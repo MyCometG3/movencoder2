@@ -1,0 +1,126 @@
+//
+//  METranscoder.h
+//  movencoder2
+//
+//  Created by Takashi Mochizuki on 2018/11/03.
+//  Copyright © 2018 MyCometG3. All rights reserved.
+//
+
+/*
+ * This file is part of movencoder2.
+ *
+ * movencoder2 is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * movencoder2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+#ifndef METranscoder_h
+#define METranscoder_h
+
+@import Foundation;
+@import AVFoundation;
+@import VideoToolbox;
+
+@class MEManager;
+@class MEInput;
+@class MEOutput;
+
+/* =================================================================================== */
+// MARK: -
+/* =================================================================================== */
+
+NS_ASSUME_NONNULL_BEGIN
+
+extern NSString* const kLPCMDepthKey;       // NSNumber of int
+extern NSString* const kAudioKbpsKey;       // NSNumber of float
+extern NSString* const kVideoKbpsKey;       // NSNumber of float
+extern NSString* const kCopyFieldKey;       // NSNumber of BOOL
+extern NSString* const kCopyNCLCKey;        // NSNumber of BOOL
+extern NSString* const kCopyOtherMediaKey;  // NSNumber of BOOL
+extern NSString* const kVideoEncodeKey;     // NSNumber of BOOL
+extern NSString* const kAudioEncodeKey;     // NSNumber of BOOL
+extern NSString* const kVideoCodecKey;      // NSString representation of OSType
+extern NSString* const kAudioCodecKey;      // NSString representation of OSType
+
+typedef void (^progress_block_t)(NSDictionary* _Nonnull);
+
+NS_ASSUME_NONNULL_END
+
+/* =================================================================================== */
+// MARK: -
+/* =================================================================================== */
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface METranscoder : NSObject
+
+- (instancetype)init NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
+
+- (instancetype)initWithInput:(NSURL*) input output:(NSURL*) output;
++ (instancetype)transcoderWithInput:(NSURL*) input output:(NSURL*) output;
+
+@property (strong, readonly) NSURL* inputURL;
+@property (strong, readonly) NSURL* outputURL;
+@property (strong, nonatomic) AVMutableMovie* inMovie;
+@property (strong, nonatomic) AVMutableMovie* outMovie;
+
+@property (strong, nonatomic) AVAssetReader* assetReader;
+@property (strong, nonatomic) AVAssetWriter* assetWriter;
+
+@property (strong, nonatomic) NSMutableDictionary* param;
+@property (assign, nonatomic) CMTime startTime;
+@property (assign, nonatomic) CMTime endTime;
+
+@property (nonatomic) BOOL verbose;
+
+// custom callback support
+@property (strong, nonatomic) dispatch_queue_t callbackQueue;
+@property (strong, nonatomic) dispatch_block_t startCallback;
+@property (strong, nonatomic) progress_block_t progressCallback;
+@property (strong, nonatomic) dispatch_block_t completionCallback;
+
+// status as atomic readonly
+@property (assign, readonly) BOOL writerIsBusy; // atomic
+@property (assign, readonly) BOOL finalSuccess; // atomic
+@property (strong, nonatomic, readonly, nullable) NSError* finalError;
+@property (assign, readonly) BOOL cancelled;    // atomic
+
+/* =================================================================================== */
+// MARK: -
+/* =================================================================================== */
+
+/**
+ Register MEManager for specified trackID
+
+ @param meManager MEManager
+ @param trackID trackID
+ */
+- (void) registerMEManager:(MEManager*)meManager for:(CMPersistentTrackID)trackID;
+
+/**
+ Start export asynchronously
+ */
+- (void) startAsync;
+
+
+/**
+ Cancel export session
+ */
+- (void) cancelAsync;
+
+@end
+
+NS_ASSUME_NONNULL_END
+
+#endif /* METranscoder_h */
