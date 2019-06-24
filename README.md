@@ -1,14 +1,14 @@
-##movencoder2
+## movencoder2
 
 This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a wheel".
 
-####Features:
-#####Movie file support:
+#### Features:
+###### Movie file support:
 - Read/write mov file. Possiblly common mp4 file would also work for read.
 - All read/write is processed via AVFoundation. No compatibility issue would arise.
 - Support reference movie. Both legacy QuickTime and AVFoundation based will work.
 
-#####Video transcode support:
+###### Video transcode support:
 - Use either AVFoundation based encoder or libavcodec based encoder. (video)
 - Support libavcodec and libx264/libx265 for video transcode.
 - Support libavfilter for video filtering.
@@ -18,21 +18,21 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 - Keep field information. Field count/Filed mode can be preserved when transcode.
 - Keep source video media timescale. No change.
 
-####Restriction:
+#### Restriction:
 - Video: 8bit depth only. No 10/16 bit support.
 - Video: Decoded format is 2vuy/kCVPixelFormatType_422YpCbCr8 = AV_PIX_FMT_UYVY422
 
-####License:
+#### License:
 - GPL v2
 
 ---
 
-####Runtime requirement:
+#### Runtime requirement:
     macOS 10.13 (High Sierra), macOS 10.14 (Mojave)
 
-####Required libraries:
+#### Required libraries:
     Please verify if required dylib (or symlink) are available.
-    
+
     /usr/lib/liblzma.dylib
     /usr/lib/libz.dylib
     /usr/local/lib/libavcodec.dylib
@@ -48,9 +48,9 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 
 ---
 
-####Command line sample 1
-######Using AVFoundation with HW h264 encoder with yuv422, and abr mode
-    $ movencoder2 
+#### Command line sample 1
+###### Using AVFoundation with HW h264 encoder with yuv422, and abr mode
+    $ movencoder2
         -verbose \
         -mevf "format=yuv422p, yadif=0:-1:0, format=uyvy422" \
         -ve "encode=y;codec=avc1;nclc=y;field=1;bitrate=5M" \
@@ -58,9 +58,9 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
         -in /Users/foo/Movies/refav90sec.mov \
         -out /Users/foo/Movies/out.mov
 
-####Command line sample 2
-######Using libx264 with yuv420, and crf mode
-    $ movencoder2 
+#### Command line sample 2
+###### Using libx264 with yuv420, and crf mode
+    $ movencoder2
         -verbose \
         -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
         -meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high" \
@@ -68,8 +68,8 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
         -ae "encode=y;codec=aac;bitrate=192k" \
         -in /Users/foo/Movies/refav90sec.mov \
         -out /Users/foo/Movies/out.mov
-######Another form of above example:
-    $ movencoder2 
+###### Another form of above example:
+    $ movencoder2
         -verbose \
         -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
         -meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high\
@@ -80,7 +80,7 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 
 ---
 
-####Generic Options
+#### Generic Options
     -verbose
         show some informative details.
     -debug
@@ -106,11 +106,11 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
     -x265 "args"
         libx265 based video encoder string. i.e. x265 -h long
 
-####Arguments (-ve)
+#### Arguments (-ve)
     This arguments are for AVFoundation based video encoder.
     every parameters are separated by semi-colon (;).
     e.g. -ve "encode=y;codec=avc1;nclc=y;field=y;bitrate=5M"
-    
+
     encode=boolean
         transcode via AVFoundation. Should be y/yes.
     codec=string
@@ -122,11 +122,11 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
     nclc=boolean
         put nclc atom into output video sampledescription.
 
-####Arguments (-ae)
+#### Arguments (-ae)
     This arguments are for AVFoundation based audio encoder.
     every parameters are separated by semi-colon (;).
     e.g. -ae "encode=y;codec=aac;bitrate=192k"
-    
+
     encode=boolean
         transcode audio using AVFoundation (yes/no)
     codec=string
@@ -136,11 +136,11 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
     depth=numeric
         LPCM bit depth (8, 16, 32)
 
-####Arguments (-meve)
+#### Arguments (-meve)
     This arguments are for libavcodec based video encoder.
     every parameters are separated by semi-colon (;).
     e.g. -meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high:level=4.1"
-    
+
     c=string
         formatName or libName string video encoder. required.
         e.g. c=libx264
@@ -174,24 +174,24 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
     x265=string
         same as -x265 option.
 
-####Arguments (-mevf)
+#### Arguments (-mevf)
     This arguments are for libavfilter based video filter.
     every parameters are separated by comma (, ).
     e.g. -mevf "format=yuv422p, yadif=0:-1:0, format=uyvy422"
-    
+
     reference: ffmpeg -filters; ffmpeg -h filter=format; ffmpeg -h filter=yadif;
 
-####Arguments (-mex264)
+#### Arguments (-mex264)
     This arguments are optional, for libx264 based video encoder.
     NOTE:preset and profile should be -meve "o=preset=xxx:profile=xxx".
     e.g. -mex264 "level=4.1:vbv-maxrate=50000:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3"
-    
+
     reference: x264 -h; x264 --longhelp; x264 --fullhelp;
 
-####Arguments (-mex265)
+#### Arguments (-mex265)
     This arguments are optional, for libx265 based video encoder.
     NOTE:preset and tune should be -meve "o=preset=xxx:profile=xxx".
-    
+
     reference: x265 -h; x265 --fullhelp;
 
 ---
