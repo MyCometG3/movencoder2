@@ -49,34 +49,52 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 ---
 
 #### Command line sample 1
-###### Using AVFoundation with HW h264 encoder with yuv422, and abr mode
-    $ movencoder2
-        -verbose \
+Using AVFoundation with HW h264 encoder with yuv422, and abr mode:
+
+    $ movencoder2 -verbose \
         -mevf "format=yuv422p, yadif=0:-1:0, format=uyvy422" \
         -ve "encode=y;codec=avc1;nclc=y;field=1;bitrate=5M" \
         -ae "encode=y;codec=aac;bitrate=192k" \
-        -in /Users/foo/Movies/refav90sec.mov \
-        -out /Users/foo/Movies/out.mov
+        -in /Users/foo/Movies/in.mov -out /Users/foo/Movies/out.mov
 
 #### Command line sample 2
-###### Using libx264 with yuv420, and crf mode
-    $ movencoder2
-        -verbose \
+Using libx264 with yuv420, and crf mode; x264 High profile level 4.1:
+
+    $ movencoder2 -verbose \
         -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
-        -meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high" \
-        -mex264 "level=4.1:vbv-maxrate=50000:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3" \
+        -meve "c=libx264;r=30000:1001;o=preset=medium:profile=high" \
+        -mex264 "level=4.1:vbv-maxrate=62500:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3" \
         -ae "encode=y;codec=aac;bitrate=192k" \
-        -in /Users/foo/Movies/refav90sec.mov \
-        -out /Users/foo/Movies/out.mov
-###### Another form of above example:
-    $ movencoder2
-        -verbose \
+        -in /Users/foo/Movies/cam.mov -out /Users/foo/Movies/out.mov
+
+Another form of above example:
+
+    $ movencoder2 -verbose \
         -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
-        -meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high\
-        :level=4.1:maxrate=50M:bufsize=62.5M:crf=19:g=60:keyint_min=6:bf=3"
+        -meve "c=libx264;r=30000:1001;o=preset=medium:profile=high\
+        :level=4.1:maxrate=62.5M:bufsize=62.5M:crf=19:g=60:keyint_min=6:bf=3"
         -ae "encode=y;codec=aac;bitrate=192k" \
-        -in /Users/foo/Movies/refav90sec.mov \
-        -out /Users/foo/Movies/out.mov
+        -in /Users/foo/Movies/in.mov -out /Users/foo/Movies/out.mov
+
+#### Command line sample 3
+Using libx264 with yuv420, and abr mode; 1440x1080 16:9 30fps x264 High profile level 4.0 abr 5.0Mbps:
+
+        $ movencoder2 -verbose \
+            -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
+            -meve "c=libx264;r=30000:1001;par=4:3;b=5M;o=preset=medium:profile=high" \
+            -mex264 "level=4.0:vbv-maxrate=25000:vbv-bufsize=25000:keyint=60:min-keyint=6:bframes=3" \
+            -ae "encode=y;codec=aac;bitrate=192k" \
+            -in /Users/foo/Movies/in.mov -out /Users/foo/Movies/out.mov
+
+#### Command line sample 4
+Using libx264 with yuv420, and abr mode; 720x480 16:9 with c.a. 30fps x264 Main profile level 3.0 abr 2.0Mbps:
+
+        $ movencoder2 -verbose \
+            -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
+            -meve "c=libx264;r=30000:1001;par=40:33;b=2M;clean=704:480:4:0;o=preset=medium:profile=main" \
+            -mex264 "level=3.0:vbv-maxrate=10000:vbv-bufsize=10000:keyint=60:min-keyint=6:bframes=3" \
+            -ae "encode=y;codec=aac;bitrate=128k" \
+            -in /Users/foo/Movies/SD16x9.mov -out /Users/foo/Movies/out.mov
 
 ---
 
@@ -107,7 +125,7 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
         libx265 based video encoder string. i.e. x265 -h long
 
 #### Arguments (-ve)
-    This arguments are for AVFoundation based video encoder.
+    These arguments are for AVFoundation based video encoder.
     every parameters are separated by semi-colon (;).
     e.g. -ve "encode=y;codec=avc1;nclc=y;field=y;bitrate=5M"
 
@@ -123,7 +141,7 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
         put nclc atom into output video sampledescription.
 
 #### Arguments (-ae)
-    This arguments are for AVFoundation based audio encoder.
+    These arguments are for AVFoundation based audio encoder.
     every parameters are separated by semi-colon (;).
     e.g. -ae "encode=y;codec=aac;bitrate=192k"
 
@@ -137,7 +155,7 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
         LPCM bit depth (8, 16, 32)
 
 #### Arguments (-meve)
-    This arguments are for libavcodec based video encoder.
+    These arguments are for libavcodec based video encoder.
     every parameters are separated by semi-colon (;).
     e.g. -meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high:level=4.1"
 
@@ -165,7 +183,8 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
         NOTE: this does not imply update. Check only.
         e.g. par=40:33
     clean=witdh:height:hOffset:vOffset
-        put special clean aperture (clap) atom into output movie. optional. NOTE: This does not crop.
+        put special clean aperture (clap) atom into output movie. optional.
+        NOTE: This does not crop.
         e.g. clean=704,480,4,0
     f=string
         same as -mevf option.
@@ -175,22 +194,22 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
         same as -x265 option.
 
 #### Arguments (-mevf)
-    This arguments are for libavfilter based video filter.
-    every parameters are separated by comma (, ).
-    e.g. -mevf "format=yuv422p, yadif=0:-1:0, format=uyvy422"
+    These arguments are for libavfilter based video filter.
+    every parameters are separated by comma (,).
+    e.g. -mevf "format=yuv422p,yadif=0:-1:0,format=uyvy422"
 
     reference: ffmpeg -filters; ffmpeg -h filter=format; ffmpeg -h filter=yadif;
 
 #### Arguments (-mex264)
-    This arguments are optional, for libx264 based video encoder.
+    These arguments are optional, for libx264 based video encoder.
     NOTE:preset and profile should be -meve "o=preset=xxx:profile=xxx".
     e.g. -mex264 "level=4.1:vbv-maxrate=50000:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3"
 
     reference: x264 -h; x264 --longhelp; x264 --fullhelp;
 
 #### Arguments (-mex265)
-    This arguments are optional, for libx265 based video encoder.
-    NOTE:preset and tune should be -meve "o=preset=xxx:profile=xxx".
+    These arguments are optional, for libx265 based video encoder.
+    NOTE:preset and tune should be -meve "o=preset=xxx:tune=xxx".
 
     reference: x265 -h; x265 --fullhelp;
 
