@@ -83,6 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (assign, nonatomic) CMTime endTime;
 
 @property (nonatomic) BOOL verbose;
+@property (nonatomic) int lastProgress; // for progressCallback support
 
 // custom callback support
 @property (strong, nonatomic) dispatch_queue_t callbackQueue;

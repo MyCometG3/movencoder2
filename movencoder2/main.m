@@ -449,7 +449,26 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
             }
         };
         transcoder.callbackQueue = dispatch_get_main_queue();
+    } else {
+        __weak typeof(transcoder) wx = transcoder;
+        transcoder.progressCallback = ^(NSDictionary* info) {
+            NSString* type = (NSString*)info[kProgressMediaTypeKey];
+            if ( [@"vide" compare:type] == NSOrderedSame ) {
+                int lastProgress = wx.lastProgress;
+                int newProgress = 0;
+                NSNumber* percent = (NSNumber*)info[kProgressPercentKey];
+                if (percent != nil) {
+                    newProgress = [percent floatValue] * 2;
+                    if (lastProgress < newProgress) {
+                        wx.lastProgress = newProgress;
+                        NSLog(@"UpdatePercentPhase:(%5.1f%%)", [percent floatValue]);
+                    }
+                }
+            }
+        };
+        transcoder.callbackQueue = dispatch_get_main_queue();
     }
+    
     return transcoder;
     
 error:

@@ -161,6 +161,7 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize endTime;
 
 @synthesize verbose;
+@synthesize lastProgress;
 
 @synthesize sbChannels;
 
