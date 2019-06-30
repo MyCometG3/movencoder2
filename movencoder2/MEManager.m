@@ -1597,9 +1597,8 @@ error:
                     [self output_sync:^{
                         pullFilteredFrame(self, &ret);      // Pull filtered frame from the filtergraph
                     }];
-                    if (self.failed) {
-                        goto error;
-                    } else {
+                    if (self.failed) goto error;
+                    if (ret < 0) {
                         if (ret == AVERROR_EOF) {
                             //NSLog(@"[MEManager] Filter graph detected EOF.");
                             ret = 0;
@@ -1617,19 +1616,18 @@ error:
                 {
                     [self output_sync:^{
                         pushFilteredFrame(self, &ret);      // Push filtered frame into encoder
-                        if (self.failed) return;            // goto error;
-                        if (ret < 0) return;                // goto error;
+                        if (self.failed) return;
+                        if (ret < 0) return;
                         pullEncodedPacket(self, &ret);      // Pull compressed output from encoder
                     }];
-                    if (self.failed) {
-                        goto error;
-                    } else {
+                    if (self.failed) goto error;
+                    if (ret < 0) {
                         if (ret == AVERROR_EOF) {
-                            // NSLog(@"[MEManager] Either filter or encoder detected EOF");
+                            // NSLog(@"[MEManager] Encoder detected EOF");
                             ret = 0;
                         }
                         if (ret == AVERROR(EAGAIN)) {
-                            countEAGAIN++;                  // filter/encoder requires more frame
+                            countEAGAIN++;                  // encoder requires more frame
                             ret = 0;
                         }
                         if (ret < 0) {
@@ -1640,9 +1638,7 @@ error:
                 }
                 if (countEAGAIN == 2) {                     // Try next ququeing after delay
                     av_usleep(50*1000);
-                    if (self.failed) {
-                        goto error;
-                    }
+                    if (self.failed) goto error;
                 }
             } while(countEAGAIN > 0);                       // loop - blocking
         } else {                                            // encode => output
@@ -1652,9 +1648,8 @@ error:
                 [self output_sync:^{
                     pullEncodedPacket(self, &ret);          // Pull compressed output from encoder
                 }];
-                if (self.failed) {
-                    goto error;
-                } else {
+                if (self.failed) goto error;
+                if (ret < 0) {
                     if (ret == AVERROR_EOF) {
                         // NSLog(@"[MEManager] Encoder detected EOF");
                         ret = 0;
@@ -1670,9 +1665,7 @@ error:
                 }
                 if (countEAGAIN == 1) {                     // Try next ququeing after delay
                     av_usleep(50*1000);
-                    if (self.failed) {
-                        goto error;
-                    }
+                    if (self.failed) goto error;
                 }
             } while(countEAGAIN > 0);                       // loop - blocking
         }
