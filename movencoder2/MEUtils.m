@@ -381,7 +381,7 @@ BOOL CMSBGetColorRange(CMSampleBufferRef sb, int*range) {
 // MARK: -
 /* =================================================================================== */
 
-BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input) {
+BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeScale mediaTimeScale) {
     if (sb && input) {
         // Check Timing information
         CMItemCount count = 0;
@@ -392,9 +392,12 @@ BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input) {
         }
         
         // Timing information
-        input->pkt_duration = timing_info.duration.value;
-        input->pts = timing_info.presentationTimeStamp.value;
-        input->pkt_dts = timing_info.decodeTimeStamp.value;
+        CMTime convertedDUR = CMTimeConvertScale(timing_info.duration, mediaTimeScale, kCMTimeRoundingMethod_Default);
+        CMTime convertedPTS = CMTimeConvertScale(timing_info.presentationTimeStamp, mediaTimeScale, kCMTimeRoundingMethod_Default);
+        CMTime convertedDTS = CMTimeConvertScale(timing_info.decodeTimeStamp, mediaTimeScale, kCMTimeRoundingMethod_Default);
+        input->pkt_duration = convertedDUR.value;
+        input->pts = convertedPTS.value;
+        input->pkt_dts = convertedDTS.value;
         
         // pixel aspect ratio
         AVRational ratio;

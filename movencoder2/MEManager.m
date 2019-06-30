@@ -841,7 +841,7 @@ end:
         }
         
         // fill input AVFrame parameters
-        result = CMSBCopyParametersToAVFrame(sb, input);
+        result = CMSBCopyParametersToAVFrame(sb, input, time_base);
         if (!result) {
             NSLog(@"[MEManager] ERROR: Cannot fill property values.");
             goto end;

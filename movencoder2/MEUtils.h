@@ -114,7 +114,7 @@ BOOL CMSBGetColorTRC(CMSampleBufferRef sb, int *trc);
 BOOL CMSBGetColorSPC(CMSampleBufferRef sb, int* spc);
 BOOL CMSBGetChromaLoc(CMSampleBufferRef sb, int* loc);
 BOOL CMSBGetColorRange(CMSampleBufferRef sb, int*range);
-BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input);
+BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeScale mediaTimeScale);
 BOOL CMSBCopyImageBufferToAVFrame(CMSampleBufferRef sb, AVFrame *input);
 void AVFrameReset(AVFrame *input);
 
