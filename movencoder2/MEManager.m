@@ -107,6 +107,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) BOOL videoFilterFlushed;
 @property (readwrite) BOOL videoEncoderFlushed;
 
+@property (readwrite) int64_t lastEnqueuedPTS; // for Filter
+@property (readwrite) int64_t lastDequeuedPTS; // for Filter
+
 // public atomic redefined
 @property (readwrite) BOOL failed;
 @property (readwrite) AVAssetWriterStatus writerStatus; // MEInput
@@ -1162,6 +1165,7 @@ error:
 
 static void enqueueToME(MEManager *self, int *ret) {
     BOOL inputFrameIsReady = (self->input->format != AV_PIX_FMT_NONE);
+    int64_t newPTS = self->input->pts;
     if (useVideoFilter(self)) {
         if (self.videoFilterFlushed) return;
         if (!self.videoFilterIsReady) {
@@ -1180,6 +1184,13 @@ static void enqueueToME(MEManager *self, int *ret) {
         if (*ret == 0) {
             if (inputFrameIsReady) {
                 av_frame_unref(self->input);
+                self.lastEnqueuedPTS = newPTS;
+#if 0
+                float pts0 = (float)self->_lastEnqueuedPTS/self->time_base;
+                float pts1 = (float)self->_lastDequeuedPTS/self->time_base;
+                float diff = fabsf(pts1-pts0);
+                NSLog(@"[Filter] enqueued:%8.2f, dequeued:%8.2f, diffInSec:%5.2f", pts0, pts1, diff );
+#endif
             } else {
                 self.videoFilterFlushed = TRUE;
             }
@@ -1280,11 +1291,22 @@ error:
     {
         __block int ret = 0;
         do {
+            do {
+                int64_t inPTS = self.lastEnqueuedPTS;
+                int64_t outPTS = self.lastDequeuedPTS;
+                if (labs(inPTS - outPTS) < 10 * self->time_base) {
+                    break;
+                } else {
+                    av_usleep(50*1000);
+                    if (self.failed) goto error;
+                }
+            } while (true); // TODO: check loop counter
             [self output_sync:^{
                 enqueueToME(self, &ret);
             }];
             if (ret == AVERROR(EAGAIN)) {
                 av_usleep(50*1000);
+                ret = 0;
             }
             if (self.failed || ret < 0) {
                 NSLog(@"[MEManager] ERROR: Failed to enqueue the input frame");
@@ -1395,7 +1417,7 @@ static void pullFilteredFrame(MEManager *self, int *ret) {
         AVRational cq = av_make_q(1, self->time_base);
         int64_t newpts = av_rescale_q(self->filtered->pts, bq, cq);
         self->filtered->pts = newpts;
-        
+        self.lastDequeuedPTS = newpts;
         return;
     } else if (*ret == AVERROR(EAGAIN)) {                   // Needs more frame to graph
         return;
