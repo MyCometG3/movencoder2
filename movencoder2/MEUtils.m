@@ -464,7 +464,6 @@ end:
 }
 
 BOOL CMSBCopyImageBufferToAVFrame(CMSampleBufferRef sb, AVFrame *input) {
-    int format = input->format;
     if (sb && input) {
         CVImageBufferRef image_buffer = CMSampleBufferGetImageBuffer(sb);
         if (!image_buffer) {
@@ -492,7 +491,7 @@ BOOL CMSBCopyImageBufferToAVFrame(CMSampleBufferRef sb, AVFrame *input) {
         
         av_image_copy((input->data), input->linesize,
                       (const uint8_t **)src_data, (const int *)src_linesize,
-                      format, input->width, input->height);
+                      input->format, input->width, input->height);
         
         err = CVPixelBufferUnlockBaseAddress(image_buffer, kCVPixelBufferLock_ReadOnly);
         if (err != kCVReturnSuccess) {
