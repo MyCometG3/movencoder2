@@ -35,7 +35,8 @@
 /* =================================================================================== */
 
 static uint64_t hbInterval = NSEC_PER_SEC / 5; // run _monBlock every 0.2 sec
-static uint32_t hangDetectInUsec = USEC_PER_SEC * 5; // in usec; wait after SIGINT
+static uint32_t hangDetectInUsec = USEC_PER_SEC * 5; // in usec; wait after SIGNAL
+static int _lastSignal = 0;
 
 /* =================================================================================== */
 // MARK: -
@@ -44,10 +45,8 @@ static uint32_t hangDetectInUsec = USEC_PER_SEC * 5; // in usec; wait after SIGI
 NS_ASSUME_NONNULL_BEGIN
 
 dispatch_queue_t _queue = NULL; // Monitor Queue
-monitor_block_t _monBlock = NULL; // monitor handler
-cancel_block_t _canBlock = NULL; // cancel handler
 dispatch_source_t _timerSource = NULL; // timer source
-dispatch_source_t _signalSource = NULL; // signal source
+NSMutableDictionary* signalSourceDictionary = NULL; // Dictionary of signal source
 
 static dispatch_queue_t monitorQueue() {
     if (!_queue) {
@@ -67,10 +66,12 @@ static dispatch_source_t timerSource() {
 }
 
 static dispatch_source_t signalSource(int code) {
+    dispatch_source_t _signalSource = signalSourceDictionary[@(code)];
     if (!_signalSource) {
         dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL,
                                                           code, 0, monitorQueue());
         _signalSource = source;
+        signalSourceDictionary[@(code)] = source;
     }
     return _signalSource;
 }
@@ -83,6 +84,9 @@ static void exitAsync(int code, dispatch_source_t _Nullable srcToCancel) {
 }
 
 static void cancelAndExit(int code, cancel_block_t  _Nonnull can) {
+    // record signumber
+    _lastSignal = code;
+    
     // Using the monitorQueue, trigger cancel operation
     can();
     usleep(hangDetectInUsec);   // Wait cancelling
@@ -116,9 +120,11 @@ static dispatch_source_t signalSrcInstaller(int code, dispatch_block_t handler) 
 /* =================================================================================== */
 
 /**
- Start progress monitor queue. Never returns. Handle SIGINT.
+ Start progress monitor queue. Never returns. Handle SIGINT/SIGTERM.
  */
 void startMonitor(monitor_block_t mon, cancel_block_t can) {
+    signalSourceDictionary = [NSMutableDictionary new];
+    
     // install GSD based timer handler
     timerSrcInstaller(mon, can);
     
@@ -128,13 +134,22 @@ void startMonitor(monitor_block_t mon, cancel_block_t can) {
         NSLog(@"SIGINT detected");
         cancelAndExit(SIGINT, can); // never returns
     });
-    
+    signalSrcInstaller(SIGTERM, ^{
+        printf("\n");
+        NSLog(@"SIGTERM detected");
+        cancelAndExit(SIGTERM, can); // never returns
+    });
+
     // start main queue - never returns
     dispatch_main();
 }
 
 void finishMonitor(int code) {
     exitAsync(code, timerSource());
+}
+
+int lastSignal(void) {
+    return _lastSignal;
 }
 
 NS_ASSUME_NONNULL_END
