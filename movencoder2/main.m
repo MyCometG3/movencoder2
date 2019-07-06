@@ -501,6 +501,9 @@ int main(int argc, char * const *argv) {
             }
             if (cancel) {
                 //NSLog(@"Transcode canceled.");
+                while (transcoder.writerIsBusy) {
+                    usleep(USEC_PER_SEC / 20);
+                }
                 finishMonitor(130); // 128 + SIGINT(2)
             }
             if (err) {

@@ -322,7 +322,10 @@ static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
 
 - (void) cancelAsync
 {
-    [self cancelExportCustom];
+    @synchronized (self) {
+        if (self.cancelled) return;
+        [self cancelExportCustom];
+    }
 }
 
 - (CFAbsoluteTime) timeElapsed
@@ -491,6 +494,7 @@ NS_ASSUME_NONNULL_BEGIN
         __block BOOL finish = FALSE;
         dispatch_semaphore_t waitSem = dispatch_semaphore_create(0);
         dispatch_group_notify(dg, self.processQueue, ^{
+            BOOL finalize = TRUE;
             BOOL cancelled = wself.cancelled; // cancel request
             if (cancelled == FALSE) {
                 // check reader status
@@ -498,23 +502,25 @@ NS_ASSUME_NONNULL_BEGIN
                 if (arFailed) {
                     wself.finalSuccess = FALSE;
                     wself.finalError = war.error;
-                } else {
-                    // finish writing session
-                    [waw endSessionAtSourceTime:wself.endTime];
-                    
-                    dispatch_semaphore_t finishSem = dispatch_semaphore_create(0);
-                    [waw finishWritingWithCompletionHandler:^{
-                        BOOL awFailed = (waw.status == AVAssetExportSessionStatusFailed);
-                        if (awFailed) {
-                            wself.finalSuccess = FALSE;
-                            wself.finalError = war.error;
-                        } else {
-                            finish = TRUE;
-                        }
-                        dispatch_semaphore_signal(finishSem);
-                    }];
-                    dispatch_semaphore_wait(finishSem, DISPATCH_TIME_FOREVER);
+                    finalize = FALSE;
                 }
+            }
+            if (finalize) {
+                // finish writing session
+                [waw endSessionAtSourceTime:wself.endTime];
+                
+                dispatch_semaphore_t finishSem = dispatch_semaphore_create(0);
+                [waw finishWritingWithCompletionHandler:^{
+                    BOOL awFailed = (waw.status == AVAssetExportSessionStatusFailed);
+                    if (awFailed) {
+                        wself.finalSuccess = FALSE;
+                        wself.finalError = war.error;
+                    } else {
+                        finish = !cancelled;
+                    }
+                    dispatch_semaphore_signal(finishSem);
+                }];
+                dispatch_semaphore_wait(finishSem, DISPATCH_TIME_FOREVER);
             }
             
             [war cancelReading];

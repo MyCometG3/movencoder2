@@ -1329,9 +1329,11 @@ error:
 
 - (void)markAsFinished
 {
-    int ret = 0;
-    enqueueToME(self, &ret);
     NSLog(@"[MEManager] End of input stream detected.");
+    [self output_sync:^{
+        int ret = 0;
+        enqueueToME(self, &ret);
+    }];
 }
 
 - (void)requestMediaDataWhenReadyOnQueue:(dispatch_queue_t)queue usingBlock:(RequestHandler)block

@@ -35,6 +35,7 @@
 /* =================================================================================== */
 
 static uint64_t hbInterval = NSEC_PER_SEC / 5; // run _monBlock every 0.2 sec
+static uint32_t hangDetectInUsec = USEC_PER_SEC * 5; // in usec; wait after SIGINT
 
 /* =================================================================================== */
 // MARK: -
@@ -81,6 +82,17 @@ static void exitAsync(int code, dispatch_source_t _Nullable srcToCancel) {
     dispatch_async(monitorQueue(), ^{ exit(code); });
 }
 
+static void cancelAndExit(int code, cancel_block_t  _Nonnull can) {
+    // Using the monitorQueue, trigger cancel operation
+    can();
+    usleep(hangDetectInUsec);   // Wait cancelling
+    
+    // Actual cleanup/exit operation should be performed in monitor_block_t
+    
+    NSLog(@"Force quit"); // Hangup condition detected
+    exitAsync(code, timerSource());
+}
+
 static dispatch_source_t timerSrcInstaller(dispatch_block_t handler, dispatch_block_t completion) {
     dispatch_time_t start = dispatch_time(DISPATCH_TIME_NOW, hbInterval);
     dispatch_source_t src = timerSource();
@@ -114,7 +126,7 @@ void startMonitor(monitor_block_t mon, cancel_block_t can) {
     signalSrcInstaller(SIGINT, ^{
         printf("\n");
         NSLog(@"SIGINT detected");
-        exitAsync(SIGINT, timerSource());
+        cancelAndExit(SIGINT, can); // never returns
     });
     
     // start main queue - never returns
