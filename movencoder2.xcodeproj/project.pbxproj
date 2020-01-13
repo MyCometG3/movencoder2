@@ -200,7 +200,7 @@
 		16B81249218D701000E24173 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1000;
+				LastUpgradeCheck = 1130;
 				ORGANIZATIONNAME = MyCometG3;
 				TargetAttributes = {
 					16B81250218D701000E24173 = {
@@ -360,6 +360,7 @@
 		16B81259218D701000E24173 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = BV5C4YNA4Z;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -382,6 +383,7 @@
 		16B8125A218D701000E24173 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = BV5C4YNA4Z;
 				FRAMEWORK_SEARCH_PATHS = (
