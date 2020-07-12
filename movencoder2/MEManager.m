@@ -756,12 +756,12 @@ end:
         filters_descr = av_strdup([videoFilterString UTF8String]);
         if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
                                             &inputs, &outputs, NULL)) < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot parse filter descriptions.");
+            NSLog(@"[MEManager] ERROR: Cannot parse filter descriptions. (%d)", ret);
             goto end;
         }
         
         if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot configure filter graph.");
+            NSLog(@"[MEManager] ERROR: Cannot configure filter graph. (%d)", ret);
             goto end;
         }
     }
