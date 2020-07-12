@@ -28,7 +28,7 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 ---
 
 #### Runtime requirement:
-    macOS 10.13 (High Sierra), macOS 10.14 (Mojave)
+    macOS 10.13 (High Sierra), macOS 10.14 (Mojave), macOS 10.15 (Catalina)
 
 #### Required libraries:
     Please verify if required dylib (or symlink) are available.

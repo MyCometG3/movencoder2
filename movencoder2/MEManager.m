@@ -3,7 +3,7 @@
 //  movencoder2
 //
 //  Created by Takashi Mochizuki on 2018/12/02.
-//  Copyright © 2018 MyCometG3. All rights reserved.
+//  Copyright © 2018-2020 MyCometG3. All rights reserved.
 //
 
 /*
