@@ -29,12 +29,16 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 
 #### Runtime requirement:
     macOS 10.13 (High Sierra), macOS 10.14 (Mojave), macOS 10.15 (Catalina)
+    macOS 11.xx (Big Sur)
 
 #### Required libraries:
     Please verify if required dylib (or symlink) are available.
 
-    /usr/lib/liblzma.dylib
-    /usr/lib/libz.dylib
+    # MacPorts
+    /opt/local/lib/liblzma.dylib
+    /opt/local/lib/libz.dylib
+    /opt/local/lib/libbz2.dylib
+    # ffmpeg/x264/x265
     /usr/local/lib/libavcodec.dylib
     /usr/local/lib/libavdevice.dylib
     /usr/local/lib/libavfilter.dylib
@@ -45,6 +49,9 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
     /usr/local/lib/libswscale.dylib
     /usr/local/lib/libx264.dylib
     /usr/local/lib/libx265.dylib
+
+#### Build your own libraries HOW-TO
+    See HowToBuildLibs.md
 
 ---
 
