@@ -543,15 +543,16 @@ end:
     } else if (self.cancelled) {
         NSLog(@"[METranscoder] Export session cancelled.");
     } else {
-        if (self.finalError) {
-            *error = self.finalError;
-        } else {
+        if (!self.finalError) {
             NSError* err = nil;
             [self post:[NSString stringWithFormat:@"%s (%d)", __PRETTY_FUNCTION__, __LINE__]
                 reason:@"Unexpected internal failure."
                   code:paramErr
                     to:&err];
             self.finalError = err;
+        }
+        if (error) {
+            *error = self.finalError;
         }
         NSLog(@"[METranscoder] ERROR: Export session failed. \n%@", self.finalError);
     }
