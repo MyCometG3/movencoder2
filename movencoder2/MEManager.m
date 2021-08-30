@@ -294,7 +294,7 @@ static inline BOOL uselibx265(MEManager *obj) {
 - (BOOL)prepareVideoEncoderWith:(CMSampleBufferRef _Nullable)sb
 {
     int ret = 0;
-    AVCodec* codec = NULL;
+    const AVCodec* codec = NULL;
     AVDictionary* opts = NULL;
     
     if (self.videoEncoderIsReady)
@@ -1079,7 +1079,7 @@ end:
         
         {
             // get AV_PICTURE_TYPE_xxx
-            int side_size = 0;
+            size_t side_size = 0;
             uint8_t *side = av_packet_get_side_data(self->encoded,
                                                     AV_PKT_DATA_QUALITY_STATS,
                                                     &side_size);
