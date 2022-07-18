@@ -22,14 +22,20 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 - Video: 8bit depth only. No 10/16 bit support.
 - Video: Decoded format is 2vuy/kCVPixelFormatType_422YpCbCr8 = AV_PIX_FMT_UYVY422
 
+#### Development environment
+
+macOS 12.4 Monterey
+Xcode 13.4.1
+
 #### License:
 - GPL v2
 
 ---
 
 #### Runtime requirement:
-    macOS 10.13 (High Sierra), macOS 10.14 (Mojave), macOS 10.15 (Catalina)
+    macOS 10.15 (Catalina)
     macOS 11.xx (Big Sur)
+    macOS 12.xx (Monterey)
 
 #### Required libraries:
     Please verify if required dylib (or symlink) are available.

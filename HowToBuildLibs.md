@@ -21,9 +21,9 @@
     $
 #### Clone git repositories
     $ cd yourWorkDir
-    $ git clone git://github.com/mirror/x264
-    $ git clone git://github.com/videolan/x265
-    $ git clone git://github.com/FFmpeg/FFmpeg
+    $ git clone https://github.com/mirror/x264.git x264 ;
+    $ git clone https://bitbucket.org/multicoreware/x265_git.git x265 ;
+    $ git clone https://github.com/FFmpeg/FFmpeg ffmpeg ;
     $
     $ ls -l
     total 0
@@ -33,7 +33,7 @@
     $
 #### Build/install x264 binary and libs
     $ cd yourWorkDir/x264/
-    $ ./configure --enable-static --enable-shared --disable-avs --disable-opencl --extra-cflags='-mmacosx-version-min=10.13' --extra-ldflags='-mmacosx-version-min=10.13'
+    $ ./configure --enable-static --enable-shared --disable-avs --disable-opencl --extra-cflags='-mmacosx-version-min=10.15' --extra-ldflags='-mmacosx-version-min=10.15'
     $ make
     => Verify lib*.a and lib*.*.dylib
     $ otool -l libx264.a | grep -A4 'LC_VERSION_MIN_MACOSX'
@@ -42,7 +42,7 @@
 #### Build/install x265 binary and libs
     $ cd yourWorkDir/x265/build/linux/
     $ ./make-Makefiles.bash
-    => Set CMAKE_OSX_DEPLOYMENT_TARGET = 10.13
+    => Set CMAKE_OSX_DEPLOYMENT_TARGET = 10.15
     => c(configure) => e(exit) => g(generate)
     $ make
     => Verify lib*.a and lib*.*.dylib
@@ -52,8 +52,8 @@
 #### Build/install ffmpeg binary and libs
     $ cd yourWorkDir/ffmpeg/
     $ PKG_CONFIG_PATH="/usr/local/lib/pkgconfig" ./configure \
-    >  --enable-gpl --enable-version3 --enable-nonfree --enable-shared --enable-libx264 --enable-libx265 \
-    >  --extra-cflags='-mmacosx-version-min=10.13' --extra-ldflags='-mmacosx-version-min=10.13'
+    >  --enable-gpl --enable-version3 --enable-shared --enable-libx264 --enable-libx265 \
+    >  --extra-cflags='-mmacosx-version-min=10.15' --extra-ldflags='-mmacosx-version-min=10.15'
     $ make
     => Verify lib*.a and lib*.*.dylib
     $ otool -l libxxxx.a | grep -A4 'LC_VERSION_MIN_MACOSX'
@@ -67,34 +67,33 @@
     $ ls -l /usr/local/lib/pkgconfig/*.pc
 #### Verify binaries
     $ x264 --version
-    x264 0.161.3015 4c2aafd
-    (libswscale 5.6.100)
-    (libavformat 58.35.102)
-    built on Jul 12 2020, gcc: 4.2.1 Compatible Apple LLVM 11.0.3 (clang-1103.0.32.29)
+    x264 0.164.3095 baee400
+    (libswscale 6.1.102)
+    (libavformat 59.10.100)
+    built on Jul 17 2022, clang: 13.1.6 (clang-1316.0.21.2.5)
     x264 configuration: --chroma-format=all
     libx264 configuration: --chroma-format=all
     x264 license: GPL version 2 or later
-    libswscale/libavformat license: nonfree and unredistributable
-    WARNING: This binary is unredistributable!
+    libswscale/libavformat license: GPL version 3 or later
     $
     $ x265 --version
-    x265 [info]: HEVC encoder version 3.4+12-gf7967350c
-    x265 [info]: build info [Mac OS X][clang 11.0.3][64 bit] 8bit
+    x265 [info]: HEVC encoder version 3.5+38-20255e6f0
+    x265 [info]: build info [Mac OS X][clang 13.1.6][64 bit] 8bit
     x265 [info]: using cpu capabilities: MMX2 SSE2Fast LZCNT SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2
     $
     $ ffmpeg -version
-    ffmpeg version N-98463-g3205ed31a7 Copyright (c) 2000-2020 the FFmpeg developers
-    built with Apple clang version 11.0.3 (clang-1103.0.32.29)
-    configuration: --enable-gpl --enable-version3 --enable-nonfree --enable-shared --enable-libx264 --enable-libx265 --extra-cflags='-mmacosx-version-min=10.13' --extra-ldflags='-mmacosx-version-min=10.13'
-    libavutil      56. 55.100 / 56. 55.100
-    libavcodec     58. 95.100 / 58. 95.100
-    libavformat    58. 48.100 / 58. 48.100
-    libavdevice    58. 11.101 / 58. 11.101
-    libavfilter     7. 87.100 /  7. 87.100
-    libswscale      5.  8.100 /  5.  8.100
-    libswresample   3.  8.100 /  3.  8.100
-    libpostproc    55.  8.100 / 55.  8.100
+    ffmpeg version N-107417-g940169b8aa Copyright (c) 2000-2022 the FFmpeg developers
+    built with Apple clang version 13.1.6 (clang-1316.0.21.2.5)
+    configuration: --enable-gpl --enable-version3 --enable-shared --enable-libx264 --enable-libx265 --extra-cflags='-mmacosx-version-min=10.15' --extra-ldflags='-mmacosx-version-min=10.15'
+    libavutil      57. 29.100 / 57. 29.100
+    libavcodec     59. 39.100 / 59. 39.100
+    libavformat    59. 29.100 / 59. 29.100
+    libavdevice    59.  8.100 / 59.  8.100
+    libavfilter     8. 45.100 /  8. 45.100
+    libswscale      6.  8.100 /  6.  8.100
+    libswresample   4.  8.100 /  4.  8.100
+    libpostproc    56.  7.100 / 56.  7.100
     $
 #### Note
-    As you can see above, these built binaries are non-distributable (non-free).
+    Binaries are not contained in dmg file.
     You need to build your own binaries/libraries by yourself.
