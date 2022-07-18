@@ -142,6 +142,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) BOOL copyField;
 @property (nonatomic, readonly) BOOL copyNCLC;
 
+@property (nonatomic, readonly) uint32_t audioFormatID;
+@property (nonatomic, readonly) uint32_t videoFormatID;
+
 @end
 
 NS_ASSUME_NONNULL_END
@@ -740,7 +743,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         
         // destination
         NSMutableDictionary<NSString*,id>* awInputSetting = [NSMutableDictionary dictionary];
-        awInputSetting[AVFormatIDKey] = @(UTGetOSTypeFromString((__bridge CFStringRef)self.audioFourcc));
+        awInputSetting[AVFormatIDKey] = @(self.audioFormatID);
         awInputSetting[AVSampleRateKey] = @(sampleRate);
         awInputSetting[AVNumberOfChannelsKey] = @(numChannel);
         awInputSetting[AVChannelLayoutKey] = aclData;
@@ -1139,6 +1142,27 @@ NS_ASSUME_NONNULL_BEGIN
     NSNumber* numCopyNCLC = param[kCopyNCLCKey];
     BOOL copyNCLC = (numCopyNCLC != nil) ? numCopyNCLC.boolValue : FALSE;
     return copyNCLC;
+}
+
+uint32_t formatIDFor(NSString* fourCC)
+{
+    uint32_t result = 0;
+    const char* str = [fourCC cStringUsingEncoding:NSASCIIStringEncoding];
+    if (str && strlen(str) >= 4) {
+        uint32_t c0 = str[0], c1 = str[1], c2 = str[2], c3 = str[3];
+        result = (c0<<24) + (c1<<16) + (c2<<8) + (c3);
+    }
+    return result;
+}
+
+- (uint32_t) audioFormatID
+{
+    return formatIDFor(self.audioFourcc);
+}
+
+- (uint32_t) videoFormatID
+{
+    return formatIDFor(self.videoFourcc);
 }
 
 @end
