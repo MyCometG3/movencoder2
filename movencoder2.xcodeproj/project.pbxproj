@@ -21,8 +21,6 @@
 		1654A0E126DC769000E7DBB8 /* libx265.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D726DC768F00E7DBB8 /* libx265.dylib */; };
 		1654A0E226DC769000E7DBB8 /* libavcodec.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D826DC768F00E7DBB8 /* libavcodec.dylib */; };
 		16741CE421A922C1000EEC78 /* SBChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CE321A922C1000EEC78 /* SBChannel.m */; };
-		16741CE621A924FB000EEC78 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16741CE521A924FB000EEC78 /* AVFoundation.framework */; };
-		16741CE821A92550000EEC78 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16741CE721A92550000EEC78 /* CoreMedia.framework */; };
 		16741CEB21A92DC6000EEC78 /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CEA21A92DC6000EEC78 /* MEInput.m */; };
 		16741CEE21A92DD1000EEC78 /* MEOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CED21A92DD1000EEC78 /* MEOutput.m */; };
 		16741CF121B37DCD000EEC78 /* MEManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CF021B37DCD000EEC78 /* MEManager.m */; };
@@ -89,9 +87,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				16741CE821A92550000EEC78 /* CoreMedia.framework in Frameworks */,
 				1654A0DF26DC768F00E7DBB8 /* libavutil.dylib in Frameworks */,
-				16741CE621A924FB000EEC78 /* AVFoundation.framework in Frameworks */,
 				1654A0CD26DC75D500E7DBB8 /* libbz2.dylib in Frameworks */,
 				1654A0DA26DC768F00E7DBB8 /* libx264.dylib in Frameworks */,
 				1654A0E226DC769000E7DBB8 /* libavcodec.dylib in Frameworks */,
@@ -408,7 +404,6 @@
 					/usr/local/lib,
 					/opt/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -433,7 +428,6 @@
 					/usr/local/lib,
 					/opt/local/lib,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
