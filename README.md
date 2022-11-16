@@ -24,8 +24,8 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 
 #### Development environment
 
-macOS 12.4 Monterey
-Xcode 13.4.1
+macOS 12.6.1 Monterey
+Xcode 14.1
 
 #### License:
 - GPL v2
@@ -33,9 +33,9 @@ Xcode 13.4.1
 ---
 
 #### Runtime requirement:
-    macOS 10.15 (Catalina)
     macOS 11.xx (Big Sur)
     macOS 12.xx (Monterey)
+    macOS 13.xx (Ventura)
 
 #### Required libraries:
     Please verify if required dylib (or symlink) are available.
