@@ -708,38 +708,228 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         [ar addOutput:arOutput];
         
         // preserve original sampleRate, numChannel, and audioChannelLayout(best effort)
-        int sampleRate = 48000;
-        int numChannel = 2;
-        AVAudioChannelLayout* avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_Stereo];
-        AVAudioChannelLayout* avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_Stereo];
+        int sampleRate = 0;
+        int numChannel = 0;
+        AVAudioChannelLayout* avacSrcLayout = nil;
+        AVAudioChannelLayout* avacDstLayout = nil;
         NSData* aclData = nil;
-        {
-            NSArray* descArray = track.formatDescriptions;
-            CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
+        
+        NSArray* descArray = track.formatDescriptions;
+        CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
+        
+        const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
+        assert(asbd != NULL);
+        sampleRate = (int)asbd->mSampleRate;
+        numChannel = (int)asbd->mChannelsPerFrame;
+        
+        size_t srcAclSize = 0;
+        const AudioChannelLayout* srcAclPtr = CMAudioFormatDescriptionGetChannelLayout(desc, &srcAclSize);
+        if (srcAclPtr != NULL && srcAclSize > 0) {
+            // Validate AudioChannelLayout
+            AudioChannelLayoutTag srcTag = srcAclPtr->mChannelLayoutTag;
+            AudioChannelLayoutTag dstTag = 0;
             
-            const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
-            if (asbd != NULL) {
-                sampleRate = (int)asbd->mSampleRate;
-                numChannel = (int)asbd->mChannelsPerFrame;
-            }
+            UInt32 ioPropertyDataSize = 4;
+            UInt32 outPropertyData = 0;
+            OSStatus err = AudioFormatGetProperty(kAudioFormatProperty_NumberOfChannelsForLayout,
+                                                  (UInt32)srcAclSize,
+                                                  srcAclPtr,
+                                                  &ioPropertyDataSize,
+                                                  &outPropertyData);
+            assert (!err && outPropertyData > 0);
+            numChannel = (int)outPropertyData;
             
-            if (numChannel == 1) {
-                avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_Mono];
-                avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_Mono];
-            } else if (numChannel == 2) {
-                avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_Stereo];
-                avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:kAudioChannelLayoutTag_Stereo];
+            if (AudioChannelLayoutTag_GetNumberOfChannels(srcTag)) {
+                // Request to respect LayoutTag for destination
+                dstTag = srcTag;
             } else {
-                // Multi channel (surround audio) requires AudioChannelLayout
-                // TODO: needs implementtion of layout converter (tag/bitmap/layoutdata)
+                // set of AudioChannelLabel(s), based on kAudioChannelLayoutTag_MPEG_*
+                NSSet* setCh1    = [NSSet setWithObjects:@(3), nil]; // C
+                NSSet* setCh2    = [NSSet setWithObjects:@(1),@(2), nil]; // L R
+                NSSet* setCh3    = [NSSet setWithObjects:@(1),@(2),@(3), nil]; // L R C
+                NSSet* setCh4    = [NSSet setWithObjects:@(1),@(2),@(3),@(9), nil]; // L R C Cs
+                NSSet* setCh5    = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6), nil]; // L R C Ls Rs
+                NSSet* setCh51   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6), nil]; // L R C LFE Ls Rs
+                NSSet* setCh61   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(9), nil]; // L R C LFE Ls Rs Cs
+                NSSet* setCh71AB = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(7),@(8), nil]; // L R C LFE Ls Rs Lc Rc
+                NSSet* setCh71C  = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(33),@(34), nil]; // L R C LFE Ls Rs Rls Rrs
+                
+                // set of AudioChannelLabel(s), based on kAudioChannelLayoutTag_AAC_*
+                NSSet* setAACQ   = [NSSet setWithObjects:@(1),@(2),@(5),@(6), nil]; // L R Ls Rs
+                NSSet* setAAC60  = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(9), nil]; // L R C Ls Rs Cs
+                NSSet* setAAC70  = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(33),@(34), nil]; // L R C Ls Rs Rls Rrs
+                NSSet* setAAC71C = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(13),@(15), nil]; // L R C LFE Ls Rs Vhl Vhr
+                NSSet* setAACOct = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(9),@(33),@(34), nil]; // L R C Ls Rs Cs Rls Rrs
+                
+                if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap) {
+                    // parse AudioChannelBitmap(s)
+                    NSMutableSet* srcSet = [NSMutableSet new];
+                    
+                    AudioChannelBitmap map = srcAclPtr->mChannelBitmap;
+                    for (int shift = 0; shift<27; shift++) {
+                        UInt32 testBit = (1U << shift);
+                        if (map & testBit) {
+                            [srcSet addObject: @(shift+1)];
+                        }
+                    }
+                    
+                    // Update numChannel w/ valid channel count
+                    assert(srcSet.count); // No support for Lsd, Rsd, Rls, Rrs and any Top positions
+                    numChannel = (int)srcSet.count;
+                    
+                    // get destination tag for AAC Transcode
+                    if ([srcSet isEqualToSet:setCh1]) {
+                        dstTag = kAudioChannelLayoutTag_Mono;       // kAudioChannelLayoutTag_MPEG_1_0
+                    }
+                    else if ([srcSet isEqualToSet:setCh2]) {
+                        dstTag = kAudioChannelLayoutTag_Stereo;     // kAudioChannelLayoutTag_MPEG_2_0
+                    }
+                    else if ([srcSet isEqualToSet:setCh3]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_3_0;    // kAudioChannelLayoutTag_MPEG_3_0_B, 3_0_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh4]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_4_0;    // kAudioChannelLayoutTag_MPEG_4_0_B, 4_0_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh5]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_5_0;    // kAudioChannelLayoutTag_MPEG_5_0_D, 5_0_C/B/A
+                    }
+                    else if ([srcSet isEqualToSet:setCh51]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_5_1;    // kAudioChannelLayoutTag_MPEG_5_1_D, 5_1_C/B/A
+                    }
+                    else if ([srcSet isEqualToSet:setCh61]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_6_1;    // kAudioChannelLayoutTag_MPEG_6_1_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh71AB]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_7_1;    // kAudioChannelLayoutTag_MPEG_7_1_B, 7_1_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh71C]) {
+                        // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
+                    }
+                    else if ([srcSet isEqualToSet:setAACQ]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_Quadraphonic;
+                    }
+                    else if ([srcSet isEqualToSet:setAAC60]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_6_0;
+                    }
+                    else if ([srcSet isEqualToSet:setAAC70]) {
+                        // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
+                    }
+                    else if ([srcSet isEqualToSet:setAAC71C]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_7_1_C;
+                    }
+                    else if ([srcSet isEqualToSet:setAACOct]) {
+                        // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
+                    }
+                    assert(dstTag);
+                }
+                
+                if (srcTag == kAudioChannelLayoutTag_UseChannelDescriptions) {
+                    // parse AudioChannelDescription(s)
+                    NSMutableSet* srcSet = [NSMutableSet new];
+                    
+                    UInt32 srcDescCount = srcAclPtr->mNumberChannelDescriptions;
+                    size_t offset = offsetof(struct AudioChannelLayout, mChannelDescriptions);
+                    AudioChannelDescription* descPtr = (AudioChannelDescription*)((char*)srcAclPtr + offset);
+                    for (size_t desc = 0; desc < srcDescCount; desc++) {
+                        AudioChannelLabel label = descPtr[desc].mChannelLabel;
+                        if (label != kAudioChannelLabel_Unused && label != kAudioChannelLabel_UseCoordinates) {
+                            [srcSet addObject: @(label)];
+                        }
+                    }
+                    
+                    // Update numChannel w/ valid channel count
+                    assert(srcSet.count); // kAudioChannelLabel_UseCoordinates is not supported
+                    numChannel = (int)srcSet.count;
+                    
+                    // get destination tag for AAC Transcode
+                    if ([srcSet isEqualToSet:setCh1]) {
+                        dstTag = kAudioChannelLayoutTag_Mono;       // kAudioChannelLayoutTag_MPEG_1_0
+                    }
+                    else if ([srcSet isEqualToSet:setCh2]) {
+                        dstTag = kAudioChannelLayoutTag_Stereo;     // kAudioChannelLayoutTag_MPEG_2_0
+                    }
+                    else if ([srcSet isEqualToSet:setCh3]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_3_0;    // kAudioChannelLayoutTag_MPEG_3_0_B, 3_0_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh4]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_4_0;    // kAudioChannelLayoutTag_MPEG_4_0_B, 4_0_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh5]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_5_0;    // kAudioChannelLayoutTag_MPEG_5_0_D, 5_0_C/B/A
+                    }
+                    else if ([srcSet isEqualToSet:setCh51]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_5_1;    // kAudioChannelLayoutTag_MPEG_5_1_D, 5_1_C/B/A
+                    }
+                    else if ([srcSet isEqualToSet:setCh61]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_6_1;    // kAudioChannelLayoutTag_MPEG_6_1_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh71AB]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_7_1;    // kAudioChannelLayoutTag_MPEG_7_1_B, 7_1_A
+                    }
+                    else if ([srcSet isEqualToSet:setCh71C]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_7_1_B;  // kAudioChannelLayoutTag_MPEG_7_1_C
+                    }
+                    else if ([srcSet isEqualToSet:setAACQ]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_Quadraphonic;
+                    }
+                    else if ([srcSet isEqualToSet:setAAC60]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_6_0;
+                    }
+                    else if ([srcSet isEqualToSet:setAAC70]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_7_0;
+                    }
+                    else if ([srcSet isEqualToSet:setAAC71C]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_7_1_C;
+                    }
+                    else if ([srcSet isEqualToSet:setAACOct]) {
+                        dstTag = kAudioChannelLayoutTag_AAC_Octagonal;
+                    }
+                    assert(dstTag);
+                }
             }
             
-            //
-            UInt32 acDescCount = avacDstLayout.layout->mNumberChannelDescriptions;
-            size_t acDescSize = sizeof(AudioChannelDescription);
-            size_t acLayoutSize = sizeof(AudioChannelLayout) + MIN(acDescCount - 1, 0) * acDescSize;
-            aclData = [NSData dataWithBytes:avacDstLayout.layout length:acLayoutSize];
+            // For Source, use AudioChannelLayout* inside CMAudioFormatDescription
+            avacSrcLayout = [AVAudioChannelLayout layoutWithLayout:srcAclPtr];
+            // For Destination, use AudioChannelLayoutTag_AAC_*
+            avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
+        } else {
+            // If acl is not available, use dummy layout (best effort)
+            assert(0 < numChannel && numChannel <=8);
+            
+            // For Source (suppose MPEG layout)
+            AudioChannelLayoutTag srcLayout[8] = {
+                kAudioChannelLayoutTag_Mono,        // C
+                kAudioChannelLayoutTag_Stereo,      // L R
+                kAudioChannelLayoutTag_MPEG_3_0_A,  // L R C
+                kAudioChannelLayoutTag_MPEG_4_0_A,  // L R C Cs
+                kAudioChannelLayoutTag_MPEG_5_0_A,  // L R C Ls Rs
+                kAudioChannelLayoutTag_MPEG_5_1_A,  // L R C LFE Ls Rs
+                kAudioChannelLayoutTag_MPEG_6_1_A,  // L R C LFE Ls Rs Cs
+                kAudioChannelLayoutTag_MPEG_7_1_C,  // L R C LFE Ls Rs Rls Rrs
+            };
+            AudioChannelLayoutTag srcTag = srcLayout[numChannel - 1];
+            avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:srcTag];
+            
+            // For Destination (suppose AAC layout)
+            AudioChannelLayoutTag dstLayout[8] = {
+                kAudioChannelLayoutTag_Mono,        // C
+                kAudioChannelLayoutTag_Stereo,      // L R
+                kAudioChannelLayoutTag_AAC_3_0,     // C L R
+                kAudioChannelLayoutTag_AAC_4_0,     // C L R Cs
+                kAudioChannelLayoutTag_AAC_5_0,     // C L R Ls Rs
+                kAudioChannelLayoutTag_AAC_5_1,     // C L R Ls Rs Lfe
+                kAudioChannelLayoutTag_AAC_6_1,     // C L R Ls Rs Cs Lfe
+                kAudioChannelLayoutTag_AAC_7_1_B    // C L R Ls Rs Rls Rrs LFE
+            };
+            AudioChannelLayoutTag dstTag = dstLayout[numChannel - 1];
+            avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
         }
+        
+        // Prepare NSData* of destination layout
+        UInt32 acDescCount = avacDstLayout.layout->mNumberChannelDescriptions;
+        size_t acDescSize = sizeof(AudioChannelDescription);
+        size_t acLayoutSize = sizeof(AudioChannelLayout) + MIN(acDescCount - 1, 0) * acDescSize;
+        aclData = [NSData dataWithBytes:avacDstLayout.layout length:acLayoutSize];
         
         // destination
         NSMutableDictionary<NSString*,id>* awInputSetting = [NSMutableDictionary dictionary];
