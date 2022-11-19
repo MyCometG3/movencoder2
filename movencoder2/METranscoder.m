@@ -762,14 +762,80 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
                 NSSet* setAACOct = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(9),@(33),@(34), nil]; // L R C Ls Rs Cs Rls Rrs
                 
                 if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap) {
+                    // prepare dictionaries for translation
+                    NSDictionary<NSString*,NSNumber*>* bitmaps = @{
+                        @"Left"                 : @(1U<<0 ), // L
+                        @"Right"                : @(1U<<1 ), // R
+                        @"Center"               : @(1U<<2 ), // C
+                        @"LFEScreen"            : @(1U<<3 ), // LFE
+                        @"LeftSurround"         : @(1U<<4 ), // Ls
+                        @"RightSurround"        : @(1U<<5 ), // Rs
+                        @"LeftCenter"           : @(1U<<6 ), // Lc
+                        @"RightCenter"          : @(1U<<7 ), // Rc
+                        @"CenterSurround"       : @(1U<<8 ), // Cs
+                        @"LeftSurroundDirect"   : @(1U<<9 ), // Lsd
+                        @"RightSurroundDirect"  : @(1U<<10), // Rsd
+                        @"TopCenterSurround"    : @(1U<<11), // Ts
+                        @"VerticalHeightLeft"   : @(1U<<12), // Vhl
+                        @"VerticalHeightCenter" : @(1U<<13), // Vhc
+                        @"VerticalHeightRight"  : @(1U<<14), // Vhr
+                        @"TopBackLeft"          : @(1U<<15), //
+                        @"TopBackCenter"        : @(1U<<16), //
+                        @"TopBackRight"         : @(1U<<17), //
+                    //  @"LeftTopFront"         : @(1U<<12), //
+                    //  @"CenterTopFront"       : @(1U<<13), //
+                    //  @"RightTopFront"        : @(1U<<14), //
+                        @"LeftTopMiddle"        : @(1U<<21), // Ltm
+                    //  @"CenterTopMiddle"      : @(1U<<11), //
+                        @"RightTopMiddle"       : @(1U<<23), // Rtm
+                        @"LeftTopRear"          : @(1U<<24), // Ltr
+                        @"CenterTopRear"        : @(1U<<25), // Ctr
+                        @"RightTopRear"         : @(1U<<26), // Rtr
+                    };
+                    NSDictionary<NSString*,NSNumber*>* labelsForBitmap = @{
+                        @"Left"                 : @(1 ), // L
+                        @"Right"                : @(2 ), // R
+                        @"Center"               : @(3 ), // C
+                        @"LFEScreen"            : @(4 ), // LFE
+                        @"LeftSurround"         : @(5 ), // Ls
+                        @"RightSurround"        : @(6 ), // Rs
+                        @"LeftCenter"           : @(7 ), // Lc
+                        @"RightCenter"          : @(8 ), // Rc
+                        @"CenterSurround"       : @(9 ), // Cs
+                        @"LeftSurroundDirect"   : @(10), // Lsd
+                        @"RightSurroundDirect"  : @(11), // Rsd
+                        @"TopCenterSurround"    : @(12), // Ts
+                        @"VerticalHeightLeft"   : @(13), // Vhl
+                        @"VerticalHeightCenter" : @(14), // Vhc
+                        @"VerticalHeightRight"  : @(15), // Vhr
+                        @"TopBackLeft"          : @(16), //
+                        @"TopBackCenter"        : @(17), //
+                        @"TopBackRight"         : @(18), //
+                    //  @"LeftTopFront"         : @(13), //
+                    //  @"CenterTopFront"       : @(14), //
+                    //  @"RightTopFront"        : @(15), //
+                        @"LeftTopMiddle"        : @(49), // Ltm
+                    //  @"CenterTopMiddle"      : @(12), //
+                        @"RightTopMiddle"       : @(51), // Rtm
+                        @"LeftTopRear"          : @(52), // Ltr
+                        @"CenterTopRear"        : @(53), // Ctr
+                        @"RightTopRear"         : @(54), // Rtr
+                    };
+                    
                     // parse AudioChannelBitmap(s)
                     NSMutableSet* srcSet = [NSMutableSet new];
                     
                     AudioChannelBitmap map = srcAclPtr->mChannelBitmap;
-                    for (int shift = 0; shift<27; shift++) {
-                        UInt32 testBit = (1U << shift);
-                        if (map & testBit) {
-                            [srcSet addObject: @(shift+1)];
+                    for (NSString* name in bitmaps.allKeys) {
+                        NSNumber* numBitmap = bitmaps[name];
+                        if (numBitmap != nil) {
+                            UInt32 testBit = numBitmap.unsignedIntValue;
+                            if (map & testBit) {
+                                NSNumber* numLabel = labelsForBitmap[name];
+                                if (numLabel != nil) {
+                                    [srcSet addObject: numLabel];
+                                }
+                            }
                         }
                     }
                     
