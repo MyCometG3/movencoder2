@@ -48,7 +48,7 @@ dispatch_queue_t _queue = NULL; // Monitor Queue
 dispatch_source_t _timerSource = NULL; // timer source
 NSMutableDictionary* signalSourceDictionary = NULL; // Dictionary of signal source
 
-static dispatch_queue_t monitorQueue() {
+static dispatch_queue_t monitorQueue(void) {
     if (!_queue) {
         dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_UNSPECIFIED, 0);
         _queue = queue;
@@ -56,7 +56,7 @@ static dispatch_queue_t monitorQueue() {
     return _queue;
 }
 
-static dispatch_source_t timerSource() {
+static dispatch_source_t timerSource(void) {
     if (!_timerSource) {
         dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
                                                           0, 0, monitorQueue());
