@@ -27,37 +27,54 @@
     $
     $ ls -l
     total 0
-    drwxr-xr-x  37 username  staff  1258  7 12 10:01 ffmpeg
-    drwxr-xr-x  27 username  staff   918  7 12 09:57 x264
-    drwxr-xr-x   9 username  staff   306  7 12 09:57 x265
+    drwxr-xr-x  45 takashi  staff  1440 10 29 22:18 ffmpeg
+    drwxr-xr-x  40 takashi  staff  1280 10 29 21:55 x264
+    drwxr-xr-x  13 takashi  staff   416 10 29 15:08 x265
     $
+#### Add some workaround for linker known issue (Xcode 15.0) 
+    $ export MACOSX_DEPLOYMENT_TARGET=12
+    $ export OTHER_LDFLAGS=-Wl,-ld_classic
 #### Build/install x264 binary and libs
     $ cd yourWorkDir/x264/
-    $ ./configure --enable-static --enable-shared --disable-avs --disable-opencl --extra-cflags='-mmacosx-version-min=10.15' --extra-ldflags='-mmacosx-version-min=10.15'
+    $ ./configure --enable-static --enable-shared --system-libx264 \
+      --extra-cflags='-mmacosx-version-min=12' \
+      --extra-ldflags='-mmacosx-version-min=12 -Wl,-ld_classic' 
     $ make
-    => Verify lib*.a and lib*.*.dylib
-    $ otool -l libx264.a | grep -A4 'LC_VERSION_MIN_MACOSX'
-    => Check build target as expected
+    => Verify lib*.a and lib*.dylib
+    $ otool -L lib*.dylib
+    => Verify dylib path is absolute path
     $ sudo make install
 #### Build/install x265 binary and libs
     $ cd yourWorkDir/x265/build/linux/
+    $ vi source/CMakeLists.txt
+    => Update cmake_minimum_required() to VERSION 3.24.4 or so - set actual cmake version here
     $ ./make-Makefiles.bash
-    => Set CMAKE_OSX_DEPLOYMENT_TARGET = 10.15
+    => c(configure) => e(exit) => g(generate)
+    $ vi CMakeCache.txt
+    => CMAKE_BUILD_WITH_INSTALL_NAME_DIR:BOOL=ON         # use /usr/local
+    => CMAKE_EXE_LINKER_FLAGS = -Wl,-ld_classic          # workaround for linker issue
+    => CMAKE_INSTALL_NAME_DIR:PATH=/usr/local/lib        # use /usr/local/lib
+    => CMAKE_INSTALL_PREFIX:PATH=/usr/local              # use /usr/local
+    => CMAKE_OSX_DEPLOYMENT_TARGET:STRING=12             # workaround for linker issue
+    => CMAKE_SHARED_LINKER_FLAGS:STRING=-Wl,-ld_classic  # workaround for linker issue
+    $ ./make-Makefiles.bash
+    => t(toggle advanced mode) - verify settings as expected
     => c(configure) => e(exit) => g(generate)
     $ make
-    => Verify lib*.a and lib*.*.dylib
-    $ otool -l libx264.a | grep -A4 'LC_VERSION_MIN_MACOSX'
-    => Check build target as expected
+    => Verify lib*.a and lib*.dylib
+    $ otool -L lib*dylib
+    => Verify dylib path is absolute path
     $ sudo make install
 #### Build/install ffmpeg binary and libs
     $ cd yourWorkDir/ffmpeg/
     $ PKG_CONFIG_PATH="/usr/local/lib/pkgconfig" ./configure \
-    >  --enable-gpl --enable-version3 --enable-shared --enable-libx264 --enable-libx265 \
-    >  --extra-cflags='-mmacosx-version-min=10.15' --extra-ldflags='-mmacosx-version-min=10.15'
+      --enable-gpl --enable-version3 --enable-shared --enable-libx264 --enable-libx265 \
+      --extra-cflags='-mmacosx-version-min=12' \
+      --extra-ldflags='-mmacosx-version-min=12 -Wl,-ld_classic'
     $ make
-    => Verify lib*.a and lib*.*.dylib
-    $ otool -l libxxxx.a | grep -A4 'LC_VERSION_MIN_MACOSX'
-    => Check build target as expected
+    => Verify lib*.a and lib*.dylib
+    $ otool -L */lib*.a */lib*.dylib
+    => Verify dylib path is absolute path
     $ sudo make install
 #### Verify installed files
     $ ls -l /usr/local/lib/*.a
@@ -67,32 +84,29 @@
     $ ls -l /usr/local/lib/pkgconfig/*.pc
 #### Verify binaries
     $ x264 --version
-    x264 0.164.3095 baee400
-    (libswscale 6.1.102)
-    (libavformat 59.10.100)
-    built on Jul 17 2022, clang: 13.1.6 (clang-1316.0.21.2.5)
+    x264 0.164.3106 eaa68fa
+    built on Oct 29 2023, clang: 15.0.0 (clang-1500.0.40.1)
     x264 configuration: --chroma-format=all
     libx264 configuration: --chroma-format=all
     x264 license: GPL version 2 or later
-    libswscale/libavformat license: GPL version 3 or later
     $
     $ x265 --version
-    x265 [info]: HEVC encoder version 3.5+38-20255e6f0
-    x265 [info]: build info [Mac OS X][clang 13.1.6][64 bit] 8bit
+    x265 [info]: HEVC encoder version 3.5+110-8ee01d45b
+    x265 [info]: build info [Mac OS X][clang 15.0.0][64 bit] 8bit
     x265 [info]: using cpu capabilities: MMX2 SSE2Fast LZCNT SSSE3 SSE4.2 AVX FMA3 BMI2 AVX2
     $
     $ ffmpeg -version
-    ffmpeg version N-107417-g940169b8aa Copyright (c) 2000-2022 the FFmpeg developers
-    built with Apple clang version 13.1.6 (clang-1316.0.21.2.5)
-    configuration: --enable-gpl --enable-version3 --enable-shared --enable-libx264 --enable-libx265 --extra-cflags='-mmacosx-version-min=10.15' --extra-ldflags='-mmacosx-version-min=10.15'
-    libavutil      57. 29.100 / 57. 29.100
-    libavcodec     59. 39.100 / 59. 39.100
-    libavformat    59. 29.100 / 59. 29.100
-    libavdevice    59.  8.100 / 59.  8.100
-    libavfilter     8. 45.100 /  8. 45.100
-    libswscale      6.  8.100 /  6.  8.100
-    libswresample   4.  8.100 /  4.  8.100
-    libpostproc    56.  7.100 / 56.  7.100
+    ffmpeg version N-112534-ge5f774268a Copyright (c) 2000-2023 the FFmpeg developers
+    built with Apple clang version 15.0.0 (clang-1500.0.40.1)
+    configuration: --enable-gpl --enable-version3 --enable-shared --enable-libx264 --enable-libx265 --extra-cflags='-mmacosx-version-min=12' --extra-ldflags='-mmacosx-version-min=12 -Wl,-ld_classic'
+    libavutil      58. 28.100 / 58. 28.100
+    libavcodec     60. 30.102 / 60. 30.102
+    libavformat    60. 15.101 / 60. 15.101
+    libavdevice    60.  2.101 / 60.  2.101
+    libavfilter     9. 11.100 /  9. 11.100
+    libswscale      7.  4.100 /  7.  4.100
+    libswresample   4. 11.100 /  4. 11.100
+    libpostproc    57.  2.100 / 57.  2.100
     $
 #### Note
     Binaries are not contained in dmg file.
