@@ -37,6 +37,7 @@
 #include <libavfilter/buffersrc.h>
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
+#include <libavutil/time.h>
 #include <libavcodec/videotoolbox.h>
 
 /* =================================================================================== */
