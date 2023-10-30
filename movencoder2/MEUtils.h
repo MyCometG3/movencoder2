@@ -38,6 +38,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/time.h>
+#include <libavutil/version.h>
 #include <libavcodec/videotoolbox.h>
 
 /* =================================================================================== */
