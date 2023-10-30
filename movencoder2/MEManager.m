@@ -442,8 +442,8 @@ static inline BOOL uselibx265(MEManager *obj) {
             avctx->time_base = av_make_q(1, time_base);
             avctx->sample_aspect_ratio = filtered->sample_aspect_ratio;
             avctx->field_order = AV_FIELD_PROGRESSIVE;
-            if (filtered->interlaced_frame) {
-                if (filtered->top_field_first) {
+            if (filtered->flags & AV_FRAME_FLAG_INTERLACED) {
+                if (filtered->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST) {
                     avctx->field_order = AV_FIELD_TT;
                 } else {
                     avctx->field_order = AV_FIELD_BB;
@@ -472,7 +472,6 @@ static inline BOOL uselibx265(MEManager *obj) {
             //
             avctx->framerate = frameRate;
             avctx->time_base = av_make_q(1, timebase);
-            avctx->ticks_per_frame = duration;
         }
         
         // av_dict_set(&opts, "b", "2.5M", 0);
@@ -865,8 +864,14 @@ end:
             int fieldCount = 1;
             int top_field_first = 0;
             if (CMSBGetFieldInfo_FDE(sourceExtensions, &fieldCount, &top_field_first)) {
-                input->interlaced_frame = (fieldCount == 2) ? 1 : 0;
-                input->top_field_first = top_field_first;
+                input->flags &= ~AV_FRAME_FLAG_INTERLACED;
+                input->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
+                if (fieldCount == 2) {
+                    input->flags |= AV_FRAME_FLAG_INTERLACED;
+                    if (top_field_first) {
+                        input->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+                    }
+                }
             }
         }
         

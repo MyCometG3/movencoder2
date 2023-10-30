@@ -395,7 +395,7 @@ BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeSca
         CMTime convertedDUR = CMTimeConvertScale(timing_info.duration, mediaTimeScale, kCMTimeRoundingMethod_Default);
         CMTime convertedPTS = CMTimeConvertScale(timing_info.presentationTimeStamp, mediaTimeScale, kCMTimeRoundingMethod_Default);
         CMTime convertedDTS = CMTimeConvertScale(timing_info.decodeTimeStamp, mediaTimeScale, kCMTimeRoundingMethod_Default);
-        input->pkt_duration = convertedDUR.value;
+        input->duration = convertedDUR.value;
         input->pts = convertedPTS.value;
         input->pkt_dts = convertedDTS.value;
         
@@ -453,8 +453,14 @@ BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeSca
         // FieldCount/FieldDetail
         int fieldCount = 1, top_field_first = 0;
         if (CMSBGetFieldInfo(sb, &fieldCount, &top_field_first)) {
-            input->interlaced_frame = (fieldCount == 2 ? 1 : 0);
-            input->top_field_first = top_field_first;
+            input->flags &= ~AV_FRAME_FLAG_INTERLACED;
+            input->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
+            if (fieldCount == 2) {
+                input->flags |= AV_FRAME_FLAG_INTERLACED;
+                if (top_field_first) {
+                    input->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+                }
+            }
         } else {
             goto end;
         }
@@ -516,7 +522,6 @@ end:
 
 void AVFrameReset(AVFrame *input) {
     // Reset properties to default: see libavutil/frame.h - frame_copy_props()
-    input->key_frame = 0;
     input->pict_type = AV_PICTURE_TYPE_NONE;
     input->sample_aspect_ratio = av_make_q(0, 1);       // copy from sb
     input->crop_top = 0;                                // copy from sb
@@ -524,21 +529,13 @@ void AVFrameReset(AVFrame *input) {
     input->crop_left = 0;                               // copy from sb
     input->crop_right = 0;                              // copy from sb
     input->pts = AV_NOPTS_VALUE;                        // copy from sb
+    input->duration = 0;                                // copy from sb
     input->repeat_pict = 0;
-    input->interlaced_frame = 0;                        // copy from sb
-    input->top_field_first = 0;                         // copy from sb
-    input->palette_has_changed = 0;
     input->sample_rate = 0;
     input->opaque = NULL;
     input->pkt_dts = AV_NOPTS_VALUE;                    // copy from sb
-    input->pkt_pos = -1;
-    input->pkt_size = -1;
-    input->pkt_duration = 0;                            // copy from sb
-    input->reordered_opaque = 0;
     input->quality = 0;
     input->best_effort_timestamp = AV_NOPTS_VALUE;
-    input->coded_picture_number = 0;
-    input->display_picture_number = 0;  // TODO
     input->flags = 0;
     input->decode_error_flags = 0;
     input->color_primaries = AVCOL_PRI_UNSPECIFIED;     // copy from sb
@@ -667,8 +664,8 @@ CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered) {
         }
     }
     {   //field count/field detail
-        int interlaced_frame = filtered->interlaced_frame;
-        int top_field_first = filtered->top_field_first;
+        int interlaced_frame = (filtered->flags & AV_FRAME_FLAG_INTERLACED);
+        int top_field_first = (filtered->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST);
         if (interlaced_frame) {
             NSString *keyFielDetail9_SFLE = (__bridge NSString*)kCVImageBufferFieldDetailSpatialFirstLineEarly;
             NSString *keyFielDetail14_SFLL = (__bridge NSString*)kCVImageBufferFieldDetailSpatialFirstLineLate;
