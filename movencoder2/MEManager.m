@@ -827,6 +827,7 @@ end:
         input->format = pxl_fmt_filter.ff_id;
         input->width = width;
         input->height = height;
+        input->time_base = av_make_q(1,time_base);
         
         // allocate new input buffer
         int ret = AVERROR_UNKNOWN;

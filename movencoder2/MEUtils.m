@@ -534,6 +534,7 @@ void AVFrameReset(AVFrame *input) {
     input->sample_rate = 0;
     input->opaque = NULL;
     input->pkt_dts = AV_NOPTS_VALUE;                    // copy from sb
+    input->time_base = av_make_q(1, 1);                 // copy from sb
     input->quality = 0;
     input->best_effort_timestamp = AV_NOPTS_VALUE;
     input->flags = 0;
