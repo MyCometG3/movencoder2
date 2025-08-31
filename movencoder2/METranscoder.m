@@ -48,6 +48,7 @@ NSString* const kVideoEncodeKey = @"videoEncode";
 NSString* const kAudioEncodeKey = @"audioEncode";
 NSString* const kVideoCodecKey = @"videoCodec";
 NSString* const kAudioCodecKey = @"audioCodec";
+NSString* const kAudioChannelLayoutTagKey = @"audioChannelLayoutTag";
 
 static const char* const kControlQueueLabel = "movencoder.controlQueue";
 static const char* const kProcessQueueLabel = "movencoder.processQueue";
@@ -144,6 +145,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, readonly) uint32_t audioFormatID;
 @property (nonatomic, readonly) uint32_t videoFormatID;
+@property (nonatomic, readonly) uint32_t audioChannelLayoutTag;
 
 @end
 
@@ -728,229 +730,232 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             // Validate AudioChannelLayout
             AudioChannelLayoutTag srcTag = srcAclPtr->mChannelLayoutTag;
             AudioChannelLayoutTag dstTag = 0;
-            
-            UInt32 ioPropertyDataSize = 4;
-            UInt32 outPropertyData = 0;
-            OSStatus err = AudioFormatGetProperty(kAudioFormatProperty_NumberOfChannelsForLayout,
-                                                  (UInt32)srcAclSize,
-                                                  srcAclPtr,
-                                                  &ioPropertyDataSize,
-                                                  &outPropertyData);
-            assert (!err && outPropertyData > 0);
-            numChannel = (int)outPropertyData;
-            
-            if (AudioChannelLayoutTag_GetNumberOfChannels(srcTag)) {
-                // Request to respect LayoutTag for destination
-                dstTag = srcTag;
+            if (self.audioChannelLayoutTag != 0) {
+                dstTag = self.audioChannelLayoutTag;
             } else {
-                // set of AudioChannelLabel(s), based on kAudioChannelLayoutTag_MPEG_*
-                NSSet* setCh1    = [NSSet setWithObjects:@(3), nil]; // C
-                NSSet* setCh2    = [NSSet setWithObjects:@(1),@(2), nil]; // L R
-                NSSet* setCh3    = [NSSet setWithObjects:@(1),@(2),@(3), nil]; // L R C
-                NSSet* setCh4    = [NSSet setWithObjects:@(1),@(2),@(3),@(9), nil]; // L R C Cs
-                NSSet* setCh5    = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6), nil]; // L R C Ls Rs
-                NSSet* setCh51   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6), nil]; // L R C LFE Ls Rs
-                NSSet* setCh61   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(9), nil]; // L R C LFE Ls Rs Cs
-                NSSet* setCh71AB = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(7),@(8), nil]; // L R C LFE Ls Rs Lc Rc
-                NSSet* setCh71C  = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(33),@(34), nil]; // L R C LFE Ls Rs Rls Rrs
+                UInt32 ioPropertyDataSize = 4;
+                UInt32 outPropertyData = 0;
+                OSStatus err = AudioFormatGetProperty(kAudioFormatProperty_NumberOfChannelsForLayout,
+                                                      (UInt32)srcAclSize,
+                                                      srcAclPtr,
+                                                      &ioPropertyDataSize,
+                                                      &outPropertyData);
+                assert (!err && outPropertyData > 0);
+                numChannel = (int)outPropertyData;
                 
-                // set of AudioChannelLabel(s), based on kAudioChannelLayoutTag_AAC_*
-                NSSet* setAACQ   = [NSSet setWithObjects:@(1),@(2),@(5),@(6), nil]; // L R Ls Rs
-                NSSet* setAAC60  = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(9), nil]; // L R C Ls Rs Cs
-                NSSet* setAAC70  = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(33),@(34), nil]; // L R C Ls Rs Rls Rrs
-                NSSet* setAAC71C = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(13),@(15), nil]; // L R C LFE Ls Rs Vhl Vhr
-                NSSet* setAACOct = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(9),@(33),@(34), nil]; // L R C Ls Rs Cs Rls Rrs
-                
-                if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap) {
-                    // prepare dictionaries for translation
-                    NSDictionary<NSString*,NSNumber*>* bitmaps = @{
-                        @"Left"                 : @(1U<<0 ), // L
-                        @"Right"                : @(1U<<1 ), // R
-                        @"Center"               : @(1U<<2 ), // C
-                        @"LFEScreen"            : @(1U<<3 ), // LFE
-                        @"LeftSurround"         : @(1U<<4 ), // Ls
-                        @"RightSurround"        : @(1U<<5 ), // Rs
-                        @"LeftCenter"           : @(1U<<6 ), // Lc
-                        @"RightCenter"          : @(1U<<7 ), // Rc
-                        @"CenterSurround"       : @(1U<<8 ), // Cs
-                        @"LeftSurroundDirect"   : @(1U<<9 ), // Lsd
-                        @"RightSurroundDirect"  : @(1U<<10), // Rsd
-                        @"TopCenterSurround"    : @(1U<<11), // Ts
-                        @"VerticalHeightLeft"   : @(1U<<12), // Vhl
-                        @"VerticalHeightCenter" : @(1U<<13), // Vhc
-                        @"VerticalHeightRight"  : @(1U<<14), // Vhr
-                        @"TopBackLeft"          : @(1U<<15), //
-                        @"TopBackCenter"        : @(1U<<16), //
-                        @"TopBackRight"         : @(1U<<17), //
-                    //  @"LeftTopFront"         : @(1U<<12), //
-                    //  @"CenterTopFront"       : @(1U<<13), //
-                    //  @"RightTopFront"        : @(1U<<14), //
-                        @"LeftTopMiddle"        : @(1U<<21), // Ltm
-                    //  @"CenterTopMiddle"      : @(1U<<11), //
-                        @"RightTopMiddle"       : @(1U<<23), // Rtm
-                        @"LeftTopRear"          : @(1U<<24), // Ltr
-                        @"CenterTopRear"        : @(1U<<25), // Ctr
-                        @"RightTopRear"         : @(1U<<26), // Rtr
-                    };
-                    NSDictionary<NSString*,NSNumber*>* labelsForBitmap = @{
-                        @"Left"                 : @(1 ), // L
-                        @"Right"                : @(2 ), // R
-                        @"Center"               : @(3 ), // C
-                        @"LFEScreen"            : @(4 ), // LFE
-                        @"LeftSurround"         : @(5 ), // Ls
-                        @"RightSurround"        : @(6 ), // Rs
-                        @"LeftCenter"           : @(7 ), // Lc
-                        @"RightCenter"          : @(8 ), // Rc
-                        @"CenterSurround"       : @(9 ), // Cs
-                        @"LeftSurroundDirect"   : @(10), // Lsd
-                        @"RightSurroundDirect"  : @(11), // Rsd
-                        @"TopCenterSurround"    : @(12), // Ts
-                        @"VerticalHeightLeft"   : @(13), // Vhl
-                        @"VerticalHeightCenter" : @(14), // Vhc
-                        @"VerticalHeightRight"  : @(15), // Vhr
-                        @"TopBackLeft"          : @(16), //
-                        @"TopBackCenter"        : @(17), //
-                        @"TopBackRight"         : @(18), //
-                    //  @"LeftTopFront"         : @(13), //
-                    //  @"CenterTopFront"       : @(14), //
-                    //  @"RightTopFront"        : @(15), //
-                        @"LeftTopMiddle"        : @(49), // Ltm
-                    //  @"CenterTopMiddle"      : @(12), //
-                        @"RightTopMiddle"       : @(51), // Rtm
-                        @"LeftTopRear"          : @(52), // Ltr
-                        @"CenterTopRear"        : @(53), // Ctr
-                        @"RightTopRear"         : @(54), // Rtr
-                    };
+                if (AudioChannelLayoutTag_GetNumberOfChannels(srcTag)) {
+                    // Request to respect LayoutTag for destination
+                    dstTag = srcTag;
+                } else {
+                    // set of AudioChannelLabel(s), based on kAudioChannelLayoutTag_MPEG_*
+                    NSSet* setCh1    = [NSSet setWithObjects:@(3), nil]; // C
+                    NSSet* setCh2    = [NSSet setWithObjects:@(1),@(2), nil]; // L R
+                    NSSet* setCh3    = [NSSet setWithObjects:@(1),@(2),@(3), nil]; // L R C
+                    NSSet* setCh4    = [NSSet setWithObjects:@(1),@(2),@(3),@(9), nil]; // L R C Cs
+                    NSSet* setCh5    = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6), nil]; // L R C Ls Rs
+                    NSSet* setCh51   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6), nil]; // L R C LFE Ls Rs
+                    NSSet* setCh61   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(9), nil]; // L R C LFE Ls Rs Cs
+                    NSSet* setCh71AB = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(7),@(8), nil]; // L R C LFE Ls Rs Lc Rc
+                    NSSet* setCh71C  = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(33),@(34), nil]; // L R C LFE Ls Rs Rls Rrs
                     
-                    // parse AudioChannelBitmap(s)
-                    NSMutableSet* srcSet = [NSMutableSet new];
+                    // set of AudioChannelLabel(s), based on kAudioChannelLayoutTag_AAC_*
+                    NSSet* setAACQ   = [NSSet setWithObjects:@(1),@(2),@(5),@(6), nil]; // L R Ls Rs
+                    NSSet* setAAC60  = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(9), nil]; // L R C Ls Rs Cs
+                    NSSet* setAAC70  = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(33),@(34), nil]; // L R C Ls Rs Rls Rrs
+                    NSSet* setAAC71C = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(13),@(15), nil]; // L R C LFE Ls Rs Vhl Vhr
+                    NSSet* setAACOct = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6),@(9),@(33),@(34), nil]; // L R C Ls Rs Cs Rls Rrs
                     
-                    AudioChannelBitmap map = srcAclPtr->mChannelBitmap;
-                    for (NSString* name in bitmaps.allKeys) {
-                        NSNumber* numBitmap = bitmaps[name];
-                        if (numBitmap != nil) {
-                            UInt32 testBit = numBitmap.unsignedIntValue;
-                            if (map & testBit) {
-                                NSNumber* numLabel = labelsForBitmap[name];
-                                if (numLabel != nil) {
-                                    [srcSet addObject: numLabel];
+                    if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap) {
+                        // prepare dictionaries for translation
+                        NSDictionary<NSString*,NSNumber*>* bitmaps = @{
+                            @"Left"                 : @(1U<<0 ), // L
+                            @"Right"                : @(1U<<1 ), // R
+                            @"Center"               : @(1U<<2 ), // C
+                            @"LFEScreen"            : @(1U<<3 ), // LFE
+                            @"LeftSurround"         : @(1U<<4 ), // Ls
+                            @"RightSurround"        : @(1U<<5 ), // Rs
+                            @"LeftCenter"           : @(1U<<6 ), // Lc
+                            @"RightCenter"          : @(1U<<7 ), // Rc
+                            @"CenterSurround"       : @(1U<<8 ), // Cs
+                            @"LeftSurroundDirect"   : @(1U<<9 ), // Lsd
+                            @"RightSurroundDirect"  : @(1U<<10), // Rsd
+                            @"TopCenterSurround"    : @(1U<<11), // Ts
+                            @"VerticalHeightLeft"   : @(1U<<12), // Vhl
+                            @"VerticalHeightCenter" : @(1U<<13), // Vhc
+                            @"VerticalHeightRight"  : @(1U<<14), // Vhr
+                            @"TopBackLeft"          : @(1U<<15), //
+                            @"TopBackCenter"        : @(1U<<16), //
+                            @"TopBackRight"         : @(1U<<17), //
+                        //  @"LeftTopFront"         : @(1U<<12), //
+                        //  @"CenterTopFront"       : @(1U<<13), //
+                        //  @"RightTopFront"        : @(1U<<14), //
+                            @"LeftTopMiddle"        : @(1U<<21), // Ltm
+                        //  @"CenterTopMiddle"      : @(1U<<11), //
+                            @"RightTopMiddle"       : @(1U<<23), // Rtm
+                            @"LeftTopRear"          : @(1U<<24), // Ltr
+                            @"CenterTopRear"        : @(1U<<25), // Ctr
+                            @"RightTopRear"         : @(1U<<26), // Rtr
+                        };
+                        NSDictionary<NSString*,NSNumber*>* labelsForBitmap = @{
+                            @"Left"                 : @(1 ), // L
+                            @"Right"                : @(2 ), // R
+                            @"Center"               : @(3 ), // C
+                            @"LFEScreen"            : @(4 ), // LFE
+                            @"LeftSurround"         : @(5 ), // Ls
+                            @"RightSurround"        : @(6 ), // Rs
+                            @"LeftCenter"           : @(7 ), // Lc
+                            @"RightCenter"          : @(8 ), // Rc
+                            @"CenterSurround"       : @(9 ), // Cs
+                            @"LeftSurroundDirect"   : @(10), // Lsd
+                            @"RightSurroundDirect"  : @(11), // Rsd
+                            @"TopCenterSurround"    : @(12), // Ts
+                            @"VerticalHeightLeft"   : @(13), // Vhl
+                            @"VerticalHeightCenter" : @(14), // Vhc
+                            @"VerticalHeightRight"  : @(15), // Vhr
+                            @"TopBackLeft"          : @(16), //
+                            @"TopBackCenter"        : @(17), //
+                            @"TopBackRight"         : @(18), //
+                        //  @"LeftTopFront"         : @(13), //
+                        //  @"CenterTopFront"       : @(14), //
+                        //  @"RightTopFront"        : @(15), //
+                            @"LeftTopMiddle"        : @(49), // Ltm
+                        //  @"CenterTopMiddle"      : @(12), //
+                            @"RightTopMiddle"       : @(51), // Rtm
+                            @"LeftTopRear"          : @(52), // Ltr
+                            @"CenterTopRear"        : @(53), // Ctr
+                            @"RightTopRear"         : @(54), // Rtr
+                        };
+                        
+                        // parse AudioChannelBitmap(s)
+                        NSMutableSet* srcSet = [NSMutableSet new];
+                        
+                        AudioChannelBitmap map = srcAclPtr->mChannelBitmap;
+                        for (NSString* name in bitmaps.allKeys) {
+                            NSNumber* numBitmap = bitmaps[name];
+                            if (numBitmap != nil) {
+                                UInt32 testBit = numBitmap.unsignedIntValue;
+                                if (map & testBit) {
+                                    NSNumber* numLabel = labelsForBitmap[name];
+                                    if (numLabel != nil) {
+                                        [srcSet addObject: numLabel];
+                                    }
                                 }
                             }
                         }
-                    }
-                    
-                    // Update numChannel w/ valid channel count
-                    assert(srcSet.count); // No support for Lsd, Rsd, Rls, Rrs and any Top positions
-                    numChannel = (int)srcSet.count;
-                    
-                    // get destination tag for AAC Transcode
-                    if ([srcSet isEqualToSet:setCh1]) {
-                        dstTag = kAudioChannelLayoutTag_Mono;       // kAudioChannelLayoutTag_MPEG_1_0
-                    }
-                    else if ([srcSet isEqualToSet:setCh2]) {
-                        dstTag = kAudioChannelLayoutTag_Stereo;     // kAudioChannelLayoutTag_MPEG_2_0
-                    }
-                    else if ([srcSet isEqualToSet:setCh3]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_3_0;    // kAudioChannelLayoutTag_MPEG_3_0_B, 3_0_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh4]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_4_0;    // kAudioChannelLayoutTag_MPEG_4_0_B, 4_0_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh5]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_5_0;    // kAudioChannelLayoutTag_MPEG_5_0_D, 5_0_C/B/A
-                    }
-                    else if ([srcSet isEqualToSet:setCh51]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_5_1;    // kAudioChannelLayoutTag_MPEG_5_1_D, 5_1_C/B/A
-                    }
-                    else if ([srcSet isEqualToSet:setCh61]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_6_1;    // kAudioChannelLayoutTag_MPEG_6_1_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh71AB]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_7_1;    // kAudioChannelLayoutTag_MPEG_7_1_B, 7_1_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh71C]) {
-                        // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
-                    }
-                    else if ([srcSet isEqualToSet:setAACQ]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_Quadraphonic;
-                    }
-                    else if ([srcSet isEqualToSet:setAAC60]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_6_0;
-                    }
-                    else if ([srcSet isEqualToSet:setAAC70]) {
-                        // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
-                    }
-                    else if ([srcSet isEqualToSet:setAAC71C]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_7_1_C;
-                    }
-                    else if ([srcSet isEqualToSet:setAACOct]) {
-                        // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
-                    }
-                    assert(dstTag);
-                }
-                
-                if (srcTag == kAudioChannelLayoutTag_UseChannelDescriptions) {
-                    // parse AudioChannelDescription(s)
-                    NSMutableSet* srcSet = [NSMutableSet new];
-                    
-                    UInt32 srcDescCount = srcAclPtr->mNumberChannelDescriptions;
-                    size_t offset = offsetof(struct AudioChannelLayout, mChannelDescriptions);
-                    AudioChannelDescription* descPtr = (AudioChannelDescription*)((char*)srcAclPtr + offset);
-                    for (size_t desc = 0; desc < srcDescCount; desc++) {
-                        AudioChannelLabel label = descPtr[desc].mChannelLabel;
-                        if (label != kAudioChannelLabel_Unused && label != kAudioChannelLabel_UseCoordinates) {
-                            [srcSet addObject: @(label)];
+                        
+                        // Update numChannel w/ valid channel count
+                        assert(srcSet.count); // No support for Lsd, Rsd, Rls, Rrs and any Top positions
+                        numChannel = (int)srcSet.count;
+                        
+                        // get destination tag for AAC Transcode
+                        if ([srcSet isEqualToSet:setCh1]) {
+                            dstTag = kAudioChannelLayoutTag_Mono;       // kAudioChannelLayoutTag_MPEG_1_0
                         }
+                        else if ([srcSet isEqualToSet:setCh2]) {
+                            dstTag = kAudioChannelLayoutTag_Stereo;     // kAudioChannelLayoutTag_MPEG_2_0
+                        }
+                        else if ([srcSet isEqualToSet:setCh3]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_3_0;    // kAudioChannelLayoutTag_MPEG_3_0_B, 3_0_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh4]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_4_0;    // kAudioChannelLayoutTag_MPEG_4_0_B, 4_0_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh5]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_5_0;    // kAudioChannelLayoutTag_MPEG_5_0_D, 5_0_C/B/A
+                        }
+                        else if ([srcSet isEqualToSet:setCh51]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_5_1;    // kAudioChannelLayoutTag_MPEG_5_1_D, 5_1_C/B/A
+                        }
+                        else if ([srcSet isEqualToSet:setCh61]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_6_1;    // kAudioChannelLayoutTag_MPEG_6_1_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh71AB]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_7_1;    // kAudioChannelLayoutTag_MPEG_7_1_B, 7_1_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh71C]) {
+                            // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
+                        }
+                        else if ([srcSet isEqualToSet:setAACQ]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_Quadraphonic;
+                        }
+                        else if ([srcSet isEqualToSet:setAAC60]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_6_0;
+                        }
+                        else if ([srcSet isEqualToSet:setAAC70]) {
+                            // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
+                        }
+                        else if ([srcSet isEqualToSet:setAAC71C]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_7_1_C;
+                        }
+                        else if ([srcSet isEqualToSet:setAACOct]) {
+                            // No equivalent available: AudioChannelBitmap does not offer Rls/Rrs layout support.
+                        }
+                        assert(dstTag);
                     }
                     
-                    // Update numChannel w/ valid channel count
-                    assert(srcSet.count); // kAudioChannelLabel_UseCoordinates is not supported
-                    numChannel = (int)srcSet.count;
-                    
-                    // get destination tag for AAC Transcode
-                    if ([srcSet isEqualToSet:setCh1]) {
-                        dstTag = kAudioChannelLayoutTag_Mono;       // kAudioChannelLayoutTag_MPEG_1_0
+                    if (srcTag == kAudioChannelLayoutTag_UseChannelDescriptions) {
+                        // parse AudioChannelDescription(s)
+                        NSMutableSet* srcSet = [NSMutableSet new];
+                        
+                        UInt32 srcDescCount = srcAclPtr->mNumberChannelDescriptions;
+                        size_t offset = offsetof(struct AudioChannelLayout, mChannelDescriptions);
+                        AudioChannelDescription* descPtr = (AudioChannelDescription*)((char*)srcAclPtr + offset);
+                        for (size_t desc = 0; desc < srcDescCount; desc++) {
+                            AudioChannelLabel label = descPtr[desc].mChannelLabel;
+                            if (label != kAudioChannelLabel_Unused && label != kAudioChannelLabel_UseCoordinates) {
+                                [srcSet addObject: @(label)];
+                            }
+                        }
+                        
+                        // Update numChannel w/ valid channel count
+                        assert(srcSet.count); // kAudioChannelLabel_UseCoordinates is not supported
+                        numChannel = (int)srcSet.count;
+                        
+                        // get destination tag for AAC Transcode
+                        if ([srcSet isEqualToSet:setCh1]) {
+                            dstTag = kAudioChannelLayoutTag_Mono;       // kAudioChannelLayoutTag_MPEG_1_0
+                        }
+                        else if ([srcSet isEqualToSet:setCh2]) {
+                            dstTag = kAudioChannelLayoutTag_Stereo;     // kAudioChannelLayoutTag_MPEG_2_0
+                        }
+                        else if ([srcSet isEqualToSet:setCh3]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_3_0;    // kAudioChannelLayoutTag_MPEG_3_0_B, 3_0_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh4]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_4_0;    // kAudioChannelLayoutTag_MPEG_4_0_B, 4_0_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh5]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_5_0;    // kAudioChannelLayoutTag_MPEG_5_0_D, 5_0_C/B/A
+                        }
+                        else if ([srcSet isEqualToSet:setCh51]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_5_1;    // kAudioChannelLayoutTag_MPEG_5_1_D, 5_1_C/B/A
+                        }
+                        else if ([srcSet isEqualToSet:setCh61]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_6_1;    // kAudioChannelLayoutTag_MPEG_6_1_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh71AB]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_7_1;    // kAudioChannelLayoutTag_MPEG_7_1_B, 7_1_A
+                        }
+                        else if ([srcSet isEqualToSet:setCh71C]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_7_1_B;  // kAudioChannelLayoutTag_MPEG_7_1_C
+                        }
+                        else if ([srcSet isEqualToSet:setAACQ]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_Quadraphonic;
+                        }
+                        else if ([srcSet isEqualToSet:setAAC60]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_6_0;
+                        }
+                        else if ([srcSet isEqualToSet:setAAC70]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_7_0;
+                        }
+                        else if ([srcSet isEqualToSet:setAAC71C]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_7_1_C;
+                        }
+                        else if ([srcSet isEqualToSet:setAACOct]) {
+                            dstTag = kAudioChannelLayoutTag_AAC_Octagonal;
+                        }
+                        assert(dstTag);
                     }
-                    else if ([srcSet isEqualToSet:setCh2]) {
-                        dstTag = kAudioChannelLayoutTag_Stereo;     // kAudioChannelLayoutTag_MPEG_2_0
-                    }
-                    else if ([srcSet isEqualToSet:setCh3]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_3_0;    // kAudioChannelLayoutTag_MPEG_3_0_B, 3_0_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh4]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_4_0;    // kAudioChannelLayoutTag_MPEG_4_0_B, 4_0_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh5]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_5_0;    // kAudioChannelLayoutTag_MPEG_5_0_D, 5_0_C/B/A
-                    }
-                    else if ([srcSet isEqualToSet:setCh51]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_5_1;    // kAudioChannelLayoutTag_MPEG_5_1_D, 5_1_C/B/A
-                    }
-                    else if ([srcSet isEqualToSet:setCh61]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_6_1;    // kAudioChannelLayoutTag_MPEG_6_1_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh71AB]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_7_1;    // kAudioChannelLayoutTag_MPEG_7_1_B, 7_1_A
-                    }
-                    else if ([srcSet isEqualToSet:setCh71C]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_7_1_B;  // kAudioChannelLayoutTag_MPEG_7_1_C
-                    }
-                    else if ([srcSet isEqualToSet:setAACQ]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_Quadraphonic;
-                    }
-                    else if ([srcSet isEqualToSet:setAAC60]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_6_0;
-                    }
-                    else if ([srcSet isEqualToSet:setAAC70]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_7_0;
-                    }
-                    else if ([srcSet isEqualToSet:setAAC71C]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_7_1_C;
-                    }
-                    else if ([srcSet isEqualToSet:setAACOct]) {
-                        dstTag = kAudioChannelLayoutTag_AAC_Octagonal;
-                    }
-                    assert(dstTag);
                 }
             }
             
@@ -1419,6 +1424,11 @@ uint32_t formatIDFor(NSString* fourCC)
 - (uint32_t) videoFormatID
 {
     return formatIDFor(self.videoFourcc);
+}
+
+- (uint32_t) audioChannelLayoutTag {
+    NSNumber* numTag = param[kAudioChannelLayoutTagKey];
+    return (numTag != nil) ? numTag.unsignedIntValue : 0;
 }
 
 @end

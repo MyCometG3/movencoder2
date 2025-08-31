@@ -47,6 +47,7 @@ NSValue* _Nullable parseRect(NSString* val);
 NSValue* _Nullable parseTime(NSString* val);
 NSNumber* _Nullable parseBool(NSString* val);
 NSDictionary* _Nullable parseCodecOptions(NSString* val);
+NSNumber* _Nullable parseLayoutTag(NSString* val); // Supports AAC layout names and integer values
 
 NS_ASSUME_NONNULL_END
 

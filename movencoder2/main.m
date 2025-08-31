@@ -197,6 +197,7 @@ error:
  # bitrate=_; audio bit rate (i.e. 96k, 128k, 192k, ...)
  #  encode=_; transcode audio using AVFoundation (yes, no)
  #   codec=_; fourcc of audio codec (lcpm, aac, alac, ...)
+ #  layout=_; Audio channel layout tag (integer or AAC layout name, e.g. Stereo, AAC_5_1, 100)
  */
 static BOOL parseOptAE(NSString* param, METranscoder* coder) {
     NSArray* optArray = [param componentsSeparatedByString:separator];
@@ -226,6 +227,13 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
             if (nil == val) goto error;
             val = [val stringByPaddingToLength:4 withString:@" " startingAtIndex:0];
             coder.param[kAudioCodecKey] = val;
+        }
+        // Parse layoutTag (supports both integer and AAC layout name)
+        if ([key isEqualToString:@"layout"]) {
+            if (nil == val) goto error;
+            NSNumber* layoutTagNum = parseLayoutTag(val);
+            if (nil == layoutTagNum) goto error;
+            coder.param[@"kAudioChannelLayoutTagKey"] = layoutTagNum;
         }
     }
     

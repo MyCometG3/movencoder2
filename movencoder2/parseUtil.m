@@ -235,4 +235,34 @@ error:
     return nil;
 }
 
+NSNumber* parseLayoutTag(NSString* val) {
+    // First, try to interpret as an integer value
+    NSNumber* num = parseInteger(val);
+    if (num) return num;
+    // Constant name to value table (AAC layouts only)
+    static NSDictionary<NSString*, NSNumber*>* table = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        table = @{
+            @"Mono": @(kAudioChannelLayoutTag_Mono),
+            @"Stereo": @(kAudioChannelLayoutTag_Stereo),
+            @"AAC_3_0": @(kAudioChannelLayoutTag_AAC_3_0),
+            @"AAC_4_0": @(kAudioChannelLayoutTag_AAC_4_0),
+            @"AAC_5_0": @(kAudioChannelLayoutTag_AAC_5_0),
+            @"AAC_5_1": @(kAudioChannelLayoutTag_AAC_5_1),
+            @"AAC_6_1": @(kAudioChannelLayoutTag_AAC_6_1),
+            @"AAC_7_1": @(kAudioChannelLayoutTag_AAC_7_1),
+            @"AAC_7_1_C": @(kAudioChannelLayoutTag_AAC_7_1_C),
+            @"AAC_Quadraphonic": @(kAudioChannelLayoutTag_AAC_Quadraphonic),
+            @"AAC_6_0": @(kAudioChannelLayoutTag_AAC_6_0),
+            @"AAC_7_0": @(kAudioChannelLayoutTag_AAC_7_0),
+            @"AAC_Octagonal": @(kAudioChannelLayoutTag_AAC_Octagonal),
+        };
+    });
+    NSNumber* tag = table[val];
+    if (tag) return tag;
+    NSLog(@"ERROR: %@ : not valid AAC layout name or integer", val);
+    return nil;
+}
+
 NS_ASSUME_NONNULL_END
