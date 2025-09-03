@@ -30,6 +30,7 @@
 @import Foundation;
 @import AVFoundation;
 @import VideoToolbox;
+@import CoreAudio;
 
 @class MEManager;
 @class MEInput;
@@ -51,6 +52,7 @@ extern NSString* const kVideoEncodeKey;     // NSNumber of BOOL
 extern NSString* const kAudioEncodeKey;     // NSNumber of BOOL
 extern NSString* const kVideoCodecKey;      // NSString representation of OSType
 extern NSString* const kAudioCodecKey;      // NSString representation of OSType
+extern NSString* const kAudioChannelLayoutTagKey; // NSNumber of uint32_t
 
 typedef void (^progress_block_t)(NSDictionary* _Nonnull);
 

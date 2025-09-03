@@ -233,7 +233,7 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
             if (nil == val) goto error;
             NSNumber* layoutTagNum = parseLayoutTag(val);
             if (nil == layoutTagNum) goto error;
-            coder.param[@"kAudioChannelLayoutTagKey"] = layoutTagNum;
+            coder.param[kAudioChannelLayoutTagKey] = layoutTagNum;
         }
     }
     
