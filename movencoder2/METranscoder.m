@@ -1405,7 +1405,9 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             }
             
             avacSrcLayout = [AVAudioChannelLayout layoutWithLayout:srcAclPtr];
-            avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
+            if (dstTag != 0) {
+                avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
+            }
         } else {
             // Default layouts when source has no channel layout
             AudioChannelLayoutTag srcLayout[8] = {
@@ -1434,6 +1436,32 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
                 AudioChannelLayoutTag dstTag = dstLayout[numChannel - 1];
                 avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:srcTag];
                 avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
+            } else {
+                NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported channel count %d", track.trackID, numChannel);
+                continue;
+            }
+        }
+        
+        if (!avacSrcLayout || !avacDstLayout) {
+            // Fallback: try to create layouts based on channel count only
+            if (numChannel >= 1 && numChannel <= 8) {
+                AudioChannelLayoutTag fallbackLayouts[8] = {
+                    kAudioChannelLayoutTag_Mono,        
+                    kAudioChannelLayoutTag_Stereo,      
+                    kAudioChannelLayoutTag_AAC_3_0,     
+                    kAudioChannelLayoutTag_AAC_4_0,     
+                    kAudioChannelLayoutTag_AAC_5_0,     
+                    kAudioChannelLayoutTag_AAC_5_1,     
+                    kAudioChannelLayoutTag_AAC_6_1,     
+                    kAudioChannelLayoutTag_AAC_7_1_B    
+                };
+                AudioChannelLayoutTag fallbackTag = fallbackLayouts[numChannel - 1];
+                if (!avacSrcLayout) {
+                    avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:fallbackTag];
+                }
+                if (!avacDstLayout) {
+                    avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:fallbackTag];
+                }
             }
         }
         
