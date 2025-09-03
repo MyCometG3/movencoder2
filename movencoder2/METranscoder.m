@@ -1178,11 +1178,20 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
     // Create audio format description
     AudioStreamBasicDescription asbd = *format.streamDescription;
     CMAudioFormatDescriptionRef formatDesc = NULL;
+    
+    size_t layoutSize = 0;
+    const AudioChannelLayout* layout = NULL;
+    if (format.channelLayout) {
+        layout = format.channelLayout.layout;
+        UInt32 acDescCount = layout->mNumberChannelDescriptions;
+        layoutSize = sizeof(AudioChannelLayout) + (acDescCount > 1 ? (acDescCount - 1) * sizeof(AudioChannelDescription) : 0);
+    }
+    
     status = CMAudioFormatDescriptionCreate(
         kCFAllocatorDefault,
         &asbd,
-        format.channelLayout ? sizeof(*format.channelLayout->layout) + format.channelLayout->layout->mNumberChannelDescriptions * sizeof(AudioChannelDescription) : 0,
-        format.channelLayout ? format.channelLayout->layout : NULL,
+        layoutSize,
+        layout,
         0,
         NULL,
         NULL,
@@ -1283,18 +1292,110 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
                 if (AudioChannelLayoutTag_GetNumberOfChannels(srcTag)) {
                     dstTag = srcTag;
                 } else {
-                    // Channel mapping logic - abbreviated for space but includes the full logic from original
+                    // Channel mapping logic - using the existing logic from the original method
                     if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap || srcTag == kAudioChannelLayoutTag_UseChannelDescriptions) {
-                        // Use simplified channel count based mapping for now
+                        // Define channel sets for mapping (from original logic)
+                        NSSet* setCh1    = [NSSet setWithObjects:@(3), nil]; // C
+                        NSSet* setCh2    = [NSSet setWithObjects:@(1),@(2), nil]; // L R
+                        NSSet* setCh3    = [NSSet setWithObjects:@(1),@(2),@(3), nil]; // L R C
+                        NSSet* setCh4    = [NSSet setWithObjects:@(1),@(2),@(3),@(9), nil]; // L R C Cs
+                        NSSet* setCh5    = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6), nil]; // L R C Ls Rs
+                        NSSet* setCh51   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6), nil]; // L R C LFE Ls Rs
+                        NSSet* setCh61   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(9), nil]; // L R C LFE Ls Rs Cs
+                        NSSet* setCh71AB = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(7),@(8), nil]; // L R C LFE Ls Rs Lc Rc
+                        NSSet* setCh71C  = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(33),@(34), nil]; // L R C LFE Ls Rs Rls Rrs
+                        
+                        NSMutableSet* srcSet = [NSMutableSet new];
+                        
+                        if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap) {
+                            // Parse AudioChannelBitmap (simplified)
+                            AudioChannelBitmap map = srcAclPtr->mChannelBitmap;
+                            // Add basic channel mapping - can be expanded with full bitmap parsing
+                            if (map & (1U<<0)) [srcSet addObject:@(1)]; // L
+                            if (map & (1U<<1)) [srcSet addObject:@(2)]; // R
+                            if (map & (1U<<2)) [srcSet addObject:@(3)]; // C
+                            if (map & (1U<<3)) [srcSet addObject:@(4)]; // LFE
+                            if (map & (1U<<4)) [srcSet addObject:@(5)]; // Ls
+                            if (map & (1U<<5)) [srcSet addObject:@(6)]; // Rs
+                            // Add more as needed...
+                        } else if (srcTag == kAudioChannelLayoutTag_UseChannelDescriptions) {
+                            // Parse AudioChannelDescription(s)
+                            UInt32 srcDescCount = srcAclPtr->mNumberChannelDescriptions;
+                            size_t offset = offsetof(struct AudioChannelLayout, mChannelDescriptions);
+                            AudioChannelDescription* descPtr = (AudioChannelDescription*)((char*)srcAclPtr + offset);
+                            for (size_t desc = 0; desc < srcDescCount; desc++) {
+                                AudioChannelLabel label = descPtr[desc].mChannelLabel;
+                                if (label != kAudioChannelLabel_Unused && label != kAudioChannelLabel_UseCoordinates) {
+                                    [srcSet addObject:@(label)];
+                                }
+                            }
+                        }
+                        
+                        if (srcSet.count > 0) {
+                            numChannel = (int)srcSet.count;
+                            
+                            // Map to AAC layouts
+                            if ([srcSet isEqualToSet:setCh1]) {
+                                dstTag = kAudioChannelLayoutTag_Mono;
+                            } else if ([srcSet isEqualToSet:setCh2]) {
+                                dstTag = kAudioChannelLayoutTag_Stereo;
+                            } else if ([srcSet isEqualToSet:setCh3]) {
+                                dstTag = kAudioChannelLayoutTag_AAC_3_0;
+                            } else if ([srcSet isEqualToSet:setCh4]) {
+                                dstTag = kAudioChannelLayoutTag_AAC_4_0;
+                            } else if ([srcSet isEqualToSet:setCh5]) {
+                                dstTag = kAudioChannelLayoutTag_AAC_5_0;
+                            } else if ([srcSet isEqualToSet:setCh51]) {
+                                dstTag = kAudioChannelLayoutTag_AAC_5_1;
+                            } else if ([srcSet isEqualToSet:setCh61]) {
+                                dstTag = kAudioChannelLayoutTag_AAC_6_1;
+                            } else if ([srcSet isEqualToSet:setCh71AB]) {
+                                dstTag = kAudioChannelLayoutTag_AAC_7_1;
+                            } else if ([srcSet isEqualToSet:setCh71C]) {
+                                dstTag = kAudioChannelLayoutTag_AAC_7_1_B;
+                            } else {
+                                // Fallback to channel count based mapping
+                                AudioChannelLayoutTag dstLayout[8] = {
+                                    kAudioChannelLayoutTag_Mono,        
+                                    kAudioChannelLayoutTag_Stereo,      
+                                    kAudioChannelLayoutTag_AAC_3_0,     
+                                    kAudioChannelLayoutTag_AAC_4_0,     
+                                    kAudioChannelLayoutTag_AAC_5_0,     
+                                    kAudioChannelLayoutTag_AAC_5_1,     
+                                    kAudioChannelLayoutTag_AAC_6_1,     
+                                    kAudioChannelLayoutTag_AAC_7_1_B    
+                                };
+                                if (numChannel >= 1 && numChannel <= 8) {
+                                    dstTag = dstLayout[numChannel - 1];
+                                }
+                            }
+                        } else {
+                            // Fallback for empty set
+                            AudioChannelLayoutTag dstLayout[8] = {
+                                kAudioChannelLayoutTag_Mono,        
+                                kAudioChannelLayoutTag_Stereo,      
+                                kAudioChannelLayoutTag_AAC_3_0,     
+                                kAudioChannelLayoutTag_AAC_4_0,     
+                                kAudioChannelLayoutTag_AAC_5_0,     
+                                kAudioChannelLayoutTag_AAC_5_1,     
+                                kAudioChannelLayoutTag_AAC_6_1,     
+                                kAudioChannelLayoutTag_AAC_7_1_B    
+                            };
+                            if (numChannel >= 1 && numChannel <= 8) {
+                                dstTag = dstLayout[numChannel - 1];
+                            }
+                        }
+                    } else {
+                        // Unknown layout tag, use channel count based mapping
                         AudioChannelLayoutTag dstLayout[8] = {
-                            kAudioChannelLayoutTag_Mono,        // C
-                            kAudioChannelLayoutTag_Stereo,      // L R
-                            kAudioChannelLayoutTag_AAC_3_0,     // C L R
-                            kAudioChannelLayoutTag_AAC_4_0,     // C L R Cs
-                            kAudioChannelLayoutTag_AAC_5_0,     // C L R Ls Rs
-                            kAudioChannelLayoutTag_AAC_5_1,     // C L R Ls Rs Lfe
-                            kAudioChannelLayoutTag_AAC_6_1,     // C L R Ls Rs Cs Lfe
-                            kAudioChannelLayoutTag_AAC_7_1_B    // C L R Ls Rs Rls Rrs LFE
+                            kAudioChannelLayoutTag_Mono,        
+                            kAudioChannelLayoutTag_Stereo,      
+                            kAudioChannelLayoutTag_AAC_3_0,     
+                            kAudioChannelLayoutTag_AAC_4_0,     
+                            kAudioChannelLayoutTag_AAC_5_0,     
+                            kAudioChannelLayoutTag_AAC_5_1,     
+                            kAudioChannelLayoutTag_AAC_6_1,     
+                            kAudioChannelLayoutTag_AAC_7_1_B    
                         };
                         if (numChannel >= 1 && numChannel <= 8) {
                             dstTag = dstLayout[numChannel - 1];
@@ -1479,7 +1580,8 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
                                         if (queue && block) {
                                             float progress = calcProgressOf(sourceBuffer, weakSelf.startTime, weakSelf.endTime);
                                             float pts_seconds = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sourceBuffer));
-                                            float dts_seconds = CMTimeGetSeconds(CMSampleBufferGetDecodeTimeStamp(sourceBuffer));
+                                            CMTime dts = CMSampleBufferGetDecodeTimeStamp(sourceBuffer);
+                                            float dts_seconds = CMTIME_IS_VALID(dts) ? CMTimeGetSeconds(dts) : pts_seconds;
                                             
                                             NSMutableDictionary* info = [NSMutableDictionary dictionary];
                                             info[kProgressPercentKey] = @(progress);
