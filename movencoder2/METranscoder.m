@@ -120,6 +120,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) prepareVideoChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
 - (void) prepareVideoMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
 
+- (BOOL) hasVideoMEManagers;
+- (BOOL) hasAudioMEConverters;
+
 @end
 
 NS_ASSUME_NONNULL_END
@@ -330,6 +333,32 @@ static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
     }
 }
 
+- (BOOL) hasVideoMEManagers
+{
+    if (!self.managers) return NO;
+    
+    for (NSString* key in self.managers) {
+        id manager = self.managers[key];
+        if ([manager isKindOfClass:[MEManager class]]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (BOOL) hasAudioMEConverters
+{
+    if (!self.managers) return NO;
+    
+    for (NSString* key in self.managers) {
+        id manager = self.managers[key];
+        if ([manager isKindOfClass:[MEAudioConverter class]]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
 - (void) startAsync
 {
     // process export in background queue
@@ -397,7 +426,8 @@ NS_ASSUME_NONNULL_BEGIN
     AVMutableMovie* mov = self.inMovie;
     AVAssetWriter* aw = nil;
     AVAssetReader* ar = nil;
-    BOOL useME = (self.managers != nil);
+    BOOL useME = [self hasVideoMEManagers];  // for video processing
+    BOOL useAC = [self hasAudioMEConverters]; // for audio converter processing
     
     dispatch_group_t dg;
     
@@ -467,7 +497,7 @@ NS_ASSUME_NONNULL_BEGIN
         aw.shouldOptimizeForNetworkUse = TRUE;
         
         // setup sampleBufferChannels for each track
-        if (useME) {
+        if (useAC) {
             [self prepareAudioMEChannelsWith:mov from:ar to:aw];
         } else {
             [self prepareAudioMediaChannelWith:mov from:ar to:aw];
