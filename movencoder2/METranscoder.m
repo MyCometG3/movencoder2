@@ -50,7 +50,6 @@ NSString* const kAudioEncodeKey = @"audioEncode";
 NSString* const kVideoCodecKey = @"videoCodec";
 NSString* const kAudioCodecKey = @"audioCodec";
 NSString* const kAudioChannelLayoutTagKey = @"audioChannelLayoutTag";
-NSString* const kAudioChannelLayoutTagKey = @"audioChannelLayoutTag";
 
 static const char* const kControlQueueLabel = "movencoder.controlQueue";
 static const char* const kProcessQueueLabel = "movencoder.processQueue";
