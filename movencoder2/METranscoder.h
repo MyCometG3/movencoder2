@@ -35,6 +35,7 @@
 @class MEManager;
 @class MEInput;
 @class MEOutput;
+@class MEAudioConverter;
 
 /* =================================================================================== */
 // MARK: -
@@ -110,6 +111,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param trackID trackID
  */
 - (void) registerMEManager:(MEManager*)meManager for:(CMPersistentTrackID)trackID;
+
+/**
+ Register MEAudioConverter for specified trackID
+
+ @param meAudioConverter MEAudioConverter
+ @param trackID trackID
+ */
+- (void) registerMEAudioConverter:(MEAudioConverter*)meAudioConverter for:(CMPersistentTrackID)trackID;
 
 /**
  Start export asynchronously

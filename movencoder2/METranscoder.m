@@ -28,6 +28,7 @@
 #import "MEManager.h"
 #import "MEInput.h"
 #import "MEOutput.h"
+#import "MEAudioConverter.h"
 #import "SBChannel.h"
 
 #ifndef ALog
@@ -48,6 +49,7 @@ NSString* const kVideoEncodeKey = @"videoEncode";
 NSString* const kAudioEncodeKey = @"audioEncode";
 NSString* const kVideoCodecKey = @"videoCodec";
 NSString* const kAudioCodecKey = @"audioCodec";
+NSString* const kAudioChannelLayoutTagKey = @"audioChannelLayoutTag";
 NSString* const kAudioChannelLayoutTagKey = @"audioChannelLayoutTag";
 
 static const char* const kControlQueueLabel = "movencoder.controlQueue";
@@ -110,11 +112,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) prepareCopyChannelWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw of:(AVMediaType)type;
 - (void) prepareOtherMediaChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
 - (void) prepareAudioMediaChannelWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
-- (void) prepareAudioMediaChannelWithConverter:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
-
-// Helper methods for PCM buffer conversion
-- (nullable AVAudioPCMBuffer*) createPCMBufferFromSampleBuffer:(CMSampleBufferRef)sampleBuffer withFormat:(AVAudioFormat*)format;
-- (nullable CMSampleBufferRef) createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer withPresentationTimeStamp:(CMTime)pts format:(AVAudioFormat*)format CF_RETURNS_RETAINED;
+- (void) prepareAudioMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
 
 - (BOOL) hasFieldModeSupportOf:(AVMovieTrack*)track;
 - (void) addDecommpressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting;
@@ -320,6 +318,19 @@ static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
     }
 }
 
+- (void) registerMEAudioConverter:(MEAudioConverter *)meAudioConverter for:(CMPersistentTrackID)trackID
+{
+    NSMutableDictionary* mgrs = self.managers;
+    if (mgrs == nil) {
+        mgrs = [NSMutableDictionary dictionary];
+        self.managers = mgrs;
+    }
+    if (mgrs) {
+        NSString* key = keyForTrackID(trackID);
+        mgrs[key] = meAudioConverter;
+    }
+}
+
 - (void) startAsync
 {
     // process export in background queue
@@ -457,7 +468,11 @@ NS_ASSUME_NONNULL_BEGIN
         aw.shouldOptimizeForNetworkUse = TRUE;
         
         // setup sampleBufferChannels for each track
-        [self prepareAudioMediaChannelWithConverter:mov from:ar to:aw];
+        if (useME) {
+            [self prepareAudioMEChannelsWith:mov from:ar to:aw];
+        } else {
+            [self prepareAudioMediaChannelWith:mov from:ar to:aw];
+        }
         [self prepareOtherMediaChannelsWith:mov from:ar to:aw];
         if (useME) {
             [self prepareVideoMEChannelsWith:mov from:ar to:aw];
@@ -1060,174 +1075,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
     }
 }
 
-// MARK: # Helper methods for PCM buffer conversion
-
-- (nullable AVAudioPCMBuffer*) createPCMBufferFromSampleBuffer:(CMSampleBufferRef)sampleBuffer withFormat:(AVAudioFormat*)format
-{
-    CMBlockBufferRef blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
-    if (!blockBuffer) return nil;
-    
-    size_t totalLength = CMBlockBufferGetDataLength(blockBuffer);
-    if (totalLength == 0) return nil;
-    
-    // Get audio buffer list from sample buffer
-    AudioBufferList audioBufferList;
-    CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
-        sampleBuffer, NULL, &audioBufferList, sizeof(audioBufferList), 
-        kCFAllocatorDefault, kCFAllocatorDefault, 0, NULL);
-    
-    if (audioBufferList.mNumberBuffers == 0) return nil;
-    
-    // Get frame count from sample buffer
-    CMItemCount sampleCount = CMSampleBufferGetNumSamples(sampleBuffer);
-    
-    // Create PCM buffer with the target format
-    AVAudioPCMBuffer* pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format frameCapacity:(AVAudioFrameCount)sampleCount];
-    if (!pcmBuffer) return nil;
-    
-    pcmBuffer.frameLength = (AVAudioFrameCount)sampleCount;
-    
-    // Copy data based on format
-    if (format.isInterleaved) {
-        // Interleaved format - copy all channel data sequentially
-        float* destPtr = pcmBuffer.floatChannelData[0];
-        if (audioBufferList.mBuffers[0].mData) {
-            if (audioBufferList.mBuffers[0].mDataByteSize >= sampleCount * format.channelCount * sizeof(float)) {
-                memcpy(destPtr, audioBufferList.mBuffers[0].mData, sampleCount * format.channelCount * sizeof(float));
-            }
-        }
-    } else {
-        // Non-interleaved format - copy each channel separately
-        for (UInt32 channel = 0; channel < format.channelCount && channel < audioBufferList.mNumberBuffers; channel++) {
-            float* destPtr = pcmBuffer.floatChannelData[channel];
-            if (audioBufferList.mBuffers[channel].mData) {
-                if (audioBufferList.mBuffers[channel].mDataByteSize >= sampleCount * sizeof(float)) {
-                    memcpy(destPtr, audioBufferList.mBuffers[channel].mData, sampleCount * sizeof(float));
-                }
-            }
-        }
-    }
-    
-    return pcmBuffer;
-}
-
-- (nullable CMSampleBufferRef) createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer withPresentationTimeStamp:(CMTime)pts format:(AVAudioFormat*)format CF_RETURNS_RETAINED
-{
-    if (!pcmBuffer || !format || pcmBuffer.frameLength == 0) return NULL;
-    
-    AVAudioFrameCount frameCount = pcmBuffer.frameLength;
-    UInt32 channelCount = format.channelCount;
-    UInt32 bytesPerFrame = channelCount * sizeof(float);
-    UInt32 totalBytes = frameCount * bytesPerFrame;
-    
-    // Create audio buffer list
-    AudioBufferList* audioBufferList = malloc(sizeof(AudioBufferList) + (channelCount - 1) * sizeof(AudioBuffer));
-    if (!audioBufferList) return NULL;
-    
-    // Allocate block buffer
-    CMBlockBufferRef blockBuffer = NULL;
-    OSStatus status = CMBlockBufferCreateWithMemoryBlock(
-        kCFAllocatorDefault,
-        NULL,  // Use allocated memory
-        totalBytes,
-        kCFAllocatorDefault,
-        NULL,  // No custom block source
-        0,     // Offset into block
-        totalBytes,
-        0,     // Flags
-        &blockBuffer);
-    
-    if (status != noErr) {
-        free(audioBufferList);
-        return NULL;
-    }
-    
-    // Get pointer to block buffer data
-    char* dataPtr = NULL;
-    status = CMBlockBufferGetDataPointer(blockBuffer, 0, NULL, NULL, &dataPtr);
-    if (status != noErr) {
-        CFRelease(blockBuffer);
-        free(audioBufferList);
-        return NULL;
-    }
-    
-    if (format.isInterleaved) {
-        // Interleaved format
-        audioBufferList->mNumberBuffers = 1;
-        audioBufferList->mBuffers[0].mNumberChannels = channelCount;
-        audioBufferList->mBuffers[0].mDataByteSize = totalBytes;
-        audioBufferList->mBuffers[0].mData = dataPtr;
-        
-        // Copy interleaved data
-        memcpy(dataPtr, pcmBuffer.floatChannelData[0], totalBytes);
-    } else {
-        // Non-interleaved format
-        audioBufferList->mNumberBuffers = channelCount;
-        UInt32 bytesPerChannel = frameCount * sizeof(float);
-        
-        for (UInt32 channel = 0; channel < channelCount; channel++) {
-            audioBufferList->mBuffers[channel].mNumberChannels = 1;
-            audioBufferList->mBuffers[channel].mDataByteSize = bytesPerChannel;
-            audioBufferList->mBuffers[channel].mData = dataPtr + (channel * bytesPerChannel);
-            
-            // Copy channel data
-            memcpy(audioBufferList->mBuffers[channel].mData, pcmBuffer.floatChannelData[channel], bytesPerChannel);
-        }
-    }
-    
-    // Create audio format description
-    AudioStreamBasicDescription asbd = *format.streamDescription;
-    CMAudioFormatDescriptionRef formatDesc = NULL;
-    
-    size_t layoutSize = 0;
-    const AudioChannelLayout* layout = NULL;
-    if (format.channelLayout) {
-        layout = format.channelLayout.layout;
-        UInt32 acDescCount = layout->mNumberChannelDescriptions;
-        layoutSize = sizeof(AudioChannelLayout) + (acDescCount > 1 ? (acDescCount - 1) * sizeof(AudioChannelDescription) : 0);
-    }
-    
-    status = CMAudioFormatDescriptionCreate(
-        kCFAllocatorDefault,
-        &asbd,
-        layoutSize,
-        layout,
-        0,
-        NULL,
-        NULL,
-        &formatDesc);
-    
-    if (status != noErr) {
-        CFRelease(blockBuffer);
-        free(audioBufferList);
-        return NULL;
-    }
-    
-    // Create sample buffer
-    CMSampleBufferRef sampleBuffer = NULL;
-    status = CMSampleBufferCreate(
-        kCFAllocatorDefault,
-        blockBuffer,
-        TRUE,  // dataReady
-        NULL,  // makeDataReadyCallback
-        NULL,  // makeDataReadyRefcon
-        formatDesc,
-        frameCount,  // numSamples
-        1,     // numSampleTimingEntries
-        &(CMSampleTimingInfo){.duration = CMTimeMake(1, format.sampleRate), .presentationTimeStamp = pts, .decodeTimeStamp = kCMTimeInvalid},
-        0,     // numSampleSizeEntries
-        NULL,  // sampleSizeArray
-        &sampleBuffer);
-    
-    // Cleanup
-    CFRelease(blockBuffer);
-    CFRelease(formatDesc);
-    free(audioBufferList);
-    
-    return status == noErr ? sampleBuffer : NULL;
-}
-
-- (void) prepareAudioMediaChannelWithConverter:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw
+- (void) prepareAudioMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw
 {
     if (self.audioEncode == FALSE) {
         [self prepareCopyChannelWith:movie from:ar to:aw of:AVMediaTypeAudio];
@@ -1235,21 +1083,14 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
     }
     
     for (AVMovieTrack* track in [movie tracksWithMediaType:AVMediaTypeAudio]) {
-        // Source configuration - force Float32 interleaved PCM
-        NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
-        arOutputSetting[AVFormatIDKey] = @(kAudioFormatLinearPCM);
-        arOutputSetting[AVLinearPCMIsFloatKey] = @YES;
-        arOutputSetting[AVLinearPCMBitDepthKey] = @32;
-        arOutputSetting[AVLinearPCMIsNonInterleavedKey] = @NO; // Interleaved
-        arOutputSetting[AVLinearPCMIsBigEndianKey] = @NO;
-        
-        AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
-                                                                                   outputSettings:arOutputSetting];
-        if (![ar canAddOutput:arOutput]) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - reader output not supported", track.trackID);
-            continue;
+        // Check if we have a registered MEAudioConverter for this track
+        NSString* key = keyForTrackID(track.trackID);
+        MEAudioConverter* audioConverter = self.managers[key];
+        if (![audioConverter isKindOfClass:[MEAudioConverter class]]) {
+            // Fall back to regular audio processing if no MEAudioConverter registered
+            [self prepareAudioMediaChannelWith:movie from:ar to:aw];
+            return;
         }
-        [ar addOutput:arOutput];
         
         // Get source audio parameters
         NSArray* descArray = track.formatDescriptions;
@@ -1277,7 +1118,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             if (self.audioChannelLayoutTag != 0) {
                 dstTag = self.audioChannelLayoutTag;
             } else {
-                // Channel layout analysis and mapping (reused from existing logic)
+                // Channel layout analysis and mapping (basic implementation)
                 UInt32 ioPropertyDataSize = 4;
                 UInt32 outPropertyData = 0;
                 OSStatus err = AudioFormatGetProperty(kAudioFormatProperty_NumberOfChannelsForLayout,
@@ -1292,114 +1133,19 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
                 if (AudioChannelLayoutTag_GetNumberOfChannels(srcTag)) {
                     dstTag = srcTag;
                 } else {
-                    // Channel mapping logic - using the existing logic from the original method
-                    if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap || srcTag == kAudioChannelLayoutTag_UseChannelDescriptions) {
-                        // Define channel sets for mapping (from original logic)
-                        NSSet* setCh1    = [NSSet setWithObjects:@(3), nil]; // C
-                        NSSet* setCh2    = [NSSet setWithObjects:@(1),@(2), nil]; // L R
-                        NSSet* setCh3    = [NSSet setWithObjects:@(1),@(2),@(3), nil]; // L R C
-                        NSSet* setCh4    = [NSSet setWithObjects:@(1),@(2),@(3),@(9), nil]; // L R C Cs
-                        NSSet* setCh5    = [NSSet setWithObjects:@(1),@(2),@(3),@(5),@(6), nil]; // L R C Ls Rs
-                        NSSet* setCh51   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6), nil]; // L R C LFE Ls Rs
-                        NSSet* setCh61   = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(9), nil]; // L R C LFE Ls Rs Cs
-                        NSSet* setCh71AB = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(7),@(8), nil]; // L R C LFE Ls Rs Lc Rc
-                        NSSet* setCh71C  = [NSSet setWithObjects:@(1),@(2),@(3),@(4),@(5),@(6),@(33),@(34), nil]; // L R C LFE Ls Rs Rls Rrs
-                        
-                        NSMutableSet* srcSet = [NSMutableSet new];
-                        
-                        if (srcTag == kAudioChannelLayoutTag_UseChannelBitmap) {
-                            // Parse AudioChannelBitmap (simplified)
-                            AudioChannelBitmap map = srcAclPtr->mChannelBitmap;
-                            // Add basic channel mapping - can be expanded with full bitmap parsing
-                            if (map & (1U<<0)) [srcSet addObject:@(1)]; // L
-                            if (map & (1U<<1)) [srcSet addObject:@(2)]; // R
-                            if (map & (1U<<2)) [srcSet addObject:@(3)]; // C
-                            if (map & (1U<<3)) [srcSet addObject:@(4)]; // LFE
-                            if (map & (1U<<4)) [srcSet addObject:@(5)]; // Ls
-                            if (map & (1U<<5)) [srcSet addObject:@(6)]; // Rs
-                            // Add more as needed...
-                        } else if (srcTag == kAudioChannelLayoutTag_UseChannelDescriptions) {
-                            // Parse AudioChannelDescription(s)
-                            UInt32 srcDescCount = srcAclPtr->mNumberChannelDescriptions;
-                            size_t offset = offsetof(struct AudioChannelLayout, mChannelDescriptions);
-                            AudioChannelDescription* descPtr = (AudioChannelDescription*)((char*)srcAclPtr + offset);
-                            for (size_t desc = 0; desc < srcDescCount; desc++) {
-                                AudioChannelLabel label = descPtr[desc].mChannelLabel;
-                                if (label != kAudioChannelLabel_Unused && label != kAudioChannelLabel_UseCoordinates) {
-                                    [srcSet addObject:@(label)];
-                                }
-                            }
-                        }
-                        
-                        if (srcSet.count > 0) {
-                            numChannel = (int)srcSet.count;
-                            
-                            // Map to AAC layouts
-                            if ([srcSet isEqualToSet:setCh1]) {
-                                dstTag = kAudioChannelLayoutTag_Mono;
-                            } else if ([srcSet isEqualToSet:setCh2]) {
-                                dstTag = kAudioChannelLayoutTag_Stereo;
-                            } else if ([srcSet isEqualToSet:setCh3]) {
-                                dstTag = kAudioChannelLayoutTag_AAC_3_0;
-                            } else if ([srcSet isEqualToSet:setCh4]) {
-                                dstTag = kAudioChannelLayoutTag_AAC_4_0;
-                            } else if ([srcSet isEqualToSet:setCh5]) {
-                                dstTag = kAudioChannelLayoutTag_AAC_5_0;
-                            } else if ([srcSet isEqualToSet:setCh51]) {
-                                dstTag = kAudioChannelLayoutTag_AAC_5_1;
-                            } else if ([srcSet isEqualToSet:setCh61]) {
-                                dstTag = kAudioChannelLayoutTag_AAC_6_1;
-                            } else if ([srcSet isEqualToSet:setCh71AB]) {
-                                dstTag = kAudioChannelLayoutTag_AAC_7_1;
-                            } else if ([srcSet isEqualToSet:setCh71C]) {
-                                dstTag = kAudioChannelLayoutTag_AAC_7_1_B;
-                            } else {
-                                // Fallback to channel count based mapping
-                                AudioChannelLayoutTag dstLayout[8] = {
-                                    kAudioChannelLayoutTag_Mono,        
-                                    kAudioChannelLayoutTag_Stereo,      
-                                    kAudioChannelLayoutTag_AAC_3_0,     
-                                    kAudioChannelLayoutTag_AAC_4_0,     
-                                    kAudioChannelLayoutTag_AAC_5_0,     
-                                    kAudioChannelLayoutTag_AAC_5_1,     
-                                    kAudioChannelLayoutTag_AAC_6_1,     
-                                    kAudioChannelLayoutTag_AAC_7_1_B    
-                                };
-                                if (numChannel >= 1 && numChannel <= 8) {
-                                    dstTag = dstLayout[numChannel - 1];
-                                }
-                            }
-                        } else {
-                            // Fallback for empty set
-                            AudioChannelLayoutTag dstLayout[8] = {
-                                kAudioChannelLayoutTag_Mono,        
-                                kAudioChannelLayoutTag_Stereo,      
-                                kAudioChannelLayoutTag_AAC_3_0,     
-                                kAudioChannelLayoutTag_AAC_4_0,     
-                                kAudioChannelLayoutTag_AAC_5_0,     
-                                kAudioChannelLayoutTag_AAC_5_1,     
-                                kAudioChannelLayoutTag_AAC_6_1,     
-                                kAudioChannelLayoutTag_AAC_7_1_B    
-                            };
-                            if (numChannel >= 1 && numChannel <= 8) {
-                                dstTag = dstLayout[numChannel - 1];
-                            }
-                        }
-                    } else {
-                        // Unknown layout tag, use channel count based mapping
-                        AudioChannelLayoutTag dstLayout[8] = {
-                            kAudioChannelLayoutTag_Mono,        
-                            kAudioChannelLayoutTag_Stereo,      
-                            kAudioChannelLayoutTag_AAC_3_0,     
-                            kAudioChannelLayoutTag_AAC_4_0,     
-                            kAudioChannelLayoutTag_AAC_5_0,     
-                            kAudioChannelLayoutTag_AAC_5_1,     
-                            kAudioChannelLayoutTag_AAC_6_1,     
-                            kAudioChannelLayoutTag_AAC_7_1_B    
-                        };
-                        if (numChannel >= 1 && numChannel <= 8) {
-                            dstTag = dstLayout[numChannel - 1];
-                        }
+                    // Fallback to channel count based mapping
+                    AudioChannelLayoutTag dstLayout[8] = {
+                        kAudioChannelLayoutTag_Mono,        
+                        kAudioChannelLayoutTag_Stereo,      
+                        kAudioChannelLayoutTag_AAC_3_0,     
+                        kAudioChannelLayoutTag_AAC_4_0,     
+                        kAudioChannelLayoutTag_AAC_5_0,     
+                        kAudioChannelLayoutTag_AAC_5_1,     
+                        kAudioChannelLayoutTag_AAC_6_1,     
+                        kAudioChannelLayoutTag_AAC_7_1_B    
+                    };
+                    if (numChannel >= 1 && numChannel <= 8) {
+                        dstTag = dstLayout[numChannel - 1];
                     }
                 }
             }
@@ -1470,7 +1216,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             continue;
         }
         
-        // Create source and destination audio formats
+        // Create source audio format - Force Float32 interleaved PCM for consistent processing
         AVAudioFormat* srcFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate channelLayout:avacSrcLayout];
         
         // Prepare destination AudioChannelLayout data with proper size calculation
@@ -1536,6 +1282,45 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             }
         }
         
+        // Configure the MEAudioConverter
+        audioConverter.sourceFormat = srcFormat;
+        audioConverter.destinationFormat = dstFormat;
+        audioConverter.startTime = self.startTime;
+        audioConverter.endTime = self.endTime;
+        audioConverter.verbose = self.verbose;
+        audioConverter.sourceExtensions = CMFormatDescriptionGetExtensions(desc);
+        audioConverter.mediaTimeScale = track.naturalTimeScale;
+        
+        // Source configuration - force Float32 interleaved PCM
+        NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
+        arOutputSetting[AVFormatIDKey] = @(kAudioFormatLinearPCM);
+        arOutputSetting[AVLinearPCMIsFloatKey] = @YES;
+        arOutputSetting[AVLinearPCMBitDepthKey] = @32;
+        arOutputSetting[AVLinearPCMIsNonInterleavedKey] = @NO; // Interleaved
+        arOutputSetting[AVLinearPCMIsBigEndianKey] = @NO;
+        
+        AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
+                                                                                   outputSettings:arOutputSetting];
+        if (![ar canAddOutput:arOutput]) {
+            NSLog(@"[METranscoder] Skipping audio track(%d) - reader output not supported", track.trackID);
+            continue;
+        }
+        [ar addOutput:arOutput];
+        
+        // Create MEInput for the MEAudioConverter
+        MEInput* meInput = (MEInput*)audioConverter;
+        
+        // Source channel: AVAssetReaderOutput -> MEAudioConverter (acting as MEInput)
+        SBChannel* sbcMEInput = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
+                                                        consumerME:meInput
+                                                           TrackID:track.trackID];
+        [sbChannels addObject:sbcMEInput];
+        
+        /* ========================================================================================== */
+        
+        // Create MEOutput from the MEAudioConverter
+        MEOutput* meOutput = (MEOutput*)audioConverter;
+        
         // Create AVAssetWriterInput
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                                          outputSettings:awInputSetting];
@@ -1545,103 +1330,11 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         }
         [aw addInput:awInput];
         
-        // Create AVAudioConverter for the actual conversion
-        AVAudioConverter* audioConverter = [[AVAudioConverter alloc] initFromFormat:srcFormat toFormat:dstFormat];
-        if (!audioConverter) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - audio converter creation failed", track.trackID);
-            continue;
-        }
-        
-        // Setup manual processing loop
-        __weak typeof(self) weakSelf = self;
-        [awInput requestMediaDataWhenReadyOnQueue:self.processQueue usingBlock:^{
-            while (awInput.isReadyForMoreMediaData && !weakSelf.cancelled) {
-                CMSampleBufferRef sourceBuffer = [arOutput copyNextSampleBuffer];
-                if (!sourceBuffer) {
-                    // End of input
-                    [awInput markAsFinished];
-                    break;
-                }
-                
-                @autoreleasepool {
-                    // Convert to AVAudioPCMBuffer
-                    AVAudioPCMBuffer* inputPCMBuffer = [weakSelf createPCMBufferFromSampleBuffer:sourceBuffer withFormat:srcFormat];
-                    if (inputPCMBuffer) {
-                        // Convert using AVAudioConverter
-                        AVAudioPCMBuffer* outputPCMBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:dstFormat frameCapacity:inputPCMBuffer.frameLength];
-                        if (outputPCMBuffer) {
-                            NSError* convertError = nil;
-                            outputPCMBuffer.frameLength = outputPCMBuffer.frameCapacity;
-                            
-                            __block BOOL inputBufferProvided = NO;
-                            AVAudioConverterInputBlock inputBlock = ^AVAudioBuffer * _Nullable(AVAudioPacketCount inNumberOfPackets, AVAudioConverterInputStatus * _Nonnull outStatus) {
-                                if (!inputBufferProvided) {
-                                    inputBufferProvided = YES;
-                                    *outStatus = AVAudioConverterInputStatus_HaveData;
-                                    return inputPCMBuffer;
-                                } else {
-                                    *outStatus = AVAudioConverterInputStatus_NoDataNow;
-                                    return nil;
-                                }
-                            };
-                            
-                            AVAudioConverterOutputStatus convertStatus = [audioConverter convertToBuffer:outputPCMBuffer
-                                                                                                     error:&convertError
-                                                                                        withInputFromBlock:inputBlock];
-                            
-                            if (convertStatus == AVAudioConverterOutputStatus_HaveData) {
-                                // Rebuild CMSampleBuffer
-                                CMTime pts = CMSampleBufferGetPresentationTimeStamp(sourceBuffer);
-                                CMSampleBufferRef outputSampleBuffer = [weakSelf createSampleBufferFromPCMBuffer:outputPCMBuffer 
-                                                                                             withPresentationTimeStamp:pts 
-                                                                                                            format:dstFormat];
-                                if (outputSampleBuffer) {
-                                    BOOL appendSuccess = [awInput appendSampleBuffer:outputSampleBuffer];
-                                    if (!appendSuccess) {
-                                        NSLog(@"[METranscoder] Failed to append audio sample buffer for track %d", track.trackID);
-                                    }
-                                    
-                                    // Progress callback
-                                    if (weakSelf.progressCallback) {
-                                        dispatch_queue_t queue = weakSelf.callbackQueue;
-                                        progress_block_t block = weakSelf.progressCallback;
-                                        if (queue && block) {
-                                            float progress = calcProgressOf(sourceBuffer, weakSelf.startTime, weakSelf.endTime);
-                                            float pts_seconds = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sourceBuffer));
-                                            CMTime dts = CMSampleBufferGetDecodeTimeStamp(sourceBuffer);
-                                            float dts_seconds = CMTIME_IS_VALID(dts) ? CMTimeGetSeconds(dts) : pts_seconds;
-                                            
-                                            NSMutableDictionary* info = [NSMutableDictionary dictionary];
-                                            info[kProgressPercentKey] = @(progress);
-                                            info[kProgressPTSKey] = @(pts_seconds);
-                                            info[kProgressDTSKey] = @(dts_seconds);
-                                            info[kProgressTrackIDKey] = @(track.trackID);
-                                            info[kProgressMediaTypeKey] = @"soun";
-                                            info[kProgressTagKey] = @"CONV";
-                                            info[kProgressCountKey] = @(1);
-                                            
-                                            dispatch_async(queue, ^{
-                                                block(info);
-                                            });
-                                        }
-                                    }
-                                    
-                                    CFRelease(outputSampleBuffer);
-                                }
-                            } else if (convertError) {
-                                NSLog(@"[METranscoder] Audio conversion error for track %d: %@", track.trackID, convertError);
-                            }
-                        }
-                    }
-                }
-                
-                CFRelease(sourceBuffer);
-            }
-            
-            if (weakSelf.cancelled) {
-                [awInput markAsFinished];
-            }
-        }];
+        // Destination channel: MEAudioConverter (acting as MEOutput) -> AVAssetWriterInput
+        SBChannel* sbcMEOutput = [SBChannel sbChannelWithProducerME:meOutput
+                                                         consumerME:(MEInput*)awInput
+                                                            TrackID:track.trackID];
+        [sbChannels addObject:sbcMEOutput];
     }
 }
 
