@@ -522,7 +522,7 @@ NS_ASSUME_NONNULL_BEGIN
             BOOL cancelled = wself.cancelled; // cancel request
             if (cancelled == FALSE) {
                 // check reader status
-                BOOL arFailed = (war.status == AVAssetExportSessionStatusFailed);
+                BOOL arFailed = (war.status == AVAssetReaderStatusFailed);
                 if (arFailed) {
                     wself.finalSuccess = FALSE;
                     wself.finalError = war.error;
@@ -535,7 +535,7 @@ NS_ASSUME_NONNULL_BEGIN
                 
                 dispatch_semaphore_t finishSem = dispatch_semaphore_create(0);
                 [waw finishWritingWithCompletionHandler:^{
-                    BOOL awFailed = (waw.status == AVAssetExportSessionStatusFailed);
+                    BOOL awFailed = (waw.status == AVAssetWriterStatusFailed);
                     if (awFailed) {
                         wself.finalSuccess = FALSE;
                         wself.finalError = war.error;
