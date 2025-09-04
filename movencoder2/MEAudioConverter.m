@@ -34,18 +34,6 @@
 // MARK: -
 /* =================================================================================== */
 
-NSString* const kProgressMediaTypeKey = @"mediaType";
-NSString* const kProgressTagKey = @"tag";
-NSString* const kProgressTrackIDKey = @"trackID";
-NSString* const kProgressPTSKey = @"pts";
-NSString* const kProgressDTSKey = @"dts";
-NSString* const kProgressPercentKey = @"percent";
-NSString* const kProgressCountKey = @"count";
-
-/* =================================================================================== */
-// MARK: -
-/* =================================================================================== */
-
 NS_ASSUME_NONNULL_BEGIN
 
 @interface MEAudioConverter ()
