@@ -54,13 +54,13 @@ NS_ASSUME_NONNULL_BEGIN
     dispatch_queue_t _outputQueue;
     
     // Input side
-    NSMutableArray<CMSampleBufferRef>* _inputBufferQueue;
+    NSMutableArray* _inputBufferQueue;
     BOOL _inputFinished;
     RequestHandler _inputRequestHandler;
     dispatch_queue_t _inputRequestQueue;
     
     // Output side
-    NSMutableArray<CMSampleBufferRef>* _outputBufferQueue;
+    NSMutableArray* _outputBufferQueue;
     BOOL _outputFinished;
     
     // Converter
