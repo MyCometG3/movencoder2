@@ -330,32 +330,6 @@ static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
     }
 }
 
-- (BOOL) hasVideoMEManagers
-{
-    if (!self.managers) return NO;
-    
-    for (NSString* key in self.managers) {
-        id manager = self.managers[key];
-        if ([manager isKindOfClass:[MEManager class]]) {
-            return YES;
-        }
-    }
-    return NO;
-}
-
-- (BOOL) hasAudioMEConverters
-{
-    if (!self.managers) return NO;
-    
-    for (NSString* key in self.managers) {
-        id manager = self.managers[key];
-        if ([manager isKindOfClass:[MEAudioConverter class]]) {
-            return YES;
-        }
-    }
-    return NO;
-}
-
 - (void) startAsync
 {
     // process export in background queue
@@ -1590,6 +1564,32 @@ end:
                                                             TrackID:track.trackID];
         [sbChannels addObject:sbcMEOutput];
     }
+}
+
+- (BOOL) hasVideoMEManagers
+{
+    if (!self.managers) return NO;
+    
+    for (NSString* key in self.managers) {
+        id manager = self.managers[key];
+        if ([manager isKindOfClass:[MEManager class]]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (BOOL) hasAudioMEConverters
+{
+    if (!self.managers) return NO;
+    
+    for (NSString* key in self.managers) {
+        id manager = self.managers[key];
+        if ([manager isKindOfClass:[MEAudioConverter class]]) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
 @end
