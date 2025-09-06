@@ -30,7 +30,6 @@
 #import "MEInput.h"
 #import "MEOutput.h"
 #import "MEAudioConverter.h"
-#import "MEVideoProcessor.h"
 #import "SBChannel.h"
 
 /* =================================================================================== */
@@ -69,7 +68,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (strong, nonatomic) NSMutableArray<SBChannel*>*sbChannels;
 @property (strong, nonatomic, nullable) NSMutableDictionary* managers;
-@property (strong, nonatomic, nullable) MEVideoProcessor* videoProcessor;
 
 @property (nonatomic, assign) CFAbsoluteTime timeStamp0;
 @property (nonatomic, assign) CFAbsoluteTime timeStamp1;
@@ -173,7 +171,6 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize lastProgress;
 
 @synthesize sbChannels;
-@synthesize videoProcessor;
 
 @synthesize timeStamp0, timeStamp1;
 
@@ -255,17 +252,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)prepareRW
 {
-    // Initialize video processor with dependencies
-    if (!self.videoProcessor) {
-        __weak typeof(self) weakSelf = self;
-        self.videoProcessor = [[MEVideoProcessor alloc] initWithParameters:self.param 
-                                                                   managers:self.managers 
-                                                                 sbChannels:self.sbChannels
-                                                        prepareCopyChannelBlock:^(AVMovie* movie, AVAssetReader* ar, AVAssetWriter* aw, AVMediaType type) {
-            [weakSelf prepareCopyChannelWith:movie from:ar to:aw of:type];
-        }];
-    }
-    
     NSError *error = nil;
     AVAssetReader* assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
                                                                 error:&error];
@@ -1340,27 +1326,270 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
 
 - (BOOL) hasFieldModeSupportOf:(AVMovieTrack*)track
 {
-    return [self.videoProcessor hasFieldModeSupportOf:track];
+    BOOL result = FALSE;
+    NSArray* descArray = track.formatDescriptions;
+    
+    CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
+    CFDictionaryRef dict = NULL;
+    VTDecompressionSessionRef decompSession = NULL;
+    {
+        OSStatus status = noErr;
+        CFDictionaryRef spec = NULL;
+        status = VTDecompressionSessionCreate(kCFAllocatorDefault,
+                                              desc,
+                                              spec,
+                                              NULL,
+                                              NULL,
+                                              &decompSession);
+        if (status != noErr) return FALSE;
+        
+        status = VTSessionCopySupportedPropertyDictionary(decompSession, &dict);
+        
+        if (status != noErr) goto end;
+    }
+    
+    if (dict) {
+        CFDictionaryRef propFieldMode = CFDictionaryGetValue(dict, kVTDecompressionPropertyKey_FieldMode);
+        if (propFieldMode) {
+            CFArrayRef propList = CFDictionaryGetValue(propFieldMode, kVTPropertySupportedValueListKey);
+            if (propList) {
+                result = CFArrayContainsValue(propList,
+                                              CFRangeMake(0, CFArrayGetCount(propList)),
+                                              kVTDecompressionProperty_FieldMode_BothFields);
+            }
+        }
+    }
+    
+end:
+    if (decompSession) {
+        VTDecompressionSessionInvalidate(decompSession);
+        CFRelease(decompSession);
+    }
+    return result;
 }
 
 - (void) addDecommpressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting
 {
-    [self.videoProcessor addDecompressionPropertiesOf:track setting:arOutputSetting];
+    if ([self hasFieldModeSupportOf:track]) {
+        NSDictionary* decompressionProperties = nil;
+        
+        // Keep both fields
+        NSMutableDictionary* dict = [NSMutableDictionary dictionary];
+        dict[(__bridge NSString*)kVTDecompressionPropertyKey_FieldMode] = (__bridge NSString*)kVTDecompressionProperty_FieldMode_BothFields;
+        decompressionProperties = [dict copy];
+        
+        // TODO: kVTDecompressionPropertyKey_PixelTransferProperties
+
+        arOutputSetting[AVVideoDecompressionPropertiesKey] = decompressionProperties;
+    }
 }
 
 - (NSMutableDictionary<NSString*,id>*)videoCompressionSettingFor:(AVMovieTrack *)track
 {
-    return [self.videoProcessor videoCompressionSettingFor:track];
+    //
+    NSDictionary* compressionProperties = nil;
+    NSArray* proresFamily = @[@"ap4h", @"apch", @"apcn", @"apcs", @"apco"];
+    if ([proresFamily containsObject:self.videoFourcc]) {
+        // ProRes family
+    } else {
+        compressionProperties = @{AVVideoAverageBitRateKey:@(self.videoBitRate)};
+    }
+    
+    NSDictionary* cleanAperture = nil;
+    NSDictionary* pixelAspectRatio = nil;
+    NSDictionary* nclc = nil;
+    
+    CGSize trackDimensions = track.naturalSize;
+    NSArray* descArray = track.formatDescriptions;
+    if (descArray.count > 0) {
+        CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef)(descArray[0]);
+        trackDimensions = CMVideoFormatDescriptionGetPresentationDimensions(desc, FALSE, FALSE);
+        
+        NSNumber* fieldCount = nil;
+        NSString* fieldDetail = nil;
+        
+        CFPropertyListRef cfExtCA = CMFormatDescriptionGetExtension(desc, kCMFormatDescriptionExtension_CleanAperture);
+        if (cfExtCA != NULL) {
+            NSDictionary* extCA = (__bridge NSDictionary*)cfExtCA;
+            NSNumber* width = (NSNumber*)extCA[(__bridge  NSString*)kCMFormatDescriptionKey_CleanApertureWidth];
+            NSNumber* height = (NSNumber*)extCA[(__bridge  NSString*)kCMFormatDescriptionKey_CleanApertureHeight];
+            NSNumber* hOffset = (NSNumber*)extCA[(__bridge  NSString*)kCMFormatDescriptionKey_CleanApertureHorizontalOffset];
+            NSNumber* vOffset = (NSNumber*)extCA[(__bridge  NSString*)kCMFormatDescriptionKey_CleanApertureVerticalOffset];
+            
+            NSMutableDictionary* dict = [NSMutableDictionary dictionary];
+            dict[AVVideoCleanApertureWidthKey] = width;
+            dict[AVVideoCleanApertureHeightKey] = height;
+            dict[AVVideoCleanApertureHorizontalOffsetKey] = hOffset;
+            dict[AVVideoCleanApertureVerticalOffsetKey] = vOffset;
+            
+            cleanAperture = dict;
+        }
+        
+        CFPropertyListRef cfExtPA = CMFormatDescriptionGetExtension(desc, kCMFormatDescriptionExtension_PixelAspectRatio);
+        if (cfExtPA != NULL) {
+            NSDictionary* extPA = (__bridge NSDictionary*)cfExtPA;
+            NSNumber* hSpacing = (NSNumber*)extPA[(__bridge NSString*)kCMFormatDescriptionKey_PixelAspectRatioHorizontalSpacing];
+            NSNumber* vSpacing = (NSNumber*)extPA[(__bridge NSString*)kCMFormatDescriptionKey_PixelAspectRatioVerticalSpacing];
+            
+            NSMutableDictionary* dict = [NSMutableDictionary dictionary];
+            dict[AVVideoPixelAspectRatioHorizontalSpacingKey] = hSpacing;
+            dict[AVVideoPixelAspectRatioVerticalSpacingKey] = vSpacing;
+            
+            pixelAspectRatio = dict;
+        }
+        
+        if (self.copyNCLC) {
+            CFPropertyListRef cfExtCP = CMFormatDescriptionGetExtension(desc, kCMFormatDescriptionExtension_ColorPrimaries);
+            CFPropertyListRef cfExtTF = CMFormatDescriptionGetExtension(desc, kCMFormatDescriptionExtension_TransferFunction);
+            CFPropertyListRef cfExtMX = CMFormatDescriptionGetExtension(desc, kCMFormatDescriptionExtension_YCbCrMatrix);
+            if (cfExtCP && cfExtTF && cfExtMX) {
+                NSString* colorPrimaries = (__bridge NSString*) cfExtCP;
+                NSString* transferFunction = (__bridge NSString*) cfExtTF;
+                NSString* ycbcrMatrix = (__bridge NSString*) cfExtMX;
+                
+                NSMutableDictionary* dict = [NSMutableDictionary dictionary];
+                dict[AVVideoColorPrimariesKey] = colorPrimaries;
+                dict[AVVideoTransferFunctionKey] = transferFunction;
+                dict[AVVideoYCbCrMatrixKey] = ycbcrMatrix;
+                
+                nclc = dict;
+            }
+        }
+        
+        if (self.copyField) {
+            CFPropertyListRef cfExtFC = CMFormatDescriptionGetExtension(desc, kCMFormatDescriptionExtension_FieldCount);
+            CFPropertyListRef cfExtFD = CMFormatDescriptionGetExtension(desc, kCMFormatDescriptionExtension_FieldDetail);
+            if (cfExtFC && cfExtFD) {
+                fieldCount = (__bridge NSNumber*)cfExtFC;
+                fieldDetail = (__bridge NSString*)cfExtFD;
+            }
+        }
+        
+        if (fieldCount || fieldDetail) {
+            NSMutableDictionary* dict = [NSMutableDictionary dictionary];
+            
+            if (self.copyField && fieldCount && fieldDetail) {
+                dict[(__bridge NSString*)kVTCompressionPropertyKey_FieldCount] = fieldCount;
+                dict[(__bridge NSString*)kVTCompressionPropertyKey_FieldDetail] = fieldDetail;
+            }
+            
+            if (compressionProperties) {
+                [dict addEntriesFromDictionary:compressionProperties];
+            }
+            compressionProperties = dict;
+        }
+    }
+    
+    // destination
+    NSMutableDictionary* awInputSetting = [NSMutableDictionary dictionary];
+    awInputSetting[AVVideoCodecKey] = self.videoFourcc;
+    awInputSetting[AVVideoWidthKey] = @(trackDimensions.width);
+    awInputSetting[AVVideoHeightKey] = @(trackDimensions.height);
+    if (compressionProperties) {
+        awInputSetting[AVVideoCompressionPropertiesKey] = compressionProperties;
+    }
+    
+    if (cleanAperture) {
+        awInputSetting[AVVideoCleanApertureKey] = cleanAperture;
+    }
+    if (pixelAspectRatio) {
+        awInputSetting[AVVideoPixelAspectRatioKey] = pixelAspectRatio;
+    }
+    if (nclc) {
+        awInputSetting[AVVideoColorPropertiesKey] = nclc;
+    }
+    return awInputSetting;
 }
 
 - (void) prepareVideoChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw
 {
-    [self.videoProcessor prepareVideoChannelsWith:movie from:ar to:aw];
+    if (self.videoEncode == FALSE) {
+        [self prepareCopyChannelWith:movie from:ar to:aw of:AVMediaTypeVideo];
+        return;
+    }
+    
+    for (AVMovieTrack* track in [movie tracksWithMediaType:AVMediaTypeVideo]) {
+        // source
+        NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
+        [self addDecommpressionPropertiesOf:track setting:arOutputSetting];
+        arOutputSetting[(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey] = @(kCVPixelFormatType_422YpCbCr8);
+        AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
+                                                                                   outputSettings:arOutputSetting];
+        [ar addOutput:arOutput];
+        
+        //
+        NSMutableDictionary<NSString*,id> * awInputSetting = [self videoCompressionSettingFor:track];
+        AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo
+                                                                         outputSettings:awInputSetting];
+        awInput.mediaTimeScale = track.naturalTimeScale;
+        [aw addInput:awInput];
+        
+        // channel
+        SBChannel* sbcVideo = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
+                                                      consumerME:(MEInput*)awInput
+                                                         TrackID:track.trackID];
+        [sbChannels addObject:sbcVideo];
+    }
 }
 
 - (void) prepareVideoMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw
 {
-    [self.videoProcessor prepareVideoMEChannelsWith:movie from:ar to:aw];
+    for (AVMovieTrack* track in [movie tracksWithMediaType:AVMediaTypeVideo]) {
+        //
+        NSString* key = keyForTrackID(track.trackID);
+        //NSDictionary* managers = self.managers[key];
+        MEManager* mgr = self.managers[key];
+        if (!mgr) continue;
+
+        // Capture source track's format description extensions
+        CMFormatDescriptionRef desc =  (__bridge CMFormatDescriptionRef)track.formatDescriptions[0];
+        CFDictionaryRef extensions =  CMFormatDescriptionGetExtensions(desc);
+        mgr.sourceExtensions = extensions;
+        
+        int32_t ts = track.naturalTimeScale;
+        mgr.mediaTimeScale = ts;
+        
+        // source from
+        NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
+        [self addDecommpressionPropertiesOf:track setting:arOutputSetting];
+        arOutputSetting[(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey] = @(kCVPixelFormatType_422YpCbCr8);
+        AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
+                                                                                   outputSettings:arOutputSetting];
+        [ar addOutput:arOutput];
+        
+        // source to
+        MEInput* meInput = [MEInput inputWithManager:mgr];
+        
+        // source channel
+        SBChannel* sbcMEInput = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
+                                                        consumerME:meInput
+                                                           TrackID:track.trackID];
+        [sbChannels addObject:sbcMEInput];
+        
+        /* ========================================================================================== */
+        
+        // destination from
+        MEOutput* meOutput = [MEOutput outputWithManager:mgr];
+        
+        // destination to
+        NSMutableDictionary<NSString*,id>* awInputSetting;
+        if (self.videoEncode == FALSE) {
+            awInputSetting = nil; // passthru writing
+        } else {
+            awInputSetting = [self videoCompressionSettingFor:track]; // transcode using AVFoundation
+        }
+        
+        AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo
+                                                                         outputSettings:awInputSetting];
+        awInput.mediaTimeScale = track.naturalTimeScale;
+        [aw addInput:awInput];
+        
+        // destination channel
+        SBChannel* sbcMEOutput = [SBChannel sbChannelWithProducerME:(MEOutput*)meOutput
+                                                         consumerME:(MEInput*)awInput
+                                                            TrackID:track.trackID];
+        [sbChannels addObject:sbcMEOutput];
+    }
 }
 
 @end
