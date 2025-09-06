@@ -24,11 +24,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#import "MECommon.h"
 #import "parseUtil.h"
-
-#ifndef ALog
-#define ALog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#endif
 
 NSString* const separator = @";";
 NSString* const equal = @"=";

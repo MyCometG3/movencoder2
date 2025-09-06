@@ -24,16 +24,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#import "MECommon.h"
 #import "METranscoder.h"
 #import "MEManager.h"
 #import "MEInput.h"
 #import "MEOutput.h"
 #import "MEAudioConverter.h"
 #import "SBChannel.h"
-
-#ifndef ALog
-#define ALog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#endif
 
 /* =================================================================================== */
 // MARK: -
