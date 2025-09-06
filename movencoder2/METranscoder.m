@@ -28,6 +28,7 @@
 #import "MEManager.h"
 #import "MEInput.h"
 #import "MEOutput.h"
+#import "MEAudioConverter.h"
 #import "SBChannel.h"
 
 #ifndef ALog
@@ -110,6 +111,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) prepareCopyChannelWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw of:(AVMediaType)type;
 - (void) prepareOtherMediaChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
 - (void) prepareAudioMediaChannelWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
+- (void) prepareAudioMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
 
 - (BOOL) hasFieldModeSupportOf:(AVMovieTrack*)track;
 - (void) addDecommpressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting;
@@ -117,6 +119,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void) prepareVideoChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
 - (void) prepareVideoMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;
+
+- (BOOL) hasVideoMEManagers;
+- (BOOL) hasAudioMEConverters;
 
 @end
 
@@ -315,6 +320,45 @@ static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
     }
 }
 
+- (void) registerMEAudioConverter:(MEAudioConverter *)meAudioConverter for:(CMPersistentTrackID)trackID
+{
+    NSMutableDictionary* mgrs = self.managers;
+    if (mgrs == nil) {
+        mgrs = [NSMutableDictionary dictionary];
+        self.managers = mgrs;
+    }
+    if (mgrs) {
+        NSString* key = keyForTrackID(trackID);
+        mgrs[key] = meAudioConverter;
+    }
+}
+
+- (BOOL) hasVideoMEManagers
+{
+    if (!self.managers) return NO;
+    
+    for (NSString* key in self.managers) {
+        id manager = self.managers[key];
+        if ([manager isKindOfClass:[MEManager class]]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (BOOL) hasAudioMEConverters
+{
+    if (!self.managers) return NO;
+    
+    for (NSString* key in self.managers) {
+        id manager = self.managers[key];
+        if ([manager isKindOfClass:[MEAudioConverter class]]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
 - (void) startAsync
 {
     // process export in background queue
@@ -382,7 +426,8 @@ NS_ASSUME_NONNULL_BEGIN
     AVMutableMovie* mov = self.inMovie;
     AVAssetWriter* aw = nil;
     AVAssetReader* ar = nil;
-    BOOL useME = (self.managers != nil);
+    BOOL useME = [self hasVideoMEManagers];  // for video processing
+    BOOL useAC = [self hasAudioMEConverters]; // for audio converter processing
     
     dispatch_group_t dg;
     
@@ -452,7 +497,11 @@ NS_ASSUME_NONNULL_BEGIN
         aw.shouldOptimizeForNetworkUse = TRUE;
         
         // setup sampleBufferChannels for each track
-        [self prepareAudioMediaChannelWith:mov from:ar to:aw];
+        if (useAC) {
+            [self prepareAudioMEChannelsWith:mov from:ar to:aw];
+        } else {
+            [self prepareAudioMediaChannelWith:mov from:ar to:aw];
+        }
         [self prepareOtherMediaChannelsWith:mov from:ar to:aw];
         if (useME) {
             [self prepareVideoMEChannelsWith:mov from:ar to:aw];
@@ -503,7 +552,7 @@ NS_ASSUME_NONNULL_BEGIN
             BOOL cancelled = wself.cancelled; // cancel request
             if (cancelled == FALSE) {
                 // check reader status
-                BOOL arFailed = (war.status == AVAssetExportSessionStatusFailed);
+                BOOL arFailed = (war.status == AVAssetReaderStatusFailed);
                 if (arFailed) {
                     wself.finalSuccess = FALSE;
                     wself.finalError = war.error;
@@ -516,7 +565,7 @@ NS_ASSUME_NONNULL_BEGIN
                 
                 dispatch_semaphore_t finishSem = dispatch_semaphore_create(0);
                 [waw finishWritingWithCompletionHandler:^{
-                    BOOL awFailed = (waw.status == AVAssetExportSessionStatusFailed);
+                    BOOL awFailed = (waw.status == AVAssetWriterStatusFailed);
                     if (awFailed) {
                         wself.finalSuccess = FALSE;
                         wself.finalError = war.error;
@@ -1052,6 +1101,290 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
                                                       consumerME:(MEInput*)awInput
                                                          TrackID:track.trackID];
         [sbChannels addObject:sbcAudio];
+    }
+}
+
+- (void) prepareAudioMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw
+{
+    if (self.audioEncode == FALSE) {
+        [self prepareCopyChannelWith:movie from:ar to:aw of:AVMediaTypeAudio];
+        return;
+    }
+    
+    for (AVMovieTrack* track in [movie tracksWithMediaType:AVMediaTypeAudio]) {
+        // Check if we have a registered MEAudioConverter for this track
+        NSString* key = keyForTrackID(track.trackID);
+        MEAudioConverter* audioConverter = self.managers[key];
+        if (![audioConverter isKindOfClass:[MEAudioConverter class]]) {
+            // Fall back to regular audio processing if no MEAudioConverter registered
+            [self prepareAudioMediaChannelWith:movie from:ar to:aw];
+            return;
+        }
+        
+        // Get source audio parameters
+        NSArray* descArray = track.formatDescriptions;
+        CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
+        const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
+        if (!asbd) {
+            NSLog(@"[METranscoder] Skipping audio track(%d) - no audio format description", track.trackID);
+            continue;
+        }
+        
+        int sampleRate = (int)asbd->mSampleRate;
+        int numChannel = (int)asbd->mChannelsPerFrame;
+        
+        /* ========================================================================================== */
+        
+        // Get source AudioChannelLayout and determine target layout
+        AVAudioChannelLayout* avacSrcLayout = nil;
+        AVAudioChannelLayout* avacDstLayout = nil;
+        
+        size_t srcAclSize = 0;
+        const AudioChannelLayout* srcAclPtr = CMAudioFormatDescriptionGetChannelLayout(desc, &srcAclSize);
+        if (srcAclPtr != NULL && srcAclSize > 0) {
+            // Use existing layout parsing logic from the original method
+            AudioChannelLayoutTag srcTag = srcAclPtr->mChannelLayoutTag;
+            AudioChannelLayoutTag dstTag = 0;
+            
+            if (self.audioChannelLayoutTag != 0) {
+                dstTag = self.audioChannelLayoutTag;
+            } else {
+                // Channel layout analysis and mapping (basic implementation)
+                UInt32 ioPropertyDataSize = 4;
+                UInt32 outPropertyData = 0;
+                OSStatus err = AudioFormatGetProperty(kAudioFormatProperty_NumberOfChannelsForLayout,
+                                                      (UInt32)srcAclSize,
+                                                      srcAclPtr,
+                                                      &ioPropertyDataSize,
+                                                      &outPropertyData);
+                if (!err && outPropertyData > 0) {
+                    numChannel = (int)outPropertyData;
+                }
+                
+                if (AudioChannelLayoutTag_GetNumberOfChannels(srcTag)) {
+                    dstTag = srcTag;
+                } else {
+                    // Fallback to channel count based mapping
+                    AudioChannelLayoutTag dstLayout[8] = {
+                        kAudioChannelLayoutTag_Mono,        
+                        kAudioChannelLayoutTag_Stereo,      
+                        kAudioChannelLayoutTag_AAC_3_0,     
+                        kAudioChannelLayoutTag_AAC_4_0,     
+                        kAudioChannelLayoutTag_AAC_5_0,     
+                        kAudioChannelLayoutTag_AAC_5_1,     
+                        kAudioChannelLayoutTag_AAC_6_1,     
+                        kAudioChannelLayoutTag_AAC_7_1_B    
+                    };
+                    if (numChannel >= 1 && numChannel <= 8) {
+                        dstTag = dstLayout[numChannel - 1];
+                    }
+                }
+            }
+            
+            avacSrcLayout = [AVAudioChannelLayout layoutWithLayout:srcAclPtr];
+            if (dstTag != 0) {
+                avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
+            }
+        } else {
+            // Default layouts when source has no channel layout
+            AudioChannelLayoutTag srcLayout[8] = {
+                kAudioChannelLayoutTag_Mono,        
+                kAudioChannelLayoutTag_Stereo,      
+                kAudioChannelLayoutTag_MPEG_3_0_A,  
+                kAudioChannelLayoutTag_MPEG_4_0_A,  
+                kAudioChannelLayoutTag_MPEG_5_0_A,  
+                kAudioChannelLayoutTag_MPEG_5_1_A,  
+                kAudioChannelLayoutTag_MPEG_6_1_A,  
+                kAudioChannelLayoutTag_MPEG_7_1_C,  
+            };
+            AudioChannelLayoutTag dstLayout[8] = {
+                kAudioChannelLayoutTag_Mono,        
+                kAudioChannelLayoutTag_Stereo,      
+                kAudioChannelLayoutTag_AAC_3_0,     
+                kAudioChannelLayoutTag_AAC_4_0,     
+                kAudioChannelLayoutTag_AAC_5_0,     
+                kAudioChannelLayoutTag_AAC_5_1,     
+                kAudioChannelLayoutTag_AAC_6_1,     
+                kAudioChannelLayoutTag_AAC_7_1_B    
+            };
+            
+            if (numChannel >= 1 && numChannel <= 8) {
+                AudioChannelLayoutTag srcTag = srcLayout[numChannel - 1];
+                AudioChannelLayoutTag dstTag = dstLayout[numChannel - 1];
+                avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:srcTag];
+                avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
+            } else {
+                NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported channel count %d", track.trackID, numChannel);
+                continue;
+            }
+        }
+        
+        if (!avacSrcLayout || !avacDstLayout) {
+            // Fallback: try to create layouts based on channel count only
+            if (numChannel >= 1 && numChannel <= 8) {
+                AudioChannelLayoutTag fallbackLayouts[8] = {
+                    kAudioChannelLayoutTag_Mono,        
+                    kAudioChannelLayoutTag_Stereo,      
+                    kAudioChannelLayoutTag_AAC_3_0,     
+                    kAudioChannelLayoutTag_AAC_4_0,     
+                    kAudioChannelLayoutTag_AAC_5_0,     
+                    kAudioChannelLayoutTag_AAC_5_1,     
+                    kAudioChannelLayoutTag_AAC_6_1,     
+                    kAudioChannelLayoutTag_AAC_7_1_B    
+                };
+                AudioChannelLayoutTag fallbackTag = fallbackLayouts[numChannel - 1];
+                if (!avacSrcLayout) {
+                    avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:fallbackTag];
+                }
+                if (!avacDstLayout) {
+                    avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:fallbackTag];
+                }
+            }
+        }
+        
+        if (!avacSrcLayout || !avacDstLayout) {
+            NSLog(@"[METranscoder] Skipping audio track(%d) - channel layout creation failed", track.trackID);
+            continue;
+        }
+        
+        /* ========================================================================================== */
+        
+        // Prepare destination AudioChannelLayout data with proper size calculation
+        UInt32 acDescCount = avacDstLayout.layout->mNumberChannelDescriptions;
+        size_t acDescSize = sizeof(AudioChannelDescription);
+        size_t acLayoutSize = sizeof(AudioChannelLayout) + (acDescCount > 1 ? (acDescCount - 1) * acDescSize : 0);
+        NSData* aclData = [NSData dataWithBytes:avacDstLayout.layout length:acLayoutSize];
+        
+        // Destination format settings
+        NSMutableDictionary<NSString*,id>* awInputSetting = [NSMutableDictionary dictionary];
+        awInputSetting[AVFormatIDKey] = @(self.audioFormatID);
+        awInputSetting[AVSampleRateKey] = @(sampleRate);
+        awInputSetting[AVNumberOfChannelsKey] = @(avacDstLayout.channelCount);
+        awInputSetting[AVChannelLayoutKey] = aclData;
+        awInputSetting[AVSampleRateConverterAlgorithmKey] = AVSampleRateConverterAlgorithm_Normal;
+        
+        if ([self.audioFourcc isEqualToString:@"lpcm"]) {
+            //
+            awInputSetting[AVLinearPCMIsBigEndianKey] = @NO;
+            awInputSetting[AVLinearPCMIsFloatKey] = @NO;
+            awInputSetting[AVLinearPCMBitDepthKey] = @(self.lpcmDepth);
+            awInputSetting[AVLinearPCMIsNonInterleavedKey] = @NO;
+        } else {
+            awInputSetting[AVEncoderBitRateKey] = @(self.audioBitRate);
+            awInputSetting[AVEncoderBitRateStrategyKey] = AVAudioBitRateStrategy_LongTermAverage;
+        }
+        
+        // Source configuration - force Float32 deinterleaved PCM
+        NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
+        arOutputSetting[AVFormatIDKey] = @(kAudioFormatLinearPCM);
+        arOutputSetting[AVLinearPCMIsFloatKey] = @YES;
+        arOutputSetting[AVLinearPCMBitDepthKey] = @32;
+        arOutputSetting[AVLinearPCMIsNonInterleavedKey] = @YES; // deinterleaved
+        arOutputSetting[AVLinearPCMIsBigEndianKey] = @NO;
+        
+        /* ========================================================================================== */
+        
+        // NOTE: Audio format transition (2 layouts, 3 formats)
+        //   arOutput
+        //     (srcACL, Float32 deinterleaved); srcFormat
+        //   MEAudioConverter
+        //     (dstACL, Float32 deinterleaved); intermediateFormat
+        //   awInput
+        //     (dstACL, encoded); dstFormat
+        
+        // Source audio format with source layout - Force Float32 deinterleaved PCM
+        AVAudioFormat* srcFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
+                                                                             channelLayout:avacSrcLayout];
+        
+        // Intermediate audio format with destination layout - Force Float32 deinterleaved PCM
+        AVAudioFormat* intermediateFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
+                                                                                      channelLayout:avacDstLayout];
+        
+        // Destination audio format with destination layout - using transcode settings
+        AVAudioFormat* dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
+        
+        if (!srcFormat || !intermediateFormat || !dstFormat) {
+            NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported audio format detected", track.trackID);
+            continue;
+        }
+        
+        // Validate and adjust bitrate using AVAudioConverter
+        if (awInputSetting[AVEncoderBitRateKey]) {
+            AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:intermediateFormat
+                                                                          toFormat:dstFormat];
+            if (converter) {
+                NSArray<NSNumber*>* bitrateArray = converter.applicableEncodeBitRates;
+                if (bitrateArray && ![bitrateArray containsObject:@(self.audioBitRate)]) {
+                    // Find the closest supported bitrate
+                    NSNumber* closestBitrate = bitrateArray.firstObject;
+                    NSInteger targetBitrate = self.audioBitRate;
+                    NSInteger minDiff = ABS(closestBitrate.integerValue - targetBitrate);
+                    
+                    for (NSNumber* bitrate in bitrateArray) {
+                        NSInteger diff = ABS(bitrate.integerValue - targetBitrate);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            closestBitrate = bitrate;
+                        }
+                    }
+                    
+                    awInputSetting[AVEncoderBitRateKey] = closestBitrate;
+                    NSLog(@"[METranscoder] Bitrate adjustment to %@ from %@", closestBitrate, @(self.audioBitRate));
+                    
+                    // Recreate destination format with adjusted bitrate
+                    dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
+                    if (!dstFormat) {
+                        NSLog(@"[METranscoder] Skipping audio track(%d) - destination format recreation failed", track.trackID);
+                        continue;
+                    }
+                }
+            }
+        }
+        
+        /* ========================================================================================== */
+        
+        // Configure the MEAudioConverter
+        audioConverter.sourceFormat = srcFormat;
+        audioConverter.destinationFormat = intermediateFormat;
+        audioConverter.startTime = self.startTime;
+        audioConverter.endTime = self.endTime;
+        audioConverter.verbose = self.verbose;
+        audioConverter.sourceExtensions = CMFormatDescriptionGetExtensions(desc);
+        audioConverter.mediaTimeScale = track.naturalTimeScale;
+        
+        /* ========================================================================================== */
+        
+        // Create AVAssetReaderTrackOutput
+        AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
+                                                                                   outputSettings:arOutputSetting];
+        if (![ar canAddOutput:arOutput]) {
+            NSLog(@"[METranscoder] Skipping audio track(%d) - reader output not supported", track.trackID);
+            continue;
+        }
+        [ar addOutput:arOutput];
+        
+        // Source channel: AVAssetReaderOutput -> MEAudioConverter (acting as MEInput)
+        SBChannel* sbcMEInput = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
+                                                        consumerME:(MEInput*)audioConverter
+                                                           TrackID:track.trackID];
+        [sbChannels addObject:sbcMEInput];
+        
+        /* ========================================================================================== */
+        
+        // Create AVAssetWriterInput
+        AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
+                                                                         outputSettings:awInputSetting];
+        if (![aw canAddInput:awInput]) {
+            NSLog(@"[METranscoder] Skipping audio track(%d) - writer input not supported", track.trackID);
+            continue;
+        }
+        [aw addInput:awInput];
+        
+        // Destination channel: MEAudioConverter (acting as MEOutput) -> AVAssetWriterInput
+        SBChannel* sbcMEOutput = [SBChannel sbChannelWithProducerME:(MEOutput*)audioConverter
+                                                         consumerME:(MEInput*)awInput
+                                                            TrackID:track.trackID];
+        [sbChannels addObject:sbcMEOutput];
     }
 }
 

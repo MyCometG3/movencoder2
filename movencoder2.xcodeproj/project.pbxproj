@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1613EE172E69BB01001F7E56 /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1613EE162E69BB01001F7E56 /* MEAudioConverter.m */; };
 		1654A0CB26DC75D500E7DBB8 /* liblzma.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C826DC75D500E7DBB8 /* liblzma.dylib */; };
 		1654A0CC26DC75D500E7DBB8 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C926DC75D500E7DBB8 /* libz.dylib */; };
 		1654A0CD26DC75D500E7DBB8 /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CA26DC75D500E7DBB8 /* libbz2.dylib */; };
@@ -44,6 +45,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1613EE152E69BB01001F7E56 /* MEAudioConverter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEAudioConverter.h; sourceTree = "<group>"; };
+		1613EE162E69BB01001F7E56 /* MEAudioConverter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEAudioConverter.m; sourceTree = "<group>"; };
 		161907892884E28B001BFA7E /* HowToBuildLibs.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = HowToBuildLibs.md; sourceTree = "<group>"; };
 		1654A0C826DC75D500E7DBB8 /* liblzma.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblzma.dylib; path = ../../../../../opt/local/lib/liblzma.dylib; sourceTree = "<group>"; };
 		1654A0C926DC75D500E7DBB8 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = ../../../../../opt/local/lib/libz.dylib; sourceTree = "<group>"; };
@@ -182,6 +185,8 @@
 				16B8125B218D72AD00E24173 /* monitorUtil.m */,
 				16B8125E218D754600E24173 /* METranscoder.h */,
 				16B8125F218D754600E24173 /* METranscoder.m */,
+				1613EE152E69BB01001F7E56 /* MEAudioConverter.h */,
+				1613EE162E69BB01001F7E56 /* MEAudioConverter.m */,
 				16741CE221A922C1000EEC78 /* SBChannel.h */,
 				16741CE321A922C1000EEC78 /* SBChannel.m */,
 				16741CE921A92DC6000EEC78 /* MEInput.h */,
@@ -223,7 +228,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1640;
 				ORGANIZATIONNAME = MyCometG3;
 				TargetAttributes = {
 					16B81250218D701000E24173 = {
@@ -257,6 +262,7 @@
 				16741CE421A922C1000EEC78 /* SBChannel.m in Sources */,
 				16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */,
 				16B8125C218D72AD00E24173 /* monitorUtil.m in Sources */,
+				1613EE172E69BB01001F7E56 /* MEAudioConverter.m in Sources */,
 				16741CEE21A92DD1000EEC78 /* MEOutput.m in Sources */,
 				16741CF121B37DCD000EEC78 /* MEManager.m in Sources */,
 				16B81260218D754600E24173 /* METranscoder.m in Sources */,
@@ -304,6 +310,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = BV5C4YNA4Z;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -364,6 +371,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = BV5C4YNA4Z;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -389,7 +397,6 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = BV5C4YNA4Z;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(USER_LIBRARY_DIR)/Frameworks",
@@ -413,7 +420,6 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = BV5C4YNA4Z;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(USER_LIBRARY_DIR)/Frameworks",

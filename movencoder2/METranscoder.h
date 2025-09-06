@@ -30,10 +30,12 @@
 @import Foundation;
 @import AVFoundation;
 @import VideoToolbox;
+@import CoreAudio;
 
 @class MEManager;
 @class MEInput;
 @class MEOutput;
+@class MEAudioConverter;
 
 /* =================================================================================== */
 // MARK: -
@@ -51,6 +53,7 @@ extern NSString* const kVideoEncodeKey;     // NSNumber of BOOL
 extern NSString* const kAudioEncodeKey;     // NSNumber of BOOL
 extern NSString* const kVideoCodecKey;      // NSString representation of OSType
 extern NSString* const kAudioCodecKey;      // NSString representation of OSType
+extern NSString* const kAudioChannelLayoutTagKey; // NSNumber of uint32_t
 
 typedef void (^progress_block_t)(NSDictionary* _Nonnull);
 
@@ -108,6 +111,14 @@ NS_ASSUME_NONNULL_BEGIN
  @param trackID trackID
  */
 - (void) registerMEManager:(MEManager*)meManager for:(CMPersistentTrackID)trackID;
+
+/**
+ Register MEAudioConverter for specified trackID
+
+ @param meAudioConverter MEAudioConverter
+ @param trackID trackID
+ */
+- (void) registerMEAudioConverter:(MEAudioConverter*)meAudioConverter for:(CMPersistentTrackID)trackID;
 
 /**
  Start export asynchronously

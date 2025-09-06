@@ -30,6 +30,7 @@
 #import "monitorUtil.h"
 #import "METranscoder.h"
 #import "MEManager.h"
+#import "MEAudioConverter.h"
 #import <getopt.h>
 
 #ifndef ALog
@@ -233,7 +234,7 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
             if (nil == val) goto error;
             NSNumber* layoutTagNum = parseLayoutTag(val);
             if (nil == layoutTagNum) goto error;
-            coder.param[@"kAudioChannelLayoutTagKey"] = layoutTagNum;
+            coder.param[kAudioChannelLayoutTagKey] = layoutTagNum;
         }
     }
     
@@ -432,6 +433,15 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
         if (parseOptAE(ae, transcoder) == FALSE) {
             NSLog(@"ERROR: Audio parameter ae is invalid.");
             goto error;
+        }
+        
+        // Register MEAudioConverter if channel layout is specified
+        if (transcoder.param[kAudioChannelLayoutTagKey]) {
+            for (AVAssetTrack* track in audioTracks) {
+                CMPersistentTrackID trackID = track.trackID;
+                MEAudioConverter* audioConverter = [MEAudioConverter new];
+                [transcoder registerMEAudioConverter:audioConverter for:trackID];
+            }
         }
     }
     if (co) {
