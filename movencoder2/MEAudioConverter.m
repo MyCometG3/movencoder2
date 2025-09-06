@@ -170,7 +170,7 @@ NS_ASSUME_NONNULL_BEGIN
     if (st != noErr) goto cleanup;
     if (abl->mNumberBuffers == 0) goto cleanup;
 
-    // 宛先 PCM バッファ作成
+    // Create destination PCM buffer
     pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format
                                         frameCapacity:(AVAudioFrameCount)sampleCount];
     if (!pcm) goto cleanup;
