@@ -1133,6 +1133,8 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         int sampleRate = (int)asbd->mSampleRate;
         int numChannel = (int)asbd->mChannelsPerFrame;
         
+        /* ========================================================================================== */
+        
         // Get source AudioChannelLayout and determine target layout
         AVAudioChannelLayout* avacSrcLayout = nil;
         AVAudioChannelLayout* avacDstLayout = nil;
@@ -1245,8 +1247,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             continue;
         }
         
-        // Create source audio format - Force Float32 interleaved PCM for consistent processing
-        AVAudioFormat* srcFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate channelLayout:avacSrcLayout];
+        /* ========================================================================================== */
         
         // Prepare destination AudioChannelLayout data with proper size calculation
         UInt32 acDescCount = avacDstLayout.layout->mNumberChannelDescriptions;
@@ -1258,11 +1259,12 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         NSMutableDictionary<NSString*,id>* awInputSetting = [NSMutableDictionary dictionary];
         awInputSetting[AVFormatIDKey] = @(self.audioFormatID);
         awInputSetting[AVSampleRateKey] = @(sampleRate);
-        awInputSetting[AVNumberOfChannelsKey] = @(numChannel);
+        awInputSetting[AVNumberOfChannelsKey] = @(avacDstLayout.channelCount);
         awInputSetting[AVChannelLayoutKey] = aclData;
         awInputSetting[AVSampleRateConverterAlgorithmKey] = AVSampleRateConverterAlgorithm_Normal;
         
         if ([self.audioFourcc isEqualToString:@"lpcm"]) {
+            //
             awInputSetting[AVLinearPCMIsBigEndianKey] = @NO;
             awInputSetting[AVLinearPCMIsFloatKey] = @NO;
             awInputSetting[AVLinearPCMBitDepthKey] = @(self.lpcmDepth);
@@ -1272,16 +1274,44 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             awInputSetting[AVEncoderBitRateStrategyKey] = AVAudioBitRateStrategy_LongTermAverage;
         }
         
-        // Create destination format and validate bitrate
+        // Source configuration - force Float32 deinterleaved PCM
+        NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
+        arOutputSetting[AVFormatIDKey] = @(kAudioFormatLinearPCM);
+        arOutputSetting[AVLinearPCMIsFloatKey] = @YES;
+        arOutputSetting[AVLinearPCMBitDepthKey] = @32;
+        arOutputSetting[AVLinearPCMIsNonInterleavedKey] = @YES; // deinterleaved
+        arOutputSetting[AVLinearPCMIsBigEndianKey] = @NO;
+        
+        /* ========================================================================================== */
+        
+        // NOTE: Audio format transition (2 layouts, 3 formats)
+        //   arOutput
+        //     (srcACL, Float32 deinterleaved); srcFormat
+        //   MEAudioConverter
+        //     (dstACL, Float32 deinterleaved); intermediateFormat
+        //   awInput
+        //     (dstACL, encoded); dstFormat
+        
+        // Source audio format with source layout - Force Float32 deinterleaved PCM
+        AVAudioFormat* srcFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
+                                                                             channelLayout:avacSrcLayout];
+        
+        // Intermediate audio format with destination layout - Force Float32 deinterleaved PCM
+        AVAudioFormat* intermediateFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
+                                                                                      channelLayout:avacDstLayout];
+        
+        // Destination audio format with destination layout - using transcode settings
         AVAudioFormat* dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
-        if (!dstFormat) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - destination format creation failed", track.trackID);
+        
+        if (!srcFormat || !intermediateFormat || !dstFormat) {
+            NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported audio format detected", track.trackID);
             continue;
         }
         
         // Validate and adjust bitrate using AVAudioConverter
         if (awInputSetting[AVEncoderBitRateKey]) {
-            AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:srcFormat toFormat:dstFormat];
+            AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:intermediateFormat
+                                                                          toFormat:dstFormat];
             if (converter) {
                 NSArray<NSNumber*>* bitrateArray = converter.applicableEncodeBitRates;
                 if (bitrateArray && ![bitrateArray containsObject:@(self.audioBitRate)]) {
@@ -1311,23 +1341,20 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             }
         }
         
+        /* ========================================================================================== */
+        
         // Configure the MEAudioConverter
         audioConverter.sourceFormat = srcFormat;
-        audioConverter.destinationFormat = dstFormat;
+        audioConverter.destinationFormat = intermediateFormat;
         audioConverter.startTime = self.startTime;
         audioConverter.endTime = self.endTime;
         audioConverter.verbose = self.verbose;
         audioConverter.sourceExtensions = CMFormatDescriptionGetExtensions(desc);
         audioConverter.mediaTimeScale = track.naturalTimeScale;
         
-        // Source configuration - force Float32 interleaved PCM
-        NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
-        arOutputSetting[AVFormatIDKey] = @(kAudioFormatLinearPCM);
-        arOutputSetting[AVLinearPCMIsFloatKey] = @YES;
-        arOutputSetting[AVLinearPCMBitDepthKey] = @32;
-        arOutputSetting[AVLinearPCMIsNonInterleavedKey] = @NO; // Interleaved
-        arOutputSetting[AVLinearPCMIsBigEndianKey] = @NO;
+        /* ========================================================================================== */
         
+        // Create AVAssetReaderTrackOutput
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
         if (![ar canAddOutput:arOutput]) {
@@ -1336,19 +1363,13 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         }
         [ar addOutput:arOutput];
         
-        // Create MEInput for the MEAudioConverter
-        MEInput* meInput = (MEInput*)audioConverter;
-        
         // Source channel: AVAssetReaderOutput -> MEAudioConverter (acting as MEInput)
         SBChannel* sbcMEInput = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
-                                                        consumerME:meInput
+                                                        consumerME:(MEInput*)audioConverter
                                                            TrackID:track.trackID];
         [sbChannels addObject:sbcMEInput];
         
         /* ========================================================================================== */
-        
-        // Create MEOutput from the MEAudioConverter
-        MEOutput* meOutput = (MEOutput*)audioConverter;
         
         // Create AVAssetWriterInput
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
@@ -1360,7 +1381,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         [aw addInput:awInput];
         
         // Destination channel: MEAudioConverter (acting as MEOutput) -> AVAssetWriterInput
-        SBChannel* sbcMEOutput = [SBChannel sbChannelWithProducerME:meOutput
+        SBChannel* sbcMEOutput = [SBChannel sbChannelWithProducerME:(MEOutput*)audioConverter
                                                          consumerME:(MEInput*)awInput
                                                             TrackID:track.trackID];
         [sbChannels addObject:sbcMEOutput];
