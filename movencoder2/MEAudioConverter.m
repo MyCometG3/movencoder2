@@ -156,7 +156,7 @@ NS_ASSUME_NONNULL_BEGIN
         goto cleanup; // Layout conversion is not handled in this function
     }
 
-    // AudioBufferList の必要サイズを問い合わせ
+    // Query required size for AudioBufferList
     size_t ablSize = 0;
     OSStatus st = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
         sampleBuffer, &ablSize, NULL, 0, kCFAllocatorDefault, kCFAllocatorDefault, 0, NULL);
