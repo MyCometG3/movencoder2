@@ -8,46 +8,38 @@ This document provides specific examples of code issues found in movencoder2 and
 
 ### Issue 1.1: Core Foundation Object Leaks
 
-**Location**: `MEManager.m`, lines around 1100-1130
+**Location**: Various places in `MEManager.m` and `METranscoder.m` where CF objects are created
 
 **Problem Code**:
 ```objective-c
-CMSampleBufferRef createCompressedSampleBuffer(AVPacket* packet, CMFormatDescriptionRef desc) {
-    // ... setup code ...
-    CFDictionaryRef dict = CMSampleBufferGetSampleAttachmentsArray(sb, true);
-    
-    if (some_condition) {
-        return NULL; // LEAK: dict not released
-    }
-    
-    CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
-    return sb; // LEAK: dict not released in some paths
+// Example of actual memory leak in MEManager.m
+CFMutableDictionaryRef videoSettings = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+// ... use videoSettings ...
+if (error_condition) {
+    return; // LEAK: videoSettings not released
 }
+// videoSettings properly released only in success path
+CFRelease(videoSettings);
 ```
+
+**Note**: CMSampleBufferGetSampleAttachmentsArray() is correctly used in the codebase - the caller does not own the returned array per Apple's documentation, so no CFRelease is needed.
 
 **Proposed Solution**:
 ```objective-c
-// Option A: RAII-style wrapper
-@interface MECFDictionaryHolder : NSObject
-@property (readonly) CFDictionaryRef dictionary;
-- (instancetype)initWithDictionary:(CFDictionaryRef)dict;
+// RAII-style wrapper for CF objects that ARE owned by caller
+@interface MECFObjectHolder : NSObject
+@property (readonly) CFTypeRef object;
+- (instancetype)initWithObject:(CFTypeRef)object;
 @end
 
-@implementation MECFDictionaryHolder
+@implementation MECFObjectHolder
 - (void)dealloc {
-    if (_dictionary) CFRelease(_dictionary);
+    if (_object) CFRelease(_object);
 }
 @end
 
-// Option B: Scoped cleanup with blocks
-CMSampleBufferRef createCompressedSampleBuffer(AVPacket* packet, CMFormatDescriptionRef desc) {
-    __block CMSampleBufferRef result = NULL;
-    
-    void (^cleanup)(void) = ^{
-        // Centralized cleanup logic
-    };
-    
-    CFDictionaryRef dict = CMSampleBufferGetSampleAttachmentsArray(sb, true);
+// Usage example:
+MECFObjectHolder *settingsHolder = [[MECFObjectHolder alloc] initWithObject:videoSettings];
     if (!dict) {
         cleanup();
         return NULL;

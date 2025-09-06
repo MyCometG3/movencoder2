@@ -37,9 +37,9 @@ This document provides a comprehensive code review and refactoring plan for the 
 
 **Example Problem Areas:**
 ```objective-c
-// In MEManager.m - Manual CF object management
-CFDictionaryRef dict = CMSampleBufferGetSampleAttachmentsArray(sb, true);
-// Missing CFRelease in error paths
+// In MEManager.m - Manual CF object management requiring cleanup
+CFMutableDictionaryRef videoSettings = CFDictionaryCreateMutable(NULL, 0, ...);
+// Missing CFRelease in error paths for objects owned by caller
 ```
 
 **Recommended Solutions:**
