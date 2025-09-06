@@ -1014,31 +1014,11 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             assert(0 < numChannel && numChannel <=8);
             
             // For Source (suppose MPEG layout)
-            AudioChannelLayoutTag srcLayout[8] = {
-                kAudioChannelLayoutTag_Mono,        // C
-                kAudioChannelLayoutTag_Stereo,      // L R
-                kAudioChannelLayoutTag_MPEG_3_0_A,  // L R C
-                kAudioChannelLayoutTag_MPEG_4_0_A,  // L R C Cs
-                kAudioChannelLayoutTag_MPEG_5_0_A,  // L R C Ls Rs
-                kAudioChannelLayoutTag_MPEG_5_1_A,  // L R C LFE Ls Rs
-                kAudioChannelLayoutTag_MPEG_6_1_A,  // L R C LFE Ls Rs Cs
-                kAudioChannelLayoutTag_MPEG_7_1_C,  // L R C LFE Ls Rs Rls Rrs
-            };
-            AudioChannelLayoutTag srcTag = srcLayout[numChannel - 1];
+            AudioChannelLayoutTag srcTag = kMEMPEGSourceLayouts[numChannel - 1];
             avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:srcTag];
             
             // For Destination (suppose AAC layout)
-            AudioChannelLayoutTag dstLayout[8] = {
-                kAudioChannelLayoutTag_Mono,        // C
-                kAudioChannelLayoutTag_Stereo,      // L R
-                kAudioChannelLayoutTag_AAC_3_0,     // C L R
-                kAudioChannelLayoutTag_AAC_4_0,     // C L R Cs
-                kAudioChannelLayoutTag_AAC_5_0,     // C L R Ls Rs
-                kAudioChannelLayoutTag_AAC_5_1,     // C L R Ls Rs Lfe
-                kAudioChannelLayoutTag_AAC_6_1,     // C L R Ls Rs Cs Lfe
-                kAudioChannelLayoutTag_AAC_7_1_B    // C L R Ls Rs Rls Rrs LFE
-            };
-            AudioChannelLayoutTag dstTag = dstLayout[numChannel - 1];
+            AudioChannelLayoutTag dstTag = kMEAACDestinationLayouts[numChannel - 1];
             avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
         }
         
@@ -1162,18 +1142,8 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
                     dstTag = srcTag;
                 } else {
                     // Fallback to channel count based mapping
-                    AudioChannelLayoutTag dstLayout[8] = {
-                        kAudioChannelLayoutTag_Mono,        
-                        kAudioChannelLayoutTag_Stereo,      
-                        kAudioChannelLayoutTag_AAC_3_0,     
-                        kAudioChannelLayoutTag_AAC_4_0,     
-                        kAudioChannelLayoutTag_AAC_5_0,     
-                        kAudioChannelLayoutTag_AAC_5_1,     
-                        kAudioChannelLayoutTag_AAC_6_1,     
-                        kAudioChannelLayoutTag_AAC_7_1_B    
-                    };
                     if (numChannel >= 1 && numChannel <= 8) {
-                        dstTag = dstLayout[numChannel - 1];
+                        dstTag = kMEAACDestinationLayouts[numChannel - 1];
                     }
                 }
             }
@@ -1184,30 +1154,9 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             }
         } else {
             // Default layouts when source has no channel layout
-            AudioChannelLayoutTag srcLayout[8] = {
-                kAudioChannelLayoutTag_Mono,        
-                kAudioChannelLayoutTag_Stereo,      
-                kAudioChannelLayoutTag_MPEG_3_0_A,  
-                kAudioChannelLayoutTag_MPEG_4_0_A,  
-                kAudioChannelLayoutTag_MPEG_5_0_A,  
-                kAudioChannelLayoutTag_MPEG_5_1_A,  
-                kAudioChannelLayoutTag_MPEG_6_1_A,  
-                kAudioChannelLayoutTag_MPEG_7_1_C,  
-            };
-            AudioChannelLayoutTag dstLayout[8] = {
-                kAudioChannelLayoutTag_Mono,        
-                kAudioChannelLayoutTag_Stereo,      
-                kAudioChannelLayoutTag_AAC_3_0,     
-                kAudioChannelLayoutTag_AAC_4_0,     
-                kAudioChannelLayoutTag_AAC_5_0,     
-                kAudioChannelLayoutTag_AAC_5_1,     
-                kAudioChannelLayoutTag_AAC_6_1,     
-                kAudioChannelLayoutTag_AAC_7_1_B    
-            };
-            
             if (numChannel >= 1 && numChannel <= 8) {
-                AudioChannelLayoutTag srcTag = srcLayout[numChannel - 1];
-                AudioChannelLayoutTag dstTag = dstLayout[numChannel - 1];
+                AudioChannelLayoutTag srcTag = kMEMPEGSourceLayouts[numChannel - 1];
+                AudioChannelLayoutTag dstTag = kMEAACDestinationLayouts[numChannel - 1];
                 avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:srcTag];
                 avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
             } else {
@@ -1219,17 +1168,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         if (!avacSrcLayout || !avacDstLayout) {
             // Fallback: try to create layouts based on channel count only
             if (numChannel >= 1 && numChannel <= 8) {
-                AudioChannelLayoutTag fallbackLayouts[8] = {
-                    kAudioChannelLayoutTag_Mono,        
-                    kAudioChannelLayoutTag_Stereo,      
-                    kAudioChannelLayoutTag_AAC_3_0,     
-                    kAudioChannelLayoutTag_AAC_4_0,     
-                    kAudioChannelLayoutTag_AAC_5_0,     
-                    kAudioChannelLayoutTag_AAC_5_1,     
-                    kAudioChannelLayoutTag_AAC_6_1,     
-                    kAudioChannelLayoutTag_AAC_7_1_B    
-                };
-                AudioChannelLayoutTag fallbackTag = fallbackLayouts[numChannel - 1];
+                AudioChannelLayoutTag fallbackTag = kMEAACDestinationLayouts[numChannel - 1];
                 if (!avacSrcLayout) {
                     avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:fallbackTag];
                 }
