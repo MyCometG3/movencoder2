@@ -145,7 +145,7 @@ NS_ASSUME_NONNULL_BEGIN
     CMItemCount sampleCount = CMSampleBufferGetNumSamples(sampleBuffer);
     if (sampleCount <= 0) goto cleanup;
 
-    // 元 ASBD と最低限の整合性チェック（ここではチャンネル数とインタリーブ一致を要求）
+    // Basic consistency check with source ASBD (requires matching channel count and interleaving)
     CMAudioFormatDescriptionRef fmtDesc = CMSampleBufferGetFormatDescription(sampleBuffer);
     if (!fmtDesc) goto cleanup;
     const AudioStreamBasicDescription *srcASBD = CMAudioFormatDescriptionGetStreamBasicDescription(fmtDesc);
