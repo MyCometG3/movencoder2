@@ -30,6 +30,7 @@
 		16B8125C218D72AD00E24173 /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125B218D72AD00E24173 /* monitorUtil.m */; };
 		16B81260218D754600E24173 /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125F218D754600E24173 /* METranscoder.m */; };
 		16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
+		16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -83,6 +84,8 @@
 		16B8125F218D754600E24173 /* METranscoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscoder.m; sourceTree = "<group>"; };
 		16D36C9222B5B4D7006E3DBF /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
 		16D36C9422B5B549006E3DBF /* parseUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parseUtil.h; sourceTree = "<group>"; };
+		16ED62412E6BD1F800152AD8 /* MECommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MECommon.h; sourceTree = "<group>"; };
+		16ED62422E6BD1F800152AD8 /* MECommon.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MECommon.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -183,6 +186,8 @@
 				16D36C9222B5B4D7006E3DBF /* parseUtil.m */,
 				16B8125D218D72BB00E24173 /* monitorUtil.h */,
 				16B8125B218D72AD00E24173 /* monitorUtil.m */,
+				16ED62412E6BD1F800152AD8 /* MECommon.h */,
+				16ED62422E6BD1F800152AD8 /* MECommon.m */,
 				16B8125E218D754600E24173 /* METranscoder.h */,
 				16B8125F218D754600E24173 /* METranscoder.m */,
 				1613EE152E69BB01001F7E56 /* MEAudioConverter.h */,
@@ -264,6 +269,7 @@
 				16B8125C218D72AD00E24173 /* monitorUtil.m in Sources */,
 				1613EE172E69BB01001F7E56 /* MEAudioConverter.m in Sources */,
 				16741CEE21A92DD1000EEC78 /* MEOutput.m in Sources */,
+				16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */,
 				16741CF121B37DCD000EEC78 /* MEManager.m in Sources */,
 				16B81260218D754600E24173 /* METranscoder.m in Sources */,
 				16B81255218D701000E24173 /* main.m in Sources */,

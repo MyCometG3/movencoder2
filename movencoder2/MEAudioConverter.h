@@ -37,14 +37,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-extern NSString* const kProgressMediaTypeKey;   // NSString
-extern NSString* const kProgressTagKey;         // NSString
-extern NSString* const kProgressTrackIDKey;     // NSNumber of int
-extern NSString* const kProgressPTSKey;         // NSNumber of float
-extern NSString* const kProgressDTSKey;         // NSNumber of float
-extern NSString* const kProgressPercentKey;     // NSNumber of float
-extern NSString* const kProgressCountKey;       // NSNumber of int
-
 typedef void (^RequestHandler)(void);
 
 NS_ASSUME_NONNULL_END

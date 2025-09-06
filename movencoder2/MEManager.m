@@ -24,12 +24,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#import "MECommon.h"
 #import "MEManager.h"
 #import "MEUtils.h"
-
-#ifndef ALog
-#define ALog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#endif
 
 /* =================================================================================== */
 // MARK: -
@@ -45,14 +42,6 @@ NSString* const kMEVECodecPARKey = @"codecPAR";             // NSValue of NSSize
 NSString* const kMEVFFilterStringKey = @"filterString";     // NSString ; ffmpeg -vf "filter_graph_strings"
 NSString* const kMEVECodecBitRateKey = @"codecBitRate";     // NSNumber ; ffmpeg -b:v 2.5M
 NSString* const kMEVECleanApertureKey = @"cleanAperture";   // NSValue of NSRect ; convert as ffmpeg -crop-left/right/top/bottom
-
-NSString* const kProgressMediaTypeKey = @"mediaType";       // NSString
-NSString* const kProgressTagKey = @"tag";                   // NSString
-NSString* const kProgressTrackIDKey = @"trackID";           // NSNumber of int
-NSString* const kProgressPTSKey = @"pts";                   // NSNumber of float
-NSString* const kProgressDTSKey = @"dts";                   // NSNumber of float
-NSString* const kProgressPercentKey = @"percent";           // NSNumber of float
-NSString* const kProgressCountKey = @"count";               // NSNumber of float
 
 enum AVPixelFormat pix_fmt_list[] = { AV_PIX_FMT_YUV444P, AV_PIX_FMT_YUV422P, AV_PIX_FMT_YUV420P, AV_PIX_FMT_UYVY422, AV_PIX_FMT_NONE };
 

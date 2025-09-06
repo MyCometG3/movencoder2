@@ -26,16 +26,13 @@
 
 @import Foundation;
 
+#import "MECommon.h"
 #import "parseUtil.h"
 #import "monitorUtil.h"
 #import "METranscoder.h"
 #import "MEManager.h"
 #import "MEAudioConverter.h"
 #import <getopt.h>
-
-#ifndef ALog
-#define ALog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
-#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
