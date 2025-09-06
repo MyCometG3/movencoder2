@@ -48,14 +48,6 @@ extern NSString* const kMEVFFilterStringKey;    // NSString ; ffmpeg -vf "filter
 extern NSString* const kMEVECodecBitRateKey;    // NSNumber ; ffmpeg -b:v 2.5M
 extern NSString* const kMEVECleanApertureKey;   // NSValue of NSRect ; convert as ffmpeg -crop-left/right/top/bottom
 
-extern NSString* const kProgressMediaTypeKey;   // NSString
-extern NSString* const kProgressTagKey;         // NSString
-extern NSString* const kProgressTrackIDKey;     // NSNumber of int
-extern NSString* const kProgressPTSKey;         // NSNumber of float
-extern NSString* const kProgressDTSKey;         // NSNumber of float
-extern NSString* const kProgressPercentKey;     // NSNumber of float
-extern NSString* const kProgressCountKey;       // NSNumber of int
-
 typedef void (^RequestHandler)(void);
 
 NS_ASSUME_NONNULL_END

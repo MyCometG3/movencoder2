@@ -66,4 +66,16 @@ static const AudioChannelLayoutTag kMEAACDestinationLayouts[8] = {
     kAudioChannelLayoutTag_AAC_7_1_B    // C L R Ls Rs Rls Rrs LFE
 };
 
+/* =================================================================================== */
+// MARK: - Progress Callback Keys
+/* =================================================================================== */
+
+extern NSString* const kProgressMediaTypeKey;   // NSString
+extern NSString* const kProgressTagKey;         // NSString
+extern NSString* const kProgressTrackIDKey;     // NSNumber of int
+extern NSString* const kProgressPTSKey;         // NSNumber of float
+extern NSString* const kProgressDTSKey;         // NSNumber of float
+extern NSString* const kProgressPercentKey;     // NSNumber of float
+extern NSString* const kProgressCountKey;       // NSNumber of int
+
 #endif /* MECommon_h */
