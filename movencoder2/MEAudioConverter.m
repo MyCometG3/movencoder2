@@ -89,6 +89,8 @@ NS_ASSUME_NONNULL_BEGIN
         
         self.startTime = kCMTimeInvalid;
         self.endTime = kCMTimeInvalid;
+        
+        self.maxInputBufferCount = 10;
     }
     return self;
 }
@@ -413,9 +415,10 @@ cleanup:
     }
     
     // Limit queue size to prevent memory issues
+    NSUInteger limit = self.maxInputBufferCount;
     __block BOOL ready;
     dispatch_sync(_inputQueue, ^{
-        ready = (_inputBufferQueue.count < 10);
+        ready = (limit > 0) ? (_inputBufferQueue.count < limit) : NO;
     });
     return ready;
 }

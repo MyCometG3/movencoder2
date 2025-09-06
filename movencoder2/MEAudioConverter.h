@@ -83,6 +83,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic) BOOL verbose;
 
+/**
+ Maximum input buffer count to queue.
+ */
+@property (nonatomic) NSUInteger maxInputBufferCount;
+
 /* =================================================================================== */
 // MARK: - for MEInput; queue SB from previous AVAssetReaderOutput to MEAudioConverter
 /* =================================================================================== */
