@@ -1286,26 +1286,28 @@ error:
     {
         __block int ret = 0;
         do {
-            do {
-                int64_t inPTS = self.lastEnqueuedPTS;
-                int64_t outPTS = self.lastDequeuedPTS;
-                if (labs(inPTS - outPTS) < 10 * self->time_base) {
-                    break;
-                } else {
+            @autoreleasepool {
+                do {
+                    int64_t inPTS = self.lastEnqueuedPTS;
+                    int64_t outPTS = self.lastDequeuedPTS;
+                    if (labs(inPTS - outPTS) < 10 * self->time_base) {
+                        break;
+                    } else {
+                        av_usleep(50*1000);
+                        if (self.failed) goto error;
+                    }
+                } while (true); // TODO: check loop counter
+                [self output_sync:^{
+                    enqueueToME(self, &ret);
+                }];
+                if (ret == AVERROR(EAGAIN)) {
                     av_usleep(50*1000);
-                    if (self.failed) goto error;
+                    ret = 0;
                 }
-            } while (true); // TODO: check loop counter
-            [self output_sync:^{
-                enqueueToME(self, &ret);
-            }];
-            if (ret == AVERROR(EAGAIN)) {
-                av_usleep(50*1000);
-                ret = 0;
-            }
-            if (self.failed || ret < 0) {
-                NSLog(@"[MEManager] ERROR: Failed to enqueue the input frame");
-                goto error;
+                if (self.failed || ret < 0) {
+                    NSLog(@"[MEManager] ERROR: Failed to enqueue the input frame");
+                    goto error;
+                }
             }
         } while (ret == AVERROR(EAGAIN));
         return TRUE;
@@ -1589,33 +1591,64 @@ error:
         if (useVideoFilter(self)) {                         // filtered => encode => output
             int countEAGAIN = 0;
             do {
-                countEAGAIN = 0;
-                if (!videoFilterEOF) {
-                    [self output_sync:^{
-                        pullFilteredFrame(self, &ret);      // Pull filtered frame from the filtergraph
-                    }];
-                    if (self.failed) goto error;
-                    if (ret < 0) {
-                        if (ret == AVERROR_EOF) {
-                            //NSLog(@"[MEManager] Filter graph detected EOF.");
-                            ret = 0;
-                        }
-                        if (ret == AVERROR(EAGAIN)) {
-                            countEAGAIN++;                  // filtergraph requires more frame
-                            ret = 0;
-                        }
+                @autoreleasepool {
+                    countEAGAIN = 0;
+                    if (!videoFilterEOF) {
+                        [self output_sync:^{
+                            pullFilteredFrame(self, &ret);      // Pull filtered frame from the filtergraph
+                        }];
+                        if (self.failed) goto error;
                         if (ret < 0) {
-                            NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
-                            goto error;
+                            if (ret == AVERROR_EOF) {
+                                //NSLog(@"[MEManager] Filter graph detected EOF.");
+                                ret = 0;
+                            }
+                            if (ret == AVERROR(EAGAIN)) {
+                                countEAGAIN++;                  // filtergraph requires more frame
+                                ret = 0;
+                            }
+                            if (ret < 0) {
+                                NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
+                                goto error;
+                            }
                         }
                     }
+                    {
+                        [self output_sync:^{
+                            pushFilteredFrame(self, &ret);      // Push filtered frame into encoder
+                            if (self.failed) return;
+                            if (ret < 0) return;
+                            pullEncodedPacket(self, &ret);      // Pull compressed output from encoder
+                        }];
+                        if (self.failed) goto error;
+                        if (ret < 0) {
+                            if (ret == AVERROR_EOF) {
+                                // NSLog(@"[MEManager] Encoder detected EOF");
+                                ret = 0;
+                            }
+                            if (ret == AVERROR(EAGAIN)) {
+                                countEAGAIN++;                  // encoder requires more frame
+                                ret = 0;
+                            }
+                            if (ret < 0) {
+                                NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
+                                goto error;
+                            }
+                        }
+                    }
+                    if (countEAGAIN == 2) {                     // Try next ququeing after delay
+                        av_usleep(50*1000);
+                        if (self.failed) goto error;
+                    }
                 }
-                {
+            } while(countEAGAIN > 0);                       // loop - blocking
+        } else {                                            // encode => output
+            int countEAGAIN = 0;
+            do {
+                @autoreleasepool {
+                    countEAGAIN = 0;
                     [self output_sync:^{
-                        pushFilteredFrame(self, &ret);      // Push filtered frame into encoder
-                        if (self.failed) return;
-                        if (ret < 0) return;
-                        pullEncodedPacket(self, &ret);      // Pull compressed output from encoder
+                        pullEncodedPacket(self, &ret);          // Pull compressed output from encoder
                     }];
                     if (self.failed) goto error;
                     if (ret < 0) {
@@ -1624,45 +1657,18 @@ error:
                             ret = 0;
                         }
                         if (ret == AVERROR(EAGAIN)) {
-                            countEAGAIN++;                  // encoder requires more frame
+                            countEAGAIN++;                      // encoder requires more frame
                             ret = 0;
                         }
                         if (ret < 0) {
-                            NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
-                            goto error;
+                            NSLog(@"[MEManager] ERROR: Encoder detected: %d", ret);
+                            break;
                         }
                     }
-                }
-                if (countEAGAIN == 2) {                     // Try next ququeing after delay
-                    av_usleep(50*1000);
-                    if (self.failed) goto error;
-                }
-            } while(countEAGAIN > 0);                       // loop - blocking
-        } else {                                            // encode => output
-            int countEAGAIN = 0;
-            do {
-                countEAGAIN = 0;
-                [self output_sync:^{
-                    pullEncodedPacket(self, &ret);          // Pull compressed output from encoder
-                }];
-                if (self.failed) goto error;
-                if (ret < 0) {
-                    if (ret == AVERROR_EOF) {
-                        // NSLog(@"[MEManager] Encoder detected EOF");
-                        ret = 0;
+                    if (countEAGAIN == 1) {                     // Try next ququeing after delay
+                        av_usleep(50*1000);
+                        if (self.failed) goto error;
                     }
-                    if (ret == AVERROR(EAGAIN)) {
-                        countEAGAIN++;                      // encoder requires more frame
-                        ret = 0;
-                    }
-                    if (ret < 0) {
-                        NSLog(@"[MEManager] ERROR: Encoder detected: %d", ret);
-                        break;
-                    }
-                }
-                if (countEAGAIN == 1) {                     // Try next ququeing after delay
-                    av_usleep(50*1000);
-                    if (self.failed) goto error;
                 }
             } while(countEAGAIN > 0);                       // loop - blocking
         }
@@ -1685,30 +1691,32 @@ error:
         {
             int countEAGAIN = 0;
             do {
-                countEAGAIN = 0;
-                [self output_sync:^{
-                    pullFilteredFrame(self, &ret);          // Pull filtered frame from the filtergraph
-                }];
-                if (self.failed) {
-                    goto error;
-                } else {
-                    if (ret == AVERROR_EOF) {
-                        //NSLog(@"[MEManager] Filter graph detected EOF.");
-                        ret = 0;
-                    }
-                    if (ret == AVERROR(EAGAIN)) {
-                        countEAGAIN++;                      // filtergraph requires more frame
-                        ret = 0;
-                    }
-                    if (ret < 0) {
-                        NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
-                        break;
-                    }
-                }
-                if (countEAGAIN == 1) {                     // Try next ququeing after delay
-                    av_usleep(50*1000);
+                @autoreleasepool {
+                    countEAGAIN = 0;
+                    [self output_sync:^{
+                        pullFilteredFrame(self, &ret);          // Pull filtered frame from the filtergraph
+                    }];
                     if (self.failed) {
                         goto error;
+                    } else {
+                        if (ret == AVERROR_EOF) {
+                            //NSLog(@"[MEManager] Filter graph detected EOF.");
+                            ret = 0;
+                        }
+                        if (ret == AVERROR(EAGAIN)) {
+                            countEAGAIN++;                      // filtergraph requires more frame
+                            ret = 0;
+                        }
+                        if (ret < 0) {
+                            NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
+                            break;
+                        }
+                    }
+                    if (countEAGAIN == 1) {                     // Try next ququeing after delay
+                        av_usleep(50*1000);
+                        if (self.failed) {
+                            goto error;
+                        }
                     }
                 }
             } while(countEAGAIN > 0);                       // loop - blocking
