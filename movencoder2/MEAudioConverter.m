@@ -25,6 +25,7 @@
  */
 
 #import "MEAudioConverter.h"
+#include <unistd.h>
 
 #ifndef ALog
 #define ALog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
@@ -541,17 +542,30 @@ cleanup:
     }
     
     __block CMSampleBufferRef result = NULL;
-    dispatch_sync(_outputQueue, ^{
-        if (_outputBufferQueue.count > 0) {
-            NSValue* value = _outputBufferQueue.firstObject;
-            [_outputBufferQueue removeObjectAtIndex:0];
-            result = (CMSampleBufferRef)[value pointerValue];
-            // Don't release here as this method should return a retained reference
-        } else if (_outputFinished) {
-            // No more data available
-            result = NULL;
+    __block BOOL shouldContinue = YES;
+    
+    // Blocking loop - wait until data becomes available
+    while (shouldContinue && !self.failed) {
+        dispatch_sync(_outputQueue, ^{
+            if (_outputBufferQueue.count > 0) {
+                NSValue* value = _outputBufferQueue.firstObject;
+                [_outputBufferQueue removeObjectAtIndex:0];
+                result = (CMSampleBufferRef)[value pointerValue];
+                // Don't release here as this method should return a retained reference
+                shouldContinue = NO;
+            } else if (_inputFinished) {
+                // Only return NULL when input is finished and no more buffers available
+                result = NULL;
+                shouldContinue = NO;
+            }
+            // If neither condition is met, continue waiting
+        });
+        
+        if (shouldContinue && !self.failed) {
+            // Sleep briefly to avoid busy waiting, similar to MEManager pattern
+            usleep(50 * 1000); // 50ms delay
         }
-    });
+    }
     
     return result;
 }
