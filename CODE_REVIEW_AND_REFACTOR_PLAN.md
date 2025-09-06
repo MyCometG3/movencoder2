@@ -21,7 +21,7 @@ This document provides a comprehensive code review and refactoring plan for the 
 | Goto Statements | 57+ | ⚠️ Cleanup pattern usage |
 | Concurrency Primitives | 49 | ❌ Complex threading |
 | FFmpeg API Calls (MEManager) | 59 | ⚠️ Heavy external dependency |
-| Core Foundation Objects | 151 | ✅ Correctly managed with ARC |
+| Core Foundation Objects | 151 | ✅ Correctly managed following CF ownership rules |
 | TODO/FIXME Comments | 6 | ✅ Reasonable technical debt |
 
 ## Critical Issues Identified
@@ -31,10 +31,12 @@ This document provides a comprehensive code review and refactoring plan for the 
 
 **Issues:**
 - Complex cleanup patterns using goto statements
-- Some potential memory leaks in error paths (but most CF objects are properly managed)
 - Error handling could be more consistent
 
-**Note:** Upon review, this project correctly uses ARC (`CLANG_ENABLE_OBJC_ARC = YES`) and properly manages Core Foundation objects with manual CFRetain/CFRelease as required by the CF API. ARC only manages Objective-C objects, not CF objects.
+**Note:** Upon review, this project correctly uses ARC (`CLANG_ENABLE_OBJC_ARC = YES`) and properly manages Core Foundation objects following CF ownership rules:
+- **GetXX functions**: Do NOT transfer ownership - code correctly avoids calling CFRelease
+- **CreateXX/CopyXX functions**: DO transfer ownership - code correctly calls CFRelease when appropriate
+ARC only manages Objective-C objects, not CF objects, and the codebase demonstrates proper manual CF memory management.
 
 **Example of Correct CF Management:**
 ```objective-c
@@ -47,9 +49,9 @@ return dictOut;   // Return owned object to caller
 ```
 
 **Recommended Solutions:**
-- Review error paths for any missing CFRelease calls
-- Standardize error handling patterns
+- Standardize error handling patterns (replace complex goto patterns with consistent approaches)
 - Add comprehensive memory leak testing
+- Document the existing correct CF memory management patterns for future developers
 
 ### 2. **CRITICAL - Concurrency and Threading Issues**
 **Priority: HIGH**

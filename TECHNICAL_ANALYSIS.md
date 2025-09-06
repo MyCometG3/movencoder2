@@ -10,7 +10,11 @@ This document provides specific examples of code issues found in movencoder2 and
 
 **Location**: Error handling paths in `MEManager.m` and `METranscoder.m`
 
-**Clarification**: This project correctly uses ARC (`CLANG_ENABLE_OBJC_ARC = YES`) and properly manages Core Foundation objects. ARC only manages Objective-C objects, not CF objects, so manual CFRetain/CFRelease is required and correctly implemented in most cases.
+**Clarification**: This project correctly uses ARC (`CLANG_ENABLE_OBJC_ARC = YES`) and properly manages Core Foundation objects following CF ownership rules:
+- **GetXX functions**: Do NOT transfer ownership (e.g., `CMSampleBufferGetImageBuffer`, `CFDictionaryGetValue`) - code correctly avoids calling CFRelease
+- **CreateXX/CopyXX functions**: DO transfer ownership (e.g., `CFDictionaryCreateMutable`, `CVPixelBufferPoolCreate`) - code correctly calls CFRelease when appropriate
+
+ARC only manages Objective-C objects, not CF objects, and the codebase demonstrates proper manual CF memory management according to Apple's ownership rules.
 
 **Example of Correct CF Management**:
 ```objective-c
@@ -24,24 +28,40 @@ return dictOut;   // Return owned object to caller
 
 **Potential Issues to Review**:
 ```objective-c
-// Check error paths for any missing CFRelease calls
-CFMutableDictionaryRef settings = CFDictionaryCreateMutable(...);
+// Ensure consistency in error handling patterns (goto vs early return)
+// The CF memory management is already correct per ownership rules
 if (error_condition) {
-    // Ensure settings is released before return
-    CFRelease(settings);
-    return; 
+    // Current goto pattern works but could be standardized
+    goto cleanup;
 }
-CFRelease(settings);
+// ... processing ...
+cleanup:
+    // Cleanup logic here
+    return result;
 ```
 
-**Note**: CMSampleBufferGetSampleAttachmentsArray() is correctly used - the caller does not own the returned array per Apple's documentation.
+**Note**: The code correctly follows CF ownership rules - `CMSampleBufferGetSampleAttachmentsArray()` is a Get function so caller does not own the returned array per Apple's documentation.
 
 **Proposed Solution**:
 ```objective-c
-// Use consistent error handling patterns
+// The CF memory management is already correct. Focus on error handling patterns:
+// Option 1: Consistent goto-based cleanup (current approach)
+CFMutableDictionaryRef settings = CFDictionaryCreateMutable(...);
+BOOL success = YES;
+if (error_condition) {
+    success = NO;
+    goto cleanup;
+}
+// ... processing ...
+
+cleanup:
+    if (settings) CFRelease(settings);
+    return success;
+
+// Option 2: RAII-style wrapper for CF objects
 @interface MECFObjectHolder : NSObject
 @property (readonly) CFTypeRef object;
-- (instancetype)initWithObject:(CFTypeRef)object;
+- (instancetype)initWithObject:(CFTypeRef)object CF_RETURNS_RETAINED;
 @end
 
 @implementation MECFObjectHolder
@@ -49,14 +69,6 @@ CFRelease(settings);
     if (_object) CFRelease(_object);
 }
 @end
-
-// Alternative: Ensure proper cleanup in error paths
-CFMutableDictionaryRef settings = CFDictionaryCreateMutable(...);
-@try {
-    // ... use settings ...
-} @finally {
-    if (settings) CFRelease(settings);
-}
 ```
     }
     
@@ -485,7 +497,7 @@ NSNumber* parseInteger(NSString* val) {
 For each refactoring task:
 
 1. **Memory Management**
-   - [ ] Review error paths for any missing CFRelease calls (CF objects are generally well-managed)
+   - [ ] Document existing correct CF memory management patterns (GetXX vs CreateXX/CopyXX ownership rules are properly followed)
    - [ ] Autorelease pools in appropriate locations
    - [ ] No retain cycles in block usage
 
