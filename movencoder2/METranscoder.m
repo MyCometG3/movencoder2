@@ -1320,20 +1320,21 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         status = VTSessionCopySupportedPropertyDictionary(decompSession, &dict);
         
         if (status != noErr) goto end;
-    }
-    
-    if (dict) {
-        CFDictionaryRef propFieldMode = CFDictionaryGetValue(dict, kVTDecompressionPropertyKey_FieldMode);
-        if (propFieldMode) {
-            CFArrayRef propList = CFDictionaryGetValue(propFieldMode, kVTPropertySupportedValueListKey);
-            if (propList) {
-                result = CFArrayContainsValue(propList,
-                                              CFRangeMake(0, CFArrayGetCount(propList)),
-                                              kVTDecompressionProperty_FieldMode_BothFields);
+        
+        if (dict) {
+            CFDictionaryRef propFieldMode = CFDictionaryGetValue(dict, kVTDecompressionPropertyKey_FieldMode);
+            if (propFieldMode) {
+                CFArrayRef propList = CFDictionaryGetValue(propFieldMode, kVTPropertySupportedValueListKey);
+                if (propList) {
+                    result = CFArrayContainsValue(propList,
+                                                  CFRangeMake(0, CFArrayGetCount(propList)),
+                                                  kVTDecompressionProperty_FieldMode_BothFields);
+                }
             }
+            CFRelease(dict);
         }
     }
-    
+
 end:
     if (decompSession) {
         VTDecompressionSessionInvalidate(decompSession);
