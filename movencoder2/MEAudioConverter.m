@@ -153,7 +153,7 @@ NS_ASSUME_NONNULL_BEGIN
 
     BOOL srcIsInterleaved = ((srcASBD->mFormatFlags & kAudioFormatFlagIsNonInterleaved) == 0);
     if (srcASBD->mChannelsPerFrame != format.channelCount || srcIsInterleaved != format.isInterleaved) {
-        goto cleanup; // レイアウト変換は本関数では扱わない
+        goto cleanup; // Layout conversion is not handled in this function
     }
 
     // AudioBufferList の必要サイズを問い合わせ
