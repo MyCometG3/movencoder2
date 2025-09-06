@@ -255,6 +255,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)prepareRW
 {
+    // Initialize video processor with dependencies
+    if (!self.videoProcessor) {
+        __weak typeof(self) weakSelf = self;
+        self.videoProcessor = [[MEVideoProcessor alloc] initWithParameters:self.param 
+                                                                   managers:self.managers 
+                                                                 sbChannels:self.sbChannels
+                                                        prepareCopyChannelBlock:^(AVMovie* movie, AVAssetReader* ar, AVAssetWriter* aw, AVMediaType type) {
+            [weakSelf prepareCopyChannelWith:movie from:ar to:aw of:type];
+        }];
+    }
+    
     NSError *error = nil;
     AVAssetReader* assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
                                                                 error:&error];
@@ -300,20 +311,6 @@ NS_ASSUME_NONNULL_BEGIN
         dispatch_queue_set_specific(_processQueue, processQueueKey, unused, NULL);
     }
     return _processQueue;
-}
-
-- (MEVideoProcessor*) videoProcessor
-{
-    if (!_videoProcessor) {
-        __weak typeof(self) weakSelf = self;
-        _videoProcessor = [[MEVideoProcessor alloc] initWithParameters:self.param 
-                                                              managers:self.managers 
-                                                            sbChannels:self.sbChannels
-                                                   prepareCopyChannelBlock:^(AVMovie* movie, AVAssetReader* ar, AVAssetWriter* aw, AVMediaType type) {
-            [weakSelf prepareCopyChannelWith:movie from:ar to:aw of:type];
-        }];
-    }
-    return _videoProcessor;
 }
 
 static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
