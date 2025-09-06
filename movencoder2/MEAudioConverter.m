@@ -134,167 +134,252 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable AVAudioPCMBuffer*) createPCMBufferFromSampleBuffer:(CMSampleBufferRef)sampleBuffer withFormat:(AVAudioFormat*)format
 {
-    CMBlockBufferRef blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer);
-    if (!blockBuffer) return nil;
-    
-    size_t totalLength = CMBlockBufferGetDataLength(blockBuffer);
-    if (totalLength == 0) return nil;
-    
-    // Get audio buffer list from sample buffer
-    AudioBufferList audioBufferList;
-    CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
-        sampleBuffer, NULL, &audioBufferList, sizeof(audioBufferList), 
-        kCFAllocatorDefault, kCFAllocatorDefault, 0, NULL);
-    
-    if (audioBufferList.mNumberBuffers == 0) return nil;
-    
-    // Get frame count from sample buffer
+    AVAudioPCMBuffer *pcm = nil;
+    AudioBufferList *abl = NULL;
+    CMBlockBufferRef retainedBB = NULL;
+
+    if (!sampleBuffer || !format) goto cleanup;
+    if (format.streamDescription->mFormatID != kAudioFormatLinearPCM) goto cleanup;
+
     CMItemCount sampleCount = CMSampleBufferGetNumSamples(sampleBuffer);
-    
-    // Create PCM buffer with the target format
-    AVAudioPCMBuffer* pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format frameCapacity:(AVAudioFrameCount)sampleCount];
-    if (!pcmBuffer) return nil;
-    
-    pcmBuffer.frameLength = (AVAudioFrameCount)sampleCount;
-    
-    // Copy data based on format
+    if (sampleCount <= 0) goto cleanup;
+
+    // 元 ASBD と最低限の整合性チェック（ここではチャンネル数とインタリーブ一致を要求）
+    CMAudioFormatDescriptionRef fmtDesc = CMSampleBufferGetFormatDescription(sampleBuffer);
+    if (!fmtDesc) goto cleanup;
+    const AudioStreamBasicDescription *srcASBD = CMAudioFormatDescriptionGetStreamBasicDescription(fmtDesc);
+    if (!srcASBD) goto cleanup;
+
+    BOOL srcIsInterleaved = ((srcASBD->mFormatFlags & kAudioFormatFlagIsNonInterleaved) == 0);
+    if (srcASBD->mChannelsPerFrame != format.channelCount || srcIsInterleaved != format.isInterleaved) {
+        goto cleanup; // レイアウト変換は本関数では扱わない
+    }
+
+    // AudioBufferList の必要サイズを問い合わせ
+    size_t ablSize = 0;
+    OSStatus st = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+        sampleBuffer, &ablSize, NULL, 0, kCFAllocatorDefault, kCFAllocatorDefault, 0, NULL);
+    if (st != noErr || ablSize == 0) goto cleanup;
+
+    abl = (AudioBufferList*)malloc(ablSize);
+    if (!abl) goto cleanup;
+
+    st = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+        sampleBuffer, NULL, abl, ablSize, kCFAllocatorDefault, kCFAllocatorDefault, 0, &retainedBB);
+    if (st != noErr) goto cleanup;
+    if (abl->mNumberBuffers == 0) goto cleanup;
+
+    // 宛先 PCM バッファ作成
+    pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format
+                                        frameCapacity:(AVAudioFrameCount)sampleCount];
+    if (!pcm) goto cleanup;
+    pcm.frameLength = (AVAudioFrameCount)sampleCount;
+
+    const UInt32 ch = format.channelCount;
+    AVAudioCommonFormat cf = format.commonFormat;
+
     if (format.isInterleaved) {
-        // Interleaved format - copy all channel data sequentially
-        float* destPtr = pcmBuffer.floatChannelData[0];
-        if (audioBufferList.mBuffers[0].mData) {
-            if (audioBufferList.mBuffers[0].mDataByteSize >= sampleCount * format.channelCount * sizeof(float)) {
-                memcpy(destPtr, audioBufferList.mBuffers[0].mData, sampleCount * format.channelCount * sizeof(float));
-            }
+        const AudioBuffer src = abl->mBuffers[0];
+        switch (cf) {
+            case AVAudioPCMFormatFloat32: {
+                float *dst = pcm.floatChannelData[0];
+                size_t dstBytes = (size_t)sampleCount * ch * sizeof(float);
+                size_t copyBytes = MIN(dstBytes, (size_t)src.mDataByteSize);
+                if (dst && src.mData && copyBytes) memcpy(dst, src.mData, copyBytes);
+            } break;
+            case AVAudioPCMFormatInt16: {
+                SInt16 *dst = pcm.int16ChannelData[0];
+                size_t dstBytes = (size_t)sampleCount * ch * sizeof(SInt16);
+                size_t copyBytes = MIN(dstBytes, (size_t)src.mDataByteSize);
+                if (dst && src.mData && copyBytes) memcpy(dst, src.mData, copyBytes);
+            } break;
+            case AVAudioPCMFormatInt32: {
+                SInt32 *dst = pcm.int32ChannelData[0];
+                size_t dstBytes = (size_t)sampleCount * ch * sizeof(SInt32);
+                size_t copyBytes = MIN(dstBytes, (size_t)src.mDataByteSize);
+                if (dst && src.mData && copyBytes) memcpy(dst, src.mData, copyBytes);
+            } break;
+            default:
+                pcm = nil; goto cleanup;
         }
     } else {
-        // Non-interleaved format - copy each channel separately
-        for (UInt32 channel = 0; channel < format.channelCount && channel < audioBufferList.mNumberBuffers; channel++) {
-            float* destPtr = pcmBuffer.floatChannelData[channel];
-            if (audioBufferList.mBuffers[channel].mData) {
-                if (audioBufferList.mBuffers[channel].mDataByteSize >= sampleCount * sizeof(float)) {
-                    memcpy(destPtr, audioBufferList.mBuffers[channel].mData, sampleCount * sizeof(float));
+        UInt32 buffersToCopy = MIN(ch, abl->mNumberBuffers);
+        switch (cf) {
+            case AVAudioPCMFormatFloat32: {
+                size_t bytesPerCh = (size_t)sampleCount * sizeof(float);
+                for (UInt32 i = 0; i < buffersToCopy; i++) {
+                    float *dst = pcm.floatChannelData[i];
+                    const AudioBuffer src = abl->mBuffers[i];
+                    size_t copyBytes = MIN(bytesPerCh, (size_t)src.mDataByteSize);
+                    if (dst && src.mData && copyBytes) memcpy(dst, src.mData, copyBytes);
+                }
+            } break;
+            case AVAudioPCMFormatInt16: {
+                size_t bytesPerCh = (size_t)sampleCount * sizeof(SInt16);
+                for (UInt32 i = 0; i < buffersToCopy; i++) {
+                    SInt16 *dst = pcm.int16ChannelData[i];
+                    const AudioBuffer src = abl->mBuffers[i];
+                    size_t copyBytes = MIN(bytesPerCh, (size_t)src.mDataByteSize);
+                    if (dst && src.mData && copyBytes) memcpy(dst, src.mData, copyBytes);
+                }
+            } break;
+            case AVAudioPCMFormatInt32: {
+                size_t bytesPerCh = (size_t)sampleCount * sizeof(SInt32);
+                for (UInt32 i = 0; i < buffersToCopy; i++) {
+                    SInt32 *dst = pcm.int32ChannelData[i];
+                    const AudioBuffer src = abl->mBuffers[i];
+                    size_t copyBytes = MIN(bytesPerCh, (size_t)src.mDataByteSize);
+                    if (dst && src.mData && copyBytes) memcpy(dst, src.mData, copyBytes);
+                }
+            } break;
+            default:
+                pcm = nil; goto cleanup;
+        }
+    }
+
+cleanup:
+    if (retainedBB) CFRelease(retainedBB);
+    if (abl) free(abl);
+    return pcm;
+}
+
+- (nullable CMSampleBufferRef) createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer
+                                  withPresentationTimeStamp:(CMTime)pts
+                                                     format:(AVAudioFormat*)format
+                                           CF_RETURNS_RETAINED
+{
+    CMSampleBufferRef sampleBuffer = NULL;
+    CMBlockBufferRef blockBuffer = NULL;
+    CMAudioFormatDescriptionRef formatDesc = NULL;
+
+    do {
+        if (!pcmBuffer || !format) break;
+        if (pcmBuffer.frameLength == 0) break;
+
+        if (format.streamDescription->mFormatID != kAudioFormatLinearPCM) break;
+
+        AVAudioFormat *srcFmt = pcmBuffer.format;
+        if (srcFmt.channelCount != format.channelCount) break;
+        if (srcFmt.isInterleaved != format.isInterleaved) break;
+        if (srcFmt.commonFormat != format.commonFormat) break;
+
+        UInt32 bytesPerSample = 0;
+        switch (format.commonFormat) {
+            case AVAudioPCMFormatFloat32: bytesPerSample = sizeof(float); break;
+            case AVAudioPCMFormatInt16:   bytesPerSample = sizeof(SInt16); break;
+            case AVAudioPCMFormatInt32:   bytesPerSample = sizeof(SInt32); break;
+            default: break;
+        }
+        if (bytesPerSample == 0) break;
+
+        const AVAudioFrameCount frames = pcmBuffer.frameLength;
+        const UInt32 channels = format.channelCount;
+        const size_t totalBytes = (size_t)frames * bytesPerSample * channels;
+
+        OSStatus st = CMBlockBufferCreateWithMemoryBlock(
+            kCFAllocatorDefault, NULL, totalBytes, kCFAllocatorDefault, NULL, 0, totalBytes,
+            kCMBlockBufferAssureMemoryNowFlag,
+            &blockBuffer);
+        if (st != noErr || !blockBuffer) break;
+
+        char *dstBase = NULL;
+        st = CMBlockBufferGetDataPointer(blockBuffer, 0, NULL, NULL, &dstBase);
+        if (st != noErr || !dstBase) break;
+
+        if (format.isInterleaved) {
+            size_t copyBytes = (size_t)frames * bytesPerSample * channels;
+            switch (format.commonFormat) {
+                case AVAudioPCMFormatFloat32:
+                    if (pcmBuffer.floatChannelData && pcmBuffer.floatChannelData[0]) {
+                        memcpy(dstBase, pcmBuffer.floatChannelData[0], copyBytes);
+                    }
+                    break;
+                case AVAudioPCMFormatInt16:
+                    if (pcmBuffer.int16ChannelData && pcmBuffer.int16ChannelData[0]) {
+                        memcpy(dstBase, pcmBuffer.int16ChannelData[0], copyBytes);
+                    }
+                    break;
+                case AVAudioPCMFormatInt32:
+                    if (pcmBuffer.int32ChannelData && pcmBuffer.int32ChannelData[0]) {
+                        memcpy(dstBase, pcmBuffer.int32ChannelData[0], copyBytes);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            size_t bytesPerChannel = (size_t)frames * bytesPerSample;
+            for (UInt32 ch = 0; ch < channels; ch++) {
+                char *dstCh = dstBase + ch * bytesPerChannel;
+                switch (format.commonFormat) {
+                    case AVAudioPCMFormatFloat32:
+                        if (pcmBuffer.floatChannelData && pcmBuffer.floatChannelData[ch]) {
+                            memcpy(dstCh, pcmBuffer.floatChannelData[ch], bytesPerChannel);
+                        }
+                        break;
+                    case AVAudioPCMFormatInt16:
+                        if (pcmBuffer.int16ChannelData && pcmBuffer.int16ChannelData[ch]) {
+                            memcpy(dstCh, pcmBuffer.int16ChannelData[ch], bytesPerChannel);
+                        }
+                        break;
+                    case AVAudioPCMFormatInt32:
+                        if (pcmBuffer.int32ChannelData && pcmBuffer.int32ChannelData[ch]) {
+                            memcpy(dstCh, pcmBuffer.int32ChannelData[ch], bytesPerChannel);
+                        }
+                        break;
+                    default:
+                        break;
                 }
             }
         }
-    }
-    
-    return pcmBuffer;
-}
 
-- (nullable CMSampleBufferRef) createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer withPresentationTimeStamp:(CMTime)pts format:(AVAudioFormat*)format CF_RETURNS_RETAINED
-{
-    if (!pcmBuffer || !format || pcmBuffer.frameLength == 0) return NULL;
-    
-    AVAudioFrameCount frameCount = pcmBuffer.frameLength;
-    UInt32 channelCount = format.channelCount;
-    UInt32 bytesPerFrame = channelCount * sizeof(float);
-    UInt32 totalBytes = frameCount * bytesPerFrame;
-    
-    // Create audio buffer list
-    AudioBufferList* audioBufferList = malloc(sizeof(AudioBufferList) + (channelCount - 1) * sizeof(AudioBuffer));
-    if (!audioBufferList) return NULL;
-    
-    // Allocate block buffer
-    CMBlockBufferRef blockBuffer = NULL;
-    OSStatus status = CMBlockBufferCreateWithMemoryBlock(
-        kCFAllocatorDefault,
-        NULL,  // Use allocated memory
-        totalBytes,
-        kCFAllocatorDefault,
-        NULL,  // No custom block source
-        0,     // Offset into block
-        totalBytes,
-        0,     // Flags
-        &blockBuffer);
-    
-    if (status != noErr) {
-        free(audioBufferList);
-        return NULL;
-    }
-    
-    // Get pointer to block buffer data
-    char* dataPtr = NULL;
-    status = CMBlockBufferGetDataPointer(blockBuffer, 0, NULL, NULL, &dataPtr);
-    if (status != noErr) {
-        CFRelease(blockBuffer);
-        free(audioBufferList);
-        return NULL;
-    }
-    
-    if (format.isInterleaved) {
-        // Interleaved format
-        audioBufferList->mNumberBuffers = 1;
-        audioBufferList->mBuffers[0].mNumberChannels = channelCount;
-        audioBufferList->mBuffers[0].mDataByteSize = totalBytes;
-        audioBufferList->mBuffers[0].mData = dataPtr;
-        
-        // Copy interleaved data
-        memcpy(dataPtr, pcmBuffer.floatChannelData[0], totalBytes);
-    } else {
-        // Non-interleaved format
-        audioBufferList->mNumberBuffers = channelCount;
-        UInt32 bytesPerChannel = frameCount * sizeof(float);
-        
-        for (UInt32 channel = 0; channel < channelCount; channel++) {
-            audioBufferList->mBuffers[channel].mNumberChannels = 1;
-            audioBufferList->mBuffers[channel].mDataByteSize = bytesPerChannel;
-            audioBufferList->mBuffers[channel].mData = dataPtr + (channel * bytesPerChannel);
-            
-            // Copy channel data
-            memcpy(audioBufferList->mBuffers[channel].mData, pcmBuffer.floatChannelData[channel], bytesPerChannel);
+        AudioStreamBasicDescription asbd = *format.streamDescription;
+        const AudioChannelLayout *layout = NULL;
+        size_t layoutSize = 0;
+        if (format.channelLayout) {
+            layout = format.channelLayout.layout;
+            if (layout) {
+                layoutSize = sizeof(AudioChannelLayout);
+                if (layout->mNumberChannelDescriptions > 1) {
+                    layoutSize += (layout->mNumberChannelDescriptions - 1) * sizeof(AudioChannelDescription);
+                }
+            }
         }
-    }
-    
-    // Create audio format description
-    AudioStreamBasicDescription asbd = *format.streamDescription;
-    CMAudioFormatDescriptionRef formatDesc = NULL;
-    
-    size_t layoutSize = 0;
-    const AudioChannelLayout* layout = NULL;
-    if (format.channelLayout) {
-        layout = format.channelLayout.layout;
-        UInt32 acDescCount = layout->mNumberChannelDescriptions;
-        layoutSize = sizeof(AudioChannelLayout) + (acDescCount > 1 ? (acDescCount - 1) * sizeof(AudioChannelDescription) : 0);
-    }
-    
-    status = CMAudioFormatDescriptionCreate(
-        kCFAllocatorDefault,
-        &asbd,
-        layoutSize,
-        layout,
-        0,
-        NULL,
-        NULL,
-        &formatDesc);
-    
-    if (status != noErr) {
-        CFRelease(blockBuffer);
-        free(audioBufferList);
-        return NULL;
-    }
-    
-    // Create sample buffer
-    CMSampleBufferRef sampleBuffer = NULL;
-    status = CMSampleBufferCreate(
-        kCFAllocatorDefault,
-        blockBuffer,
-        TRUE,  // dataReady
-        NULL,  // makeDataReadyCallback
-        NULL,  // makeDataReadyRefcon
-        formatDesc,
-        frameCount,  // numSamples
-        1,     // numSampleTimingEntries
-        &(CMSampleTimingInfo){.duration = CMTimeMake(1, format.sampleRate), .presentationTimeStamp = pts, .decodeTimeStamp = kCMTimeInvalid},
-        0,     // numSampleSizeEntries
-        NULL,  // sampleSizeArray
-        &sampleBuffer);
-    
-    // Cleanup
-    CFRelease(blockBuffer);
-    CFRelease(formatDesc);
-    free(audioBufferList);
-    
-    return status == noErr ? sampleBuffer : NULL;
+
+        st = CMAudioFormatDescriptionCreate(kCFAllocatorDefault, &asbd, layoutSize, layout, 0, NULL, NULL, &formatDesc);
+        if (st != noErr || !formatDesc) break;
+
+        double sr = asbd.mSampleRate > 0 ? asbd.mSampleRate : 48000.0;
+        int32_t timeScale = (int32_t)llround(sr);
+        if (timeScale <= 0) timeScale = 48000;
+        CMSampleTimingInfo timing = {
+            .duration = CMTimeMake(1, timeScale),
+            .presentationTimeStamp = pts,
+            .decodeTimeStamp = kCMTimeInvalid
+        };
+
+        st = CMSampleBufferCreate(kCFAllocatorDefault,
+                                  blockBuffer,
+                                  true,
+                                  NULL,
+                                  NULL,
+                                  formatDesc,
+                                  frames,
+                                  1,
+                                  &timing,
+                                  0,
+                                  NULL,
+                                  &sampleBuffer);
+        if (st != noErr) {
+            sampleBuffer = NULL;
+        } else {
+            blockBuffer = NULL;
+        }
+    } while (0);
+
+    if (blockBuffer) CFRelease(blockBuffer);
+    if (formatDesc) CFRelease(formatDesc);
+    return sampleBuffer;
 }
 
 /* =================================================================================== */
