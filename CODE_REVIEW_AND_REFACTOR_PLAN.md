@@ -21,7 +21,7 @@ This document provides a comprehensive code review and refactoring plan for the 
 | Goto Statements | 57+ | ⚠️ Cleanup pattern usage |
 | Concurrency Primitives | 49 | ❌ Complex threading |
 | FFmpeg API Calls (MEManager) | 59 | ⚠️ Heavy external dependency |
-| Core Foundation Objects | 151 | ❌ Manual memory management |
+| Core Foundation Objects | 151 | ✅ Correctly managed with ARC |
 | TODO/FIXME Comments | 6 | ✅ Reasonable technical debt |
 
 ## Critical Issues Identified
@@ -30,22 +30,25 @@ This document provides a comprehensive code review and refactoring plan for the 
 **Priority: HIGH**
 
 **Issues:**
-- Extensive use of Core Foundation objects requiring manual memory management
-- Limited ARC adoption (only 49 memory annotations across entire codebase)
 - Complex cleanup patterns using goto statements
-- Potential memory leaks in error paths
+- Some potential memory leaks in error paths (but most CF objects are properly managed)
+- Error handling could be more consistent
 
-**Example Problem Areas:**
+**Note:** Upon review, this project correctly uses ARC (`CLANG_ENABLE_OBJC_ARC = YES`) and properly manages Core Foundation objects with manual CFRetain/CFRelease as required by the CF API. ARC only manages Objective-C objects, not CF objects.
+
+**Example of Correct CF Management:**
 ```objective-c
-// In MEManager.m - Manual CF object management requiring cleanup
-CFMutableDictionaryRef videoSettings = CFDictionaryCreateMutable(NULL, 0, ...);
-// Missing CFRelease in error paths for objects owned by caller
+// In MEUtils.m - Proper CF object management pattern
+CFMutableDictionaryRef dict = CFDictionaryCreateMutable(...);
+// ... use dict ...
+CFDictionaryRef dictOut = CFDictionaryCreateCopy(kCFAllocatorDefault, dict);
+CFRelease(dict);  // Properly release temporary object
+return dictOut;   // Return owned object to caller
 ```
 
 **Recommended Solutions:**
-- Migrate to ARC where possible
-- Implement RAII-style wrappers for Core Foundation objects
-- Create smart pointer-like classes for automatic cleanup
+- Review error paths for any missing CFRelease calls
+- Standardize error handling patterns
 - Add comprehensive memory leak testing
 
 ### 2. **CRITICAL - Concurrency and Threading Issues**
@@ -233,10 +236,10 @@ float initialDelayInSec = 1.0; // Or 10.0 in debug builds
 
 ## Refactoring Timeline and Priorities
 
-### Phase 1: Critical Fixes (1-2 weeks)
-1. Memory management audit and fixes
+### Phase 1: Code Quality Review (1-2 weeks)
+1. Error handling pattern review and potential CF object leak analysis
 2. Concurrency simplification and race condition fixes
-3. Error handling standardization
+3. Documentation improvements for existing memory management patterns
 
 ### Phase 2: Architectural Improvements (2-3 weeks)
 1. Class decomposition (MEManager, METranscoder)

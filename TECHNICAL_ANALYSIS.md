@@ -6,27 +6,39 @@ This document provides specific examples of code issues found in movencoder2 and
 
 ## 1. Memory Management Issues
 
-### Issue 1.1: Core Foundation Object Leaks
+### Issue 1.1: Potential CF Object Leaks in Error Paths
 
-**Location**: Various places in `MEManager.m` and `METranscoder.m` where CF objects are created
+**Location**: Error handling paths in `MEManager.m` and `METranscoder.m`
 
-**Problem Code**:
+**Clarification**: This project correctly uses ARC (`CLANG_ENABLE_OBJC_ARC = YES`) and properly manages Core Foundation objects. ARC only manages Objective-C objects, not CF objects, so manual CFRetain/CFRelease is required and correctly implemented in most cases.
+
+**Example of Correct CF Management**:
 ```objective-c
-// Example of actual memory leak in MEManager.m
-CFMutableDictionaryRef videoSettings = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-// ... use videoSettings ...
-if (error_condition) {
-    return; // LEAK: videoSettings not released
-}
-// videoSettings properly released only in success path
-CFRelease(videoSettings);
+// From MEUtils.m - Proper pattern
+CFMutableDictionaryRef dict = CFDictionaryCreateMutable(...);
+// ... use dict ...
+CFDictionaryRef dictOut = CFDictionaryCreateCopy(kCFAllocatorDefault, dict);
+CFRelease(dict);  // Properly release temporary object
+return dictOut;   // Return owned object to caller
 ```
 
-**Note**: CMSampleBufferGetSampleAttachmentsArray() is correctly used in the codebase - the caller does not own the returned array per Apple's documentation, so no CFRelease is needed.
+**Potential Issues to Review**:
+```objective-c
+// Check error paths for any missing CFRelease calls
+CFMutableDictionaryRef settings = CFDictionaryCreateMutable(...);
+if (error_condition) {
+    // Ensure settings is released before return
+    CFRelease(settings);
+    return; 
+}
+CFRelease(settings);
+```
+
+**Note**: CMSampleBufferGetSampleAttachmentsArray() is correctly used - the caller does not own the returned array per Apple's documentation.
 
 **Proposed Solution**:
 ```objective-c
-// RAII-style wrapper for CF objects that ARE owned by caller
+// Use consistent error handling patterns
 @interface MECFObjectHolder : NSObject
 @property (readonly) CFTypeRef object;
 - (instancetype)initWithObject:(CFTypeRef)object;
@@ -38,11 +50,14 @@ CFRelease(videoSettings);
 }
 @end
 
-// Usage example:
-MECFObjectHolder *settingsHolder = [[MECFObjectHolder alloc] initWithObject:videoSettings];
-    if (!dict) {
-        cleanup();
-        return NULL;
+// Alternative: Ensure proper cleanup in error paths
+CFMutableDictionaryRef settings = CFDictionaryCreateMutable(...);
+@try {
+    // ... use settings ...
+} @finally {
+    if (settings) CFRelease(settings);
+}
+```
     }
     
     // ... processing ...
@@ -470,7 +485,7 @@ NSNumber* parseInteger(NSString* val) {
 For each refactoring task:
 
 1. **Memory Management**
-   - [ ] All Core Foundation objects properly released
+   - [ ] Review error paths for any missing CFRelease calls (CF objects are generally well-managed)
    - [ ] Autorelease pools in appropriate locations
    - [ ] No retain cycles in block usage
 
