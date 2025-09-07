@@ -14,7 +14,6 @@
 		1654A0D926DC768F00E7DBB8 /* libswscale.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CF26DC768F00E7DBB8 /* libswscale.dylib */; };
 		1654A0DA26DC768F00E7DBB8 /* libx264.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D026DC768F00E7DBB8 /* libx264.dylib */; };
 		1654A0DB26DC768F00E7DBB8 /* libavfilter.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D126DC768F00E7DBB8 /* libavfilter.dylib */; };
-		1654A0DC26DC768F00E7DBB8 /* libpostproc.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D226DC768F00E7DBB8 /* libpostproc.dylib */; };
 		1654A0DD26DC768F00E7DBB8 /* libavformat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D326DC768F00E7DBB8 /* libavformat.dylib */; };
 		1654A0DE26DC768F00E7DBB8 /* libavdevice.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D426DC768F00E7DBB8 /* libavdevice.dylib */; };
 		1654A0DF26DC768F00E7DBB8 /* libavutil.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D526DC768F00E7DBB8 /* libavutil.dylib */; };
@@ -57,7 +56,6 @@
 		1654A0CF26DC768F00E7DBB8 /* libswscale.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libswscale.dylib; path = ../../../../../usr/local/lib/libswscale.dylib; sourceTree = "<group>"; };
 		1654A0D026DC768F00E7DBB8 /* libx264.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libx264.dylib; path = ../../../../../usr/local/lib/libx264.dylib; sourceTree = "<group>"; };
 		1654A0D126DC768F00E7DBB8 /* libavfilter.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavfilter.dylib; path = ../../../../../usr/local/lib/libavfilter.dylib; sourceTree = "<group>"; };
-		1654A0D226DC768F00E7DBB8 /* libpostproc.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpostproc.dylib; path = ../../../../../usr/local/lib/libpostproc.dylib; sourceTree = "<group>"; };
 		1654A0D326DC768F00E7DBB8 /* libavformat.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavformat.dylib; path = ../../../../../usr/local/lib/libavformat.dylib; sourceTree = "<group>"; };
 		1654A0D426DC768F00E7DBB8 /* libavdevice.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavdevice.dylib; path = ../../../../../usr/local/lib/libavdevice.dylib; sourceTree = "<group>"; };
 		1654A0D526DC768F00E7DBB8 /* libavutil.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavutil.dylib; path = ../../../../../usr/local/lib/libavutil.dylib; sourceTree = "<group>"; };
@@ -102,7 +100,6 @@
 				1654A0CD26DC75D500E7DBB8 /* libbz2.dylib in Frameworks */,
 				1654A0DA26DC768F00E7DBB8 /* libx264.dylib in Frameworks */,
 				1654A0E226DC769000E7DBB8 /* libavcodec.dylib in Frameworks */,
-				1654A0DC26DC768F00E7DBB8 /* libpostproc.dylib in Frameworks */,
 				1654A0D926DC768F00E7DBB8 /* libswscale.dylib in Frameworks */,
 				1654A0E126DC769000E7DBB8 /* libx265.dylib in Frameworks */,
 				1654A0DB26DC768F00E7DBB8 /* libavfilter.dylib in Frameworks */,
@@ -135,7 +132,6 @@
 				1654A0D126DC768F00E7DBB8 /* libavfilter.dylib */,
 				1654A0D326DC768F00E7DBB8 /* libavformat.dylib */,
 				1654A0D526DC768F00E7DBB8 /* libavutil.dylib */,
-				1654A0D226DC768F00E7DBB8 /* libpostproc.dylib */,
 				1654A0D626DC768F00E7DBB8 /* libswresample.dylib */,
 				1654A0CF26DC768F00E7DBB8 /* libswscale.dylib */,
 				1654A0D026DC768F00E7DBB8 /* libx264.dylib */,
