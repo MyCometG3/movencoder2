@@ -18,14 +18,20 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 - Keep field information. Field count/Filed mode can be preserved when transcode.
 - Keep source video media timescale. No change.
 
+###### Audio transcode support:
+- Support AAC transcode with target bit rate.
+- BitDepth conversion. i.e. 32bit to 16 bit.
+- Multi Channel. Preserve original channel layout by default.
+- AudioChannelLayout conversion. i.e. 5.1ch to Stereo.
+
 #### Restriction:
 - Video: 8bit depth only. No 10/16 bit support.
 - Video: Decoded format is 2vuy/kCVPixelFormatType_422YpCbCr8 = AV_PIX_FMT_UYVY422
 
 #### Development environment
 
-macOS 14.1 Sonoma
-Xcode 15.0.1
+macOS 15.6.1 Sequoia
+Xcode 16.4
 
 #### License:
 - GPL v2
@@ -36,6 +42,7 @@ Xcode 15.0.1
     macOS 12.xx (Monterey)
     macOS 13.xx (Ventura)
     macOS 14.xx (Sonoma)
+    macOS 15.xx (Sequoia)
 
 #### Required libraries:
     Please verify if required dylib (or symlink) are available.
@@ -50,7 +57,6 @@ Xcode 15.0.1
     /usr/local/lib/libavfilter.dylib
     /usr/local/lib/libavformat.dylib
     /usr/local/lib/libavutil.dylib
-    /usr/local/lib/libpostproc.dylib
     /usr/local/lib/libswresample.dylib
     /usr/local/lib/libswscale.dylib
     /usr/local/lib/libx264.dylib
@@ -166,6 +172,8 @@ Using libx264 with yuv420, and abr mode; 720x480 16:9 with c.a. 30fps x264 Main 
         audio bit rate (i.e. 96k, 128k, 192k, ...)
     depth=numeric
         LPCM bit depth (8, 16, 32)
+    layout=string
+        XXX of kAudioChannelLayoutTag_XXX (AAC compatible layout name, e.g. Stereo, AAC_5_1, or integer like 8126470)
 
 #### Arguments (-meve)
     These arguments are for libavcodec based video encoder.
