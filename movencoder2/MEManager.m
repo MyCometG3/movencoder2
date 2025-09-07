@@ -704,9 +704,9 @@ end:
             goto end;
         }
         
-        // For FFmpeg 8.0, use av_opt_set_int_list instead of av_opt_set_bin
-        // ret = av_opt_set_int_list(buffersink_ctx, "pix_fmts", pix_fmt_list,
-        //                           AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+        // Old approach (deprecated in FFmpeg 8.0+): av_opt_set_int_list was used to set pixel formats.
+        // This API is now deprecated and may cause issues with newer FFmpeg versions.
+        // The current recommended approach is to use av_opt_set_bin (see below).
         size_t pix_fmts_length = 0;
         for (size_t i = 0; pix_fmt_list[i] != AV_PIX_FMT_NONE; i++) {
             pix_fmts_length++;
