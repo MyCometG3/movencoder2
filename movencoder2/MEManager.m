@@ -1174,6 +1174,9 @@ error:
 }
 
 static void enqueueToME(MEManager *self, int *ret) {
+    if (self.failed) goto error;
+    if (self->input == NULL) goto error;
+    
     BOOL inputFrameIsReady = (self->input->format != AV_PIX_FMT_NONE);
     int64_t newPTS = self->input->pts;
     if (useVideoFilter(self)) {
@@ -1300,28 +1303,30 @@ error:
     
     {
         __block int ret = 0;
+        useconds_t waitInUSec = 100 * 1000;
+        int64_t gapLimitInSec = self->time_base * 10;
         do {
             @autoreleasepool {
-                do {
-                    int64_t inPTS = self.lastEnqueuedPTS;
-                    int64_t outPTS = self.lastDequeuedPTS;
-                    if (labs(inPTS - outPTS) < 10 * self->time_base) {
-                        break;
-                    } else {
-                        av_usleep(50*1000);
-                        if (self.failed) goto error;
-                    }
-                } while (true); // TODO: check loop counter
+                // Wait until the input/output timestamp gap is less than 10 seconds.
+                while (llabs(self.lastEnqueuedPTS - self.lastDequeuedPTS) >= gapLimitInSec) {
+                    av_usleep(waitInUSec);
+                    if (self.failed) return NO;
+                }
+                
+                // Feed a new frame into the filter/encoder context
                 [self output_sync:^{
                     enqueueToME(self, &ret);
                 }];
-                if (ret == AVERROR(EAGAIN)) {
-                    av_usleep(50*1000);
-                    ret = 0;
+                
+                // Abort on unexpected errors (other than EAGAIN)
+                if (self.failed || (ret < 0 && ret != AVERROR(EAGAIN))) {
+                    NSLog(@"[MEManager] ERROR: Failed to enqueue the input frame (ret=%d)", ret);
+                    return NO;
                 }
-                if (self.failed || ret < 0) {
-                    NSLog(@"[MEManager] ERROR: Failed to enqueue the input frame");
-                    goto error;
+                
+                // Retry enqueue if EAGAIN is returned
+                if (ret == AVERROR(EAGAIN)) {
+                    av_usleep(waitInUSec); // back off before retry
                 }
             }
         } while (ret == AVERROR(EAGAIN));
