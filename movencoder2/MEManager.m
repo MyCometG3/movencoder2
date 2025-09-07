@@ -705,8 +705,15 @@ end:
             goto end;
         }
         
-        ret = av_opt_set_int_list(buffersink_ctx, "pix_fmts", pix_fmt_list,
-                                  AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+        // Set pixel formats using av_opt_set_bin instead of deprecated av_opt_set_int_list
+        size_t pix_fmt_size = 0;
+        for (int i = 0; pix_fmt_list[i] != AV_PIX_FMT_NONE; i++) {
+            pix_fmt_size++;
+        }
+        pix_fmt_size++; // Include the AV_PIX_FMT_NONE terminator
+        
+        ret = av_opt_set_bin(buffersink_ctx, "pix_fmts", (uint8_t*)pix_fmt_list,
+                             pix_fmt_size * sizeof(enum AVPixelFormat), AV_OPT_SEARCH_CHILDREN);
         if (ret < 0) {
             NSLog(@"[MEManager] ERROR: Cannot set output pixel format");
             goto end;
