@@ -698,24 +698,32 @@ end:
         
         /* buffer video sink: to terminate the filter chain. */
         const AVFilter *buffersink = avfilter_get_by_name("buffersink");
-        ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
-                                           NULL, NULL, filter_graph);
-        if (ret < 0) {
+        buffersink_ctx = avfilter_graph_alloc_filter(filter_graph, buffersink, "out");
+        if (!buffersink_ctx) {
             NSLog(@"[MEManager] ERROR: Cannot create buffer sink");
             goto end;
         }
         
-        // Set pixel formats using av_opt_set_bin instead of deprecated av_opt_set_int_list
-        size_t pix_fmt_size = 0;
-        for (int i = 0; pix_fmt_list[i] != AV_PIX_FMT_NONE; i++) {
-            pix_fmt_size++;
+        // For FFmpeg 8.0, use av_opt_set_int_list instead of av_opt_set_bin
+        // ret = av_opt_set_int_list(buffersink_ctx, "pix_fmts", pix_fmt_list,
+        //                           AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+        size_t pix_fmts_length = 0;
+        for (size_t i = 0; pix_fmt_list[i] != AV_PIX_FMT_NONE; i++) {
+            pix_fmts_length++;
         }
-        pix_fmt_size++; // Include the AV_PIX_FMT_NONE terminator
-        
-        ret = av_opt_set_bin(buffersink_ctx, "pix_fmts", (uint8_t*)pix_fmt_list,
-                             pix_fmt_size * sizeof(enum AVPixelFormat), AV_OPT_SEARCH_CHILDREN);
+        size_t size_bytes = pix_fmts_length * sizeof(enum AVPixelFormat);
+        ret = av_opt_set_bin(buffersink_ctx, "pix_fmts",
+                             (uint8_t *)pix_fmt_list,
+                             (int)size_bytes,
+                             AV_OPT_SEARCH_CHILDREN);
         if (ret < 0) {
             NSLog(@"[MEManager] ERROR: Cannot set output pixel format");
+            goto end;
+        }
+        
+        ret = avfilter_init_str(buffersink_ctx, NULL);
+        if (ret < 0) {
+            NSLog(@"[MEManager] ERROR: Cannot initialize buffer sink");
             goto end;
         }
         
