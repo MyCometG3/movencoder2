@@ -196,7 +196,7 @@ error:
  #  encode=_; transcode audio using AVFoundation (yes, no)
  #   codec=_; fourcc of audio codec (lcpm, aac, alac, ...)
  #  layout=_; Audio channel layout tag (integer or AAC layout name, e.g. Stereo, AAC_5_1, 100)
- #  volume=_; gain/volume control in dB (e.g. +3.0, -1.5, 0.0, range: -6.0 to +6.0)
+ #  volume=_; gain/volume control in dB (e.g. +3.0, -1.5, 0.0, range: -10.0 to +10.0)
  */
 static BOOL parseOptAE(NSString* param, METranscoder* coder) {
     NSArray* optArray = [param componentsSeparatedByString:separator];
@@ -234,14 +234,14 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
             if (nil == layoutTagNum) goto error;
             coder.param[kAudioChannelLayoutTagKey] = layoutTagNum;
         }
-        // Parse volume/gain in dB (range: -6.0 to +6.0)
+        // Parse volume/gain in dB (range: -10.0 to +10.0)
         if ([key isEqualToString:@"volume"]) {
             if (nil == val) goto error;
             NSNumber* volumeNum = parseDouble(val);
             if (nil == volumeNum) goto error;
             double volumeDb = volumeNum.doubleValue;
-            if (volumeDb < -6.0 || volumeDb > 6.0) {
-                NSLog(@"ERROR: volume parameter out of range (-6.0 to +6.0 dB): %f", volumeDb);
+            if (volumeDb < -10.0 || volumeDb > 10.0) {
+                NSLog(@"ERROR: volume parameter out of range (-10.0 to +10.0 dB): %f", volumeDb);
                 goto error;
             }
             coder.param[kAudioVolumeKey] = volumeNum;

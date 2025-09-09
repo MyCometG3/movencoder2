@@ -85,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Volume/gain adjustment in dB. Set to 0.0 for no adjustment.
- Valid range: -6.0 to +6.0 dB
+ Valid range: -10.0 to +10.0 dB
  */
 @property (nonatomic) double volumeDb;
 

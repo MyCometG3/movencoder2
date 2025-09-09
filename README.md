@@ -188,7 +188,7 @@ Or to reduce audio by 2dB:
     layout=string
         XXX of kAudioChannelLayoutTag_XXX (AAC compatible layout name, e.g. Stereo, AAC_5_1, or integer like 8126470)
     volume=numeric
-        gain/volume control in dB (e.g. +3.0, -1.5, 0.0, range: -6.0 to +6.0)
+        gain/volume control in dB (e.g. +3.0, -1.5, 0.0, range: -10.0 to +10.0)
 
 #### Arguments (-meve)
     These arguments are for libavcodec based video encoder.
