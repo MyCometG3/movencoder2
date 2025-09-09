@@ -54,6 +54,7 @@ extern NSString* const kAudioEncodeKey;     // NSNumber of BOOL
 extern NSString* const kVideoCodecKey;      // NSString representation of OSType
 extern NSString* const kAudioCodecKey;      // NSString representation of OSType
 extern NSString* const kAudioChannelLayoutTagKey; // NSNumber of uint32_t
+extern NSString* const kAudioVolumeKey;        // NSNumber of float (dB)
 
 typedef void (^progress_block_t)(NSDictionary* _Nonnull);
 

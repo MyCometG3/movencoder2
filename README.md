@@ -115,6 +115,19 @@ Using libx264 with yuv420, and abr mode; 720x480 16:9 with c.a. 30fps x264 Main 
             -ae "encode=y;codec=aac;bitrate=128k" \
             -in /Users/foo/Movies/SD16x9.mov -out /Users/foo/Movies/out.mov
 
+#### Command line sample 5
+Using volume/gain control to boost audio by 3dB:
+
+        $ movencoder2 -verbose \
+            -ae "encode=y;codec=aac;bitrate=192k;volume=+3.0" \
+            -in /Users/foo/Movies/quiet_audio.mov -out /Users/foo/Movies/louder_out.mov
+
+Or to reduce audio by 2dB:
+
+        $ movencoder2 -verbose \
+            -ae "encode=y;codec=aac;bitrate=192k;volume=-2.0" \
+            -in /Users/foo/Movies/loud_audio.mov -out /Users/foo/Movies/quieter_out.mov
+
 ---
 
 #### Generic Options
@@ -174,6 +187,8 @@ Using libx264 with yuv420, and abr mode; 720x480 16:9 with c.a. 30fps x264 Main 
         LPCM bit depth (8, 16, 32)
     layout=string
         XXX of kAudioChannelLayoutTag_XXX (AAC compatible layout name, e.g. Stereo, AAC_5_1, or integer like 8126470)
+    volume=numeric
+        gain/volume control in dB (e.g. +3.0, -1.5, 0.0, range: -6.0 to +6.0)
 
 #### Arguments (-meve)
     These arguments are for libavcodec based video encoder.
