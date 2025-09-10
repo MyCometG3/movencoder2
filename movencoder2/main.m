@@ -37,9 +37,9 @@
 NS_ASSUME_NONNULL_BEGIN
 
 #if 1
-float initialDelayInSec = 1.0;
+float initialDelayInSec = 0.1;
 #else
-float initialDelayInSec = 10.0;
+float initialDelayInSec = 5.0;
 #endif
 
 /* =================================================================================== */
