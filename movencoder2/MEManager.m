@@ -70,6 +70,12 @@ NS_ASSUME_NONNULL_BEGIN
     
     void* inputQueueKey;
     void* outputQueueKey;
+    
+    // Synchronization semaphores
+    dispatch_semaphore_t timestampGapSemaphore;
+    dispatch_semaphore_t filterReadySemaphore;
+    dispatch_semaphore_t encoderReadySemaphore;
+    dispatch_semaphore_t eagainDelaySemaphore;
 }
 - (BOOL)prepareVideoEncoderWith:(CMSampleBufferRef _Nullable)sb;
 - (BOOL)prepareVideoFilterWith:(CMSampleBufferRef)sb;
@@ -153,6 +159,12 @@ NS_ASSUME_NONNULL_BEGIN
         pxl_fmt_encode = AVFPixelFormatSpec420P;
         
         log_level = AV_LOG_INFO;
+        
+        // Initialize synchronization semaphores
+        timestampGapSemaphore = dispatch_semaphore_create(0);
+        filterReadySemaphore = dispatch_semaphore_create(0);
+        encoderReadySemaphore = dispatch_semaphore_create(0);
+        eagainDelaySemaphore = dispatch_semaphore_create(0);
     }
     return self;
 }
@@ -176,6 +188,20 @@ NS_ASSUME_NONNULL_BEGIN
     av_frame_free(&input);
     av_frame_free(&filtered);
     av_packet_free(&encoded);
+    
+    // Clean up semaphores
+    if (timestampGapSemaphore) {
+        timestampGapSemaphore = nil;
+    }
+    if (filterReadySemaphore) {
+        filterReadySemaphore = nil;
+    }
+    if (encoderReadySemaphore) {
+        encoderReadySemaphore = nil;
+    }
+    if (eagainDelaySemaphore) {
+        eagainDelaySemaphore = nil;
+    }
 }
 
 /* =================================================================================== */
@@ -604,6 +630,9 @@ static inline BOOL uselibx265(MEManager *obj) {
 
     self.videoEncoderIsReady = TRUE;
     
+    // Signal that encoder is ready
+    dispatch_semaphore_signal(encoderReadySemaphore);
+    
 end:
     av_dict_free(&opts);
     
@@ -769,6 +798,9 @@ end:
         }
     }
     self.videoFilterIsReady = TRUE;
+    
+    // Signal that filter is ready
+    dispatch_semaphore_signal(filterReadySemaphore);
     
     if (self.verbose) {
         char* dump = avfilter_graph_dump(filter_graph, NULL);
@@ -1198,6 +1230,8 @@ static void enqueueToME(MEManager *self, int *ret) {
             if (inputFrameIsReady) {
                 av_frame_unref(self->input);
                 self.lastEnqueuedPTS = newPTS;
+                // Signal timestamp gap semaphore when PTS is updated
+                dispatch_semaphore_signal(self->timestampGapSemaphore);
 #if 0
                 float pts0 = (float)self->_lastEnqueuedPTS/self->time_base;
                 float pts1 = (float)self->_lastDequeuedPTS/self->time_base;
@@ -1309,7 +1343,9 @@ error:
             @autoreleasepool {
                 // Wait until the input/output timestamp gap is less than 10 seconds.
                 while (llabs(self.lastEnqueuedPTS - self.lastDequeuedPTS) >= gapLimitInSec) {
-                    av_usleep(waitInUSec);
+                    // Use semaphore wait instead of busy loop with usleep
+                    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, waitInUSec * 1000ULL);
+                    dispatch_semaphore_wait(timestampGapSemaphore, timeout);
                     if (self.failed) return NO;
                 }
                 
@@ -1326,7 +1362,9 @@ error:
                 
                 // Retry enqueue if EAGAIN is returned
                 if (ret == AVERROR(EAGAIN)) {
-                    av_usleep(waitInUSec); // back off before retry
+                    // Use semaphore wait instead of av_usleep for backoff
+                    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, waitInUSec * 1000ULL);
+                    dispatch_semaphore_wait(eagainDelaySemaphore, timeout);
                 }
             }
         } while (ret == AVERROR(EAGAIN));
@@ -1437,6 +1475,8 @@ static void pullFilteredFrame(MEManager *self, int *ret) {
         int64_t newpts = av_rescale_q(self->filtered->pts, bq, cq);
         self->filtered->pts = newpts;
         self.lastDequeuedPTS = newpts;
+        // Signal timestamp gap semaphore when PTS is updated
+        dispatch_semaphore_signal(self->timestampGapSemaphore);
         return;
     } else if (*ret == AVERROR(EAGAIN)) {                   // Needs more frame to graph
         return;
@@ -1546,13 +1586,18 @@ static BOOL initialQueueing(MEManager *self) {
         // wait till ready
         double delayLimitInSec = MAX(self.initialDelayInSec, 30.0);
         CFAbsoluteTime limit = CFAbsoluteTimeGetCurrent() + delayLimitInSec;
-        av_usleep(self.initialDelayInSec*1000*1000);
+        
+        // Use semaphore wait instead of av_usleep for initial delay
+        dispatch_time_t initialTimeout = dispatch_time(DISPATCH_TIME_NOW, self.initialDelayInSec * 1000000000ULL);
+        dispatch_semaphore_wait(eagainDelaySemaphore, initialTimeout);
         
         if (useVideoFilter(self)) {
             do {
                 if (self.failed) break;
                 if (self.videoFilterIsReady) break;
-                av_usleep(100*1000);
+                // Use semaphore wait instead of av_usleep for filter ready check
+                dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 100 * 1000000ULL);
+                dispatch_semaphore_wait(filterReadySemaphore, timeout);
             } while (CFAbsoluteTimeGetCurrent() < limit);
             if (!self.videoFilterIsReady) {
                 NSLog(@"[MEManager] ERROR: Filter graph is not ready.");
@@ -1562,7 +1607,9 @@ static BOOL initialQueueing(MEManager *self) {
             do {
                 if (self.failed) break;
                 if (self.videoEncoderIsReady) break;
-                av_usleep(100*1000);
+                // Use semaphore wait instead of av_usleep for encoder ready check
+                dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 100 * 1000000ULL);
+                dispatch_semaphore_wait(encoderReadySemaphore, timeout);
             } while (CFAbsoluteTimeGetCurrent() < limit);
             if (!self.videoEncoderIsReady) {
                 NSLog(@"[MEManager] ERROR: Encoder is not ready.");
@@ -1657,7 +1704,8 @@ error:
                         }
                     }
                     if (countEAGAIN == 2) {                     // Try next ququeing after delay
-                        av_usleep(50*1000);
+                        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * 1000000ULL);
+                        dispatch_semaphore_wait(eagainDelaySemaphore, timeout);
                         if (self.failed) goto error;
                     }
                 }
@@ -1686,7 +1734,8 @@ error:
                         }
                     }
                     if (countEAGAIN == 1) {                     // Try next ququeing after delay
-                        av_usleep(50*1000);
+                        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * 1000000ULL);
+                        dispatch_semaphore_wait(eagainDelaySemaphore, timeout);
                         if (self.failed) goto error;
                     }
                 }
@@ -1733,7 +1782,8 @@ error:
                         }
                     }
                     if (countEAGAIN == 1) {                     // Try next ququeing after delay
-                        av_usleep(50*1000);
+                        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * 1000000ULL);
+                        dispatch_semaphore_wait(eagainDelaySemaphore, timeout);
                         if (self.failed) {
                             goto error;
                         }
