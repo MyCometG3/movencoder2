@@ -53,6 +53,11 @@ NS_ASSUME_NONNULL_BEGIN
     AVAudioConverter* _audioConverter;
 }
 
+/**
+ * Apply volume/gain to an AVAudioPCMBuffer based on volumeDb property
+ */
+- (void)applyVolumeToBuffer:(AVAudioPCMBuffer*)buffer;
+
 @property (assign) BOOL failed;                       // atomic override
 @property (assign) AVAssetWriterStatus writerStatus;  // atomic override
 @property (assign) AVAssetReaderStatus readerStatus;  // atomic override
@@ -501,6 +506,9 @@ cleanup:
                                                                             withInputFromBlock:inputBlock];
                 
                 if (convertStatus == AVAudioConverterOutputStatus_HaveData) {
+                    // Apply volume/gain adjustment if specified
+                    [self applyVolumeToBuffer:outputPCMBuffer];
+                    
                     // Rebuild CMSampleBuffer
                     CMTime pts = CMSampleBufferGetPresentationTimeStamp(inputSampleBuffer);
                     CMSampleBufferRef outputSampleBuffer = [self createSampleBufferFromPCMBuffer:outputPCMBuffer 
@@ -568,6 +576,118 @@ cleanup:
     }
     
     return result;
+}
+
+/* =================================================================================== */
+// MARK: - Volume/Gain Control
+/* =================================================================================== */
+
+- (void)applyVolumeToBuffer:(AVAudioPCMBuffer*)buffer
+{
+    if (!buffer || self.volumeDb == 0.0) {
+        return; // No volume adjustment needed
+    }
+    
+    // Convert dB to linear multiplier: multiplier = 10^(dB/20)
+    double volumeMultiplier = pow(10.0, self.volumeDb / 20.0);
+    
+    AVAudioFrameCount frameCount = buffer.frameLength;
+    UInt32 channelCount = buffer.format.channelCount;
+    
+    switch (buffer.format.commonFormat) {
+        case AVAudioPCMFormatFloat32: {
+            if (buffer.format.isInterleaved) {
+                // Interleaved format
+                float* data = buffer.floatChannelData[0];
+                for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
+                    for (UInt32 ch = 0; ch < channelCount; ch++) {
+                        data[frame * channelCount + ch] *= volumeMultiplier;
+                    }
+                }
+            } else {
+                // Non-interleaved format
+                for (UInt32 ch = 0; ch < channelCount; ch++) {
+                    float* channelData = buffer.floatChannelData[ch];
+                    if (channelData) {
+                        for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
+                            channelData[frame] *= volumeMultiplier;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        case AVAudioPCMFormatInt16: {
+            if (buffer.format.isInterleaved) {
+                // Interleaved format
+                SInt16* data = buffer.int16ChannelData[0];
+                for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
+                    for (UInt32 ch = 0; ch < channelCount; ch++) {
+                        double sample = data[frame * channelCount + ch];
+                        sample *= volumeMultiplier;
+                        // Clamp to prevent overflow
+                        if (sample > 32767.0) sample = 32767.0;
+                        if (sample < -32768.0) sample = -32768.0;
+                        data[frame * channelCount + ch] = (SInt16)sample;
+                    }
+                }
+            } else {
+                // Non-interleaved format
+                for (UInt32 ch = 0; ch < channelCount; ch++) {
+                    SInt16* channelData = buffer.int16ChannelData[ch];
+                    if (channelData) {
+                        for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
+                            double sample = channelData[frame];
+                            sample *= volumeMultiplier;
+                            // Clamp to prevent overflow
+                            if (sample > 32767.0) sample = 32767.0;
+                            if (sample < -32768.0) sample = -32768.0;
+                            channelData[frame] = (SInt16)sample;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        case AVAudioPCMFormatInt32: {
+            if (buffer.format.isInterleaved) {
+                // Interleaved format
+                SInt32* data = buffer.int32ChannelData[0];
+                for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
+                    for (UInt32 ch = 0; ch < channelCount; ch++) {
+                        double sample = data[frame * channelCount + ch];
+                        sample *= volumeMultiplier;
+                        // Clamp to prevent overflow
+                        if (sample > 2147483647.0) sample = 2147483647.0;
+                        if (sample < -2147483648.0) sample = -2147483648.0;
+                        data[frame * channelCount + ch] = (SInt32)sample;
+                    }
+                }
+            } else {
+                // Non-interleaved format
+                for (UInt32 ch = 0; ch < channelCount; ch++) {
+                    SInt32* channelData = buffer.int32ChannelData[ch];
+                    if (channelData) {
+                        for (AVAudioFrameCount frame = 0; frame < frameCount; frame++) {
+                            double sample = channelData[frame];
+                            sample *= volumeMultiplier;
+                            // Clamp to prevent overflow
+                            if (sample > 2147483647.0) sample = 2147483647.0;
+                            if (sample < -2147483648.0) sample = -2147483648.0;
+                            channelData[frame] = (SInt32)sample;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        default:
+            // Unsupported format, log warning
+            if (self.verbose) {
+                NSLog(@"[MEAudioConverter] Volume adjustment not supported for format: %d", (int)buffer.format.commonFormat);
+            }
+            break;
+    }
 }
 
 @end

@@ -196,6 +196,7 @@ error:
  #  encode=_; transcode audio using AVFoundation (yes, no)
  #   codec=_; fourcc of audio codec (lcpm, aac, alac, ...)
  #  layout=_; Audio channel layout tag (integer or AAC layout name, e.g. Stereo, AAC_5_1, 100)
+ #  volume=_; gain/volume control in dB (e.g. +3.0, -1.5, 0.0, range: -10.0 to +10.0)
  */
 static BOOL parseOptAE(NSString* param, METranscoder* coder) {
     NSArray* optArray = [param componentsSeparatedByString:separator];
@@ -232,6 +233,18 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
             NSNumber* layoutTagNum = parseLayoutTag(val);
             if (nil == layoutTagNum) goto error;
             coder.param[kAudioChannelLayoutTagKey] = layoutTagNum;
+        }
+        // Parse volume/gain in dB (range: -10.0 to +10.0)
+        if ([key isEqualToString:@"volume"]) {
+            if (nil == val) goto error;
+            NSNumber* volumeNum = parseDouble(val);
+            if (nil == volumeNum) goto error;
+            double volumeDb = volumeNum.doubleValue;
+            if (volumeDb < -10.0 || volumeDb > 10.0) {
+                NSLog(@"ERROR: volume parameter out of range (-10.0 to +10.0 dB): %f", volumeDb);
+                goto error;
+            }
+            coder.param[kAudioVolumeKey] = volumeNum;
         }
     }
     
@@ -432,11 +445,21 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
             goto error;
         }
         
-        // Register MEAudioConverter if channel layout is specified
-        if (transcoder.param[kAudioChannelLayoutTagKey]) {
+        // Register MEAudioConverter if channel layout or volume is specified
+        if (transcoder.param[kAudioChannelLayoutTagKey] || transcoder.param[kAudioVolumeKey]) {
             for (AVAssetTrack* track in audioTracks) {
                 CMPersistentTrackID trackID = track.trackID;
                 MEAudioConverter* audioConverter = [MEAudioConverter new];
+                
+                // Configure volume if specified
+                if (transcoder.param[kAudioVolumeKey]) {
+                    NSNumber* volumeNum = transcoder.param[kAudioVolumeKey];
+                    audioConverter.volumeDb = volumeNum.doubleValue;
+                    if (verbose) {
+                        NSLog(@"Setting audio volume to %.1f dB for track %d", audioConverter.volumeDb, trackID);
+                    }
+                }
+                
                 [transcoder registerMEAudioConverter:audioConverter for:trackID];
             }
         }
