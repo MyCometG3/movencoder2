@@ -1588,8 +1588,8 @@ static BOOL initialQueueing(MEManager *self) {
         CFAbsoluteTime limit = CFAbsoluteTimeGetCurrent() + delayLimitInSec;
         
         // Use semaphore wait instead of av_usleep for initial delay
-        dispatch_time_t initialTimeout = dispatch_time(DISPATCH_TIME_NOW, self.initialDelayInSec * NSEC_PER_SEC);
-        dispatch_semaphore_wait(self.eagainDelaySemaphore, initialTimeout);
+        int64_t timeoutMilliseconds = self.initialDelayInSec * MSEC_PER_SEC;
+        waitOnSemaphore(self.eagainDelaySemaphore, timeoutMilliseconds);
         
         if (useVideoFilter(self)) {
             do {
