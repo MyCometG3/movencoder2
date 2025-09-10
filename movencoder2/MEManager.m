@@ -73,10 +73,10 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 // Synchronization semaphores as private properties
-@property (nonatomic, strong) dispatch_semaphore_t timestampGapSemaphore;
-@property (nonatomic, strong) dispatch_semaphore_t filterReadySemaphore;
-@property (nonatomic, strong) dispatch_semaphore_t encoderReadySemaphore;
-@property (nonatomic, strong) dispatch_semaphore_t eagainDelaySemaphore;
+@property (readonly, nonatomic, strong) dispatch_semaphore_t timestampGapSemaphore;
+@property (readonly, nonatomic, strong) dispatch_semaphore_t filterReadySemaphore;
+@property (readonly, nonatomic, strong) dispatch_semaphore_t encoderReadySemaphore;
+@property (readonly, nonatomic, strong) dispatch_semaphore_t eagainDelaySemaphore;
 
 - (BOOL)prepareVideoEncoderWith:(CMSampleBufferRef _Nullable)sb;
 - (BOOL)prepareVideoFilterWith:(CMSampleBufferRef)sb;
@@ -167,10 +167,10 @@ NS_ASSUME_NONNULL_BEGIN
         log_level = AV_LOG_INFO;
         
         // Initialize synchronization semaphores
-        self.timestampGapSemaphore = dispatch_semaphore_create(0);
-        self.filterReadySemaphore = dispatch_semaphore_create(0);
-        self.encoderReadySemaphore = dispatch_semaphore_create(0);
-        self.eagainDelaySemaphore = dispatch_semaphore_create(0);
+        timestampGapSemaphore = dispatch_semaphore_create(0);
+        filterReadySemaphore = dispatch_semaphore_create(0);
+        encoderReadySemaphore = dispatch_semaphore_create(0);
+        eagainDelaySemaphore = dispatch_semaphore_create(0);
     }
     return self;
 }
@@ -194,20 +194,6 @@ NS_ASSUME_NONNULL_BEGIN
     av_frame_free(&input);
     av_frame_free(&filtered);
     av_packet_free(&encoded);
-    
-    // Clean up semaphores
-    if (self.timestampGapSemaphore) {
-        self.timestampGapSemaphore = nil;
-    }
-    if (self.filterReadySemaphore) {
-        self.filterReadySemaphore = nil;
-    }
-    if (self.encoderReadySemaphore) {
-        self.encoderReadySemaphore = nil;
-    }
-    if (self.eagainDelaySemaphore) {
-        self.eagainDelaySemaphore = nil;
-    }
 }
 
 /* =================================================================================== */
@@ -1237,7 +1223,7 @@ static void enqueueToME(MEManager *self, int *ret) {
                 av_frame_unref(self->input);
                 self.lastEnqueuedPTS = newPTS;
                 // Signal timestamp gap semaphore when PTS is updated
-                dispatch_semaphore_signal(self->_timestampGapSemaphore);
+                dispatch_semaphore_signal(self.timestampGapSemaphore);
 #if 0
                 float pts0 = (float)self->_lastEnqueuedPTS/self->time_base;
                 float pts1 = (float)self->_lastDequeuedPTS/self->time_base;
@@ -1481,7 +1467,7 @@ static void pullFilteredFrame(MEManager *self, int *ret) {
         self->filtered->pts = newpts;
         self.lastDequeuedPTS = newpts;
         // Signal timestamp gap semaphore when PTS is updated
-        dispatch_semaphore_signal(self->_timestampGapSemaphore);
+        dispatch_semaphore_signal(self.timestampGapSemaphore);
         return;
     } else if (*ret == AVERROR(EAGAIN)) {                   // Needs more frame to graph
         return;
@@ -1599,7 +1585,7 @@ static BOOL initialQueueing(MEManager *self) {
         CFAbsoluteTime limit = CFAbsoluteTimeGetCurrent() + delayLimitInSec;
         
         // Use semaphore wait instead of av_usleep for initial delay
-        dispatch_time_t initialTimeout = dispatch_time(DISPATCH_TIME_NOW, self.initialDelayInSec * 1000000000ULL);
+        dispatch_time_t initialTimeout = dispatch_time(DISPATCH_TIME_NOW, self.initialDelayInSec * NSEC_PER_SEC);
         dispatch_semaphore_wait(self.eagainDelaySemaphore, initialTimeout);
         
         if (useVideoFilter(self)) {
