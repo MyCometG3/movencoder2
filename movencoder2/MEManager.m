@@ -222,6 +222,11 @@ static inline BOOL uselibx265(MEManager *obj) {
     return ([codecName isEqualToString:@"libx265"]);
 }
 
+static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t timeoutMilliseconds) {
+    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, timeoutMilliseconds * NSEC_PER_MSEC);
+    return dispatch_semaphore_wait(semaphore, timeout);
+}
+
 - (dispatch_queue_t) inputQueue
 {
     if (!_inputQueue) {
@@ -1335,8 +1340,7 @@ error:
                 // Wait until the input/output timestamp gap is less than 10 seconds.
                 while (llabs(self.lastEnqueuedPTS - self.lastDequeuedPTS) >= gapLimitInSec) {
                     // Use semaphore wait instead of busy loop with usleep
-                    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC);
-                    dispatch_semaphore_wait(self.timestampGapSemaphore, timeout);
+                    waitOnSemaphore(self.timestampGapSemaphore, 50);
                     if (self.failed) return NO;
                 }
                 
@@ -1354,8 +1358,7 @@ error:
                 // Retry enqueue if EAGAIN is returned
                 if (ret == AVERROR(EAGAIN)) {
                     // Use semaphore wait instead of av_usleep for backoff
-                    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC);
-                    dispatch_semaphore_wait(self.eagainDelaySemaphore, timeout);
+                    waitOnSemaphore(self.eagainDelaySemaphore, 50);
                 }
             }
         } while (ret == AVERROR(EAGAIN));
@@ -1593,8 +1596,7 @@ static BOOL initialQueueing(MEManager *self) {
                 if (self.failed) break;
                 if (self.videoFilterIsReady) break;
                 // Use semaphore wait instead of av_usleep for filter ready check
-                dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC);
-                dispatch_semaphore_wait(self.filterReadySemaphore, timeout);
+                waitOnSemaphore(self.filterReadySemaphore, 100);
             } while (CFAbsoluteTimeGetCurrent() < limit);
             if (!self.videoFilterIsReady) {
                 NSLog(@"[MEManager] ERROR: Filter graph is not ready.");
@@ -1605,8 +1607,7 @@ static BOOL initialQueueing(MEManager *self) {
                 if (self.failed) break;
                 if (self.videoEncoderIsReady) break;
                 // Use semaphore wait instead of av_usleep for encoder ready check
-                dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC);
-                dispatch_semaphore_wait(self.encoderReadySemaphore, timeout);
+                waitOnSemaphore(self.encoderReadySemaphore, 100);
             } while (CFAbsoluteTimeGetCurrent() < limit);
             if (!self.videoEncoderIsReady) {
                 NSLog(@"[MEManager] ERROR: Encoder is not ready.");
@@ -1701,8 +1702,7 @@ error:
                         }
                     }
                     if (countEAGAIN == 2) {                     // Try next ququeing after delay
-                        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC);
-                        dispatch_semaphore_wait(self.eagainDelaySemaphore, timeout);
+                        waitOnSemaphore(self.eagainDelaySemaphore, 50);
                         if (self.failed) goto error;
                     }
                 }
@@ -1731,8 +1731,7 @@ error:
                         }
                     }
                     if (countEAGAIN == 1) {                     // Try next ququeing after delay
-                        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC);
-                        dispatch_semaphore_wait(self.eagainDelaySemaphore, timeout);
+                        waitOnSemaphore(self.eagainDelaySemaphore, 50);
                         if (self.failed) goto error;
                     }
                 }
@@ -1779,8 +1778,7 @@ error:
                         }
                     }
                     if (countEAGAIN == 1) {                     // Try next ququeing after delay
-                        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC);
-                        dispatch_semaphore_wait(self.eagainDelaySemaphore, timeout);
+                        waitOnSemaphore(self.eagainDelaySemaphore, 50);
                         if (self.failed) {
                             goto error;
                         }
