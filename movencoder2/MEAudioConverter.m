@@ -591,10 +591,9 @@ cleanup:
         // Wait for semaphore signal indicating new data is available
         // Use a timeout to periodically check for failure state
         dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC); // 50ms timeout
-        long waitResult = dispatch_semaphore_wait(_outputDataSemaphore, timeout);
+        dispatch_semaphore_wait(_outputDataSemaphore, timeout);
         
-        // If semaphore was signaled (waitResult == 0), continue the loop to check for data
-        // If timeout occurred (waitResult != 0), continue the loop to check failure state
+        // Continue the loop to check for data availability and failure state
     }
     
     return result;
