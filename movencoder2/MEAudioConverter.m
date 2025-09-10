@@ -48,6 +48,7 @@ NS_ASSUME_NONNULL_BEGIN
     // Output side
     NSMutableArray* _outputBufferQueue;
     BOOL _outputFinished;
+    dispatch_semaphore_t _outputDataSemaphore;
     
     // Converter
     AVAudioConverter* _audioConverter;
@@ -88,6 +89,9 @@ NS_ASSUME_NONNULL_BEGIN
         _inputFinished = NO;
         _outputFinished = NO;
         
+        // Initialize semaphore for output data availability signaling
+        _outputDataSemaphore = dispatch_semaphore_create(0);
+        
         self.writerStatus = AVAssetWriterStatusUnknown;
         self.readerStatus = AVAssetReaderStatusUnknown;
         self.failed = NO;
@@ -103,6 +107,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)dealloc
 {
     [self cleanup];
+    
+    // Release semaphore if it exists
+    if (_outputDataSemaphore) {
+        // Signal any waiting threads before release to prevent deadlock
+        dispatch_semaphore_signal(_outputDataSemaphore);
+        _outputDataSemaphore = nil;
+    }
 }
 
 - (void)cleanup
@@ -440,6 +451,9 @@ cleanup:
         dispatch_sync(_outputQueue, ^{
             _outputFinished = YES;
         });
+        
+        // Signal semaphore to unblock any waiting threads
+        dispatch_semaphore_signal(_outputDataSemaphore);
     });
 }
 
@@ -520,6 +534,9 @@ cleanup:
                             NSValue* outputValue = [NSValue valueWithPointer:outputSampleBuffer];
                             [_outputBufferQueue addObject:outputValue];
                         });
+                        
+                        // Signal that new data is available
+                        dispatch_semaphore_signal(_outputDataSemaphore);
                     }
                 } else if (convertError) {
                     if (self.verbose) {
@@ -550,29 +567,33 @@ cleanup:
     }
     
     __block CMSampleBufferRef result = NULL;
-    __block BOOL shouldContinue = YES;
     
-    // Blocking loop - wait until data becomes available
-    while (shouldContinue && !self.failed) {
+    // Wait for data to become available or input to finish
+    while (!self.failed) {
+        // Check if data is immediately available
         dispatch_sync(_outputQueue, ^{
             if (_outputBufferQueue.count > 0) {
                 NSValue* value = _outputBufferQueue.firstObject;
                 [_outputBufferQueue removeObjectAtIndex:0];
                 result = (CMSampleBufferRef)[value pointerValue];
                 // Don't release here as this method should return a retained reference
-                shouldContinue = NO;
             } else if (_inputFinished) {
                 // Only return NULL when input is finished and no more buffers available
                 result = NULL;
-                shouldContinue = NO;
             }
-            // If neither condition is met, continue waiting
         });
         
-        if (shouldContinue && !self.failed) {
-            // Sleep briefly to avoid busy waiting, similar to MEManager pattern
-            usleep(50 * 1000); // 50ms delay
+        // If we have a result (either data or NULL indicating end), return it
+        if (result != NULL || _inputFinished) {
+            break;
         }
+        
+        // Wait for semaphore signal indicating new data is available
+        // Use a timeout to periodically check for failure state
+        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC); // 50ms timeout
+        dispatch_semaphore_wait(_outputDataSemaphore, timeout);
+        
+        // Continue the loop to check for data availability and failure state
     }
     
     return result;
