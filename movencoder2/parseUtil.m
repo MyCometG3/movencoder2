@@ -101,7 +101,7 @@ error:
 }
 
 NSValue* parseSize(NSString* val) {
-    NSValue* _Nullable (^toSize)(NSString*, NSString*) = ^(NSString* val, NSString* delimiter) {
+    NSValue* _Nullable (^toSize)(NSString*, NSString*) = ^NSValue* (NSString* val, NSString* delimiter) {
         NSValue* outVal = nil;
         NSArray* array = [val componentsSeparatedByString:delimiter];
         if (array.count == 2) {
@@ -127,7 +127,7 @@ error:
 }
 
 NSValue* parseRect(NSString* val) {
-    NSValue* _Nullable (^toRect)(NSString*, NSString*) = ^(NSString* val, NSString* delimiter) {
+    NSValue* _Nullable (^toRect)(NSString*, NSString*) = ^NSValue* (NSString* val, NSString* delimiter) {
         NSValue* outVal = nil;
         NSArray* array = [val componentsSeparatedByString:delimiter];
         if (array.count == 4) {
@@ -156,20 +156,25 @@ error:
 }
 
 NSValue* parseTime(NSString* val) {
-    NSValue* _Nullable (^toTime)(NSString*, NSString*) = ^(NSString* val, NSString* delimiter) {
-        CMTime time = kCMTimeInvalid;
-        NSValue* outVal = nil;
-        NSArray* array = [val componentsSeparatedByString:delimiter];
-        if (array.count == 2) {
-            NSNumber* numerator = parseInteger(array[0]);
-            NSNumber* denominator = parseInteger(array[1]);
-            if (numerator && denominator) {
-                time = CMTimeMake([numerator intValue], [denominator intValue]);
-                outVal = [NSValue valueWithCMTime:time];
-            }
-        }
-        return outVal;
-    };
+    // Try to interpret as a rational number first
+    //   "30000:1001" -> CMTimeMake(30000, 1001) (frames per second)
+    NSValue* _Nullable (^toTime)(NSString*, NSString*) = ^NSValue* (NSString* val, NSString* delimiter) {
+         NSValue* outVal = nil;
+         NSArray* array = [val componentsSeparatedByString:delimiter];
+         if (array.count == 2) {
+             NSNumber* numerator = parseInteger(array[0]);
+             NSNumber* denominator = parseInteger(array[1]);
+             if (numerator && denominator) {
+                 long long numeratorLL = [numerator longLongValue];
+                 long long denominatorLL = [denominator longLongValue];
+                 if (denominatorLL <= 0 || numeratorLL <= 0) return nil;
+                 if (denominatorLL > INT32_MAX) return nil;
+                 CMTime time = CMTimeMake((int64_t)numeratorLL, (int32_t)denominatorLL);
+                 outVal = [NSValue valueWithCMTime:time];
+             }
+         }
+         return outVal;
+     };
     
     NSValue* outValue = nil;
     for (NSString* delimiter in @[@":",@"/",@"x",@","]) {
@@ -177,15 +182,19 @@ NSValue* parseTime(NSString* val) {
         if (outValue) return outValue;
     }
     
+    // Interpret as a plain floating point value (assumed as frame rate)
+    //   "29.97" -> CMTimeMake(90000, 3003) (frames per second)
+    // NOTE: Timebase 90000 is used as project-wide timescale
     NSNumber* numValue = parseDouble(val);
     if (numValue != nil) {
-        double doubleValue = [numValue doubleValue];
-        if (doubleValue != 0) {
-            int64_t numerator = 90000 / doubleValue;
-            int32_t denominator = 90000;
-            CMTime timeValue = CMTimeMake(numerator, denominator);
-            outValue = [NSValue valueWithCMTime:timeValue];
+        double fps = [numValue doubleValue];
+        if (!(fps > 0.0 && isfinite(fps))) {
+            goto error;
         }
+        int64_t numerator = 90000;  // Use timebase 90000 as project-wide timescale
+        int32_t denominator = (int32_t)floor((double)numerator / fps);
+        CMTime timeValue = CMTimeMake(numerator, denominator);
+        outValue = [NSValue valueWithCMTime:timeValue];
         if (outValue) return outValue;
     }
     
