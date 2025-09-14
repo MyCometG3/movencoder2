@@ -26,6 +26,7 @@
 
 #import "MECommon.h"
 #import "parseUtil.h"
+#include <ctype.h>
 
 NSString* const separator = @";";
 NSString* const equal = @"=";
@@ -35,30 +36,33 @@ NS_ASSUME_NONNULL_BEGIN
 
 NSNumber* parseInteger(NSString* val) {
     NSScanner *ns = [NSScanner scannerWithString:val];
-    NSInteger theValue = 0;
-    if ([ns scanInteger:&theValue]) {
-        // parse metric prefix - i.e. 1G, 1M, 1k
+    long long theValue = 0;
+    if ([ns scanLongLong:&theValue]) {
+        // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
         if (!ns.atEnd) {
-            NSString* result = nil;
+            NSString* suffix = nil;
             NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
-            if ([ns scanCharactersFromSet:cSet intoString:&result] && ns.atEnd) {
-                if ([result hasPrefix:@"T"])
-                    theValue = theValue * 1000*1000*1000*1000;
-                else if ([result hasPrefix:@"G"])
-                    theValue = theValue * 1000*1000*1000;
-                else if ([result hasPrefix:@"M"])
-                    theValue = theValue * 1000*1000;
-                else if ([result hasPrefix:@"K"])
-                    theValue = theValue * 1000;
-                else if ([result hasPrefix:@"k"])
-                    theValue = theValue * 1000;
-                else
-                    goto error;
+            if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
+                if (suffix.length != 1) goto error; // reject multi-letter suffix like "MB"
+                unichar ch = [suffix characterAtIndex:0];
+                long long multiplier = 1;
+                switch (toupper((int)ch)) {
+                    case 'T': multiplier = 1000LL * 1000LL * 1000LL * 1000LL; break;
+                    case 'G': multiplier = 1000LL * 1000LL * 1000LL; break;
+                    case 'M': multiplier = 1000LL * 1000LL; break;
+                    case 'K': multiplier = 1000LL; break;
+                    default: goto error;
+                }
+                // overflow check before multiplication
+                if (theValue > 0 && (unsigned long long)theValue > ULLONG_MAX / (unsigned long long)multiplier) goto error;
+                if (theValue < 0 && (unsigned long long)(-theValue) > ULLONG_MAX / (unsigned long long)multiplier) goto error;
+                long long result = theValue * multiplier;
+                return [NSNumber numberWithLongLong:result];
             }
         }
-        return [NSNumber numberWithInteger:theValue];
+        return [NSNumber numberWithLongLong:theValue];
     }
-    
+
 error:
     NSLog(@"ERROR: %@ : not Integer", val);
     return nil;
@@ -68,28 +72,29 @@ NSNumber* parseDouble(NSString* val) {
     NSScanner *ns = [NSScanner scannerWithString:val];
     double theValue = 0.0;
     if ([ns scanDouble:&theValue]) {
-        // parse metric prefix - i.e. 1G, 1M, 1k
+        // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
         if (!ns.atEnd) {
-            NSString* result = nil;
+            NSString* suffix = nil;
             NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
-            if ([ns scanCharactersFromSet:cSet intoString:&result] && ns.atEnd) {
-                if ([result hasPrefix:@"T"])
-                    theValue = theValue * 1000*1000*1000*1000;
-                else if ([result hasPrefix:@"G"])
-                    theValue = theValue * 1000*1000*1000;
-                else if ([result hasPrefix:@"M"])
-                    theValue = theValue * 1000*1000;
-                else if ([result hasPrefix:@"K"])
-                    theValue = theValue * 1000;
-                else if ([result hasPrefix:@"k"])
-                    theValue = theValue * 1000;
-                else
-                    goto error;
+            if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
+                if (suffix.length != 1) goto error; // reject multi-letter suffix
+                unichar ch = [suffix characterAtIndex:0];
+                double multiplier = 1.0;
+                switch (toupper((int)ch)) {
+                    case 'T': multiplier = 1e12; break;
+                    case 'G': multiplier = 1e9; break;
+                    case 'M': multiplier = 1e6; break;
+                    case 'K': multiplier = 1e3; break;
+                    default: goto error;
+                }
+                double result = theValue * multiplier;
+                if (!isfinite(result)) goto error;
+                return [NSNumber numberWithDouble:result];
             }
         }
         return [NSNumber numberWithDouble:theValue];
     }
-    
+
 error:
     NSLog(@"ERROR: %@ : not Double", val);
     return nil;
