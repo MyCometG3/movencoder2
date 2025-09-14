@@ -474,7 +474,7 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
                     manager.videoEncoderSetting[kMEVEx264_paramsKey] = mex264;
                 }
                 if (mex265) {
-                    manager.videoEncoderSetting[kMEVEx264_paramsKey] = mex265;
+                    manager.videoEncoderSetting[kMEVEx265_paramsKey] = mex265;
                 }
             }
             if (mevf) {
