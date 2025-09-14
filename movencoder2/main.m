@@ -36,6 +36,23 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// Print brief usage to stdout
+static void printUsage(void) {
+    printf("movencoder2 -i <input> -o <output> [options]\n");
+    printf("  -h, --help            Show this help\n");
+    printf("  -V, --verbose         Verbose logging\n");
+    printf("  -d, --debug           Debug logging (AV_LOG_DEBUG)\n");
+    printf("  -D, --dump            Dump sample buffer progress\n");
+    printf("  -i, --in <file>       Input movie file path\n");
+    printf("  -o, --out <file>      Output movie file path\n");
+    printf("  -v, --ve \"args\"      AVFoundation video encoder args (short: -v)\n");
+    printf("  -a, --ae \"args\"      AVFoundation audio encoder args (short: -a)\n");
+    printf("  --meve \"args\"        libavcodec (ffmpeg) video encoder args\n");
+    printf("  --mevf \"args\"        libavfilter video filter string\n");
+    printf("  --mex264/--mex265 \"args\"  libx264/libx265 specific params\n");
+    printf("  -c, --co              Copy non-A/V tracks into output (short: -c)\n");
+}
+
 #if 1
 float initialDelayInSec = 0.1;
 #else
@@ -321,13 +338,13 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
     NSString* mex265 = nil;
     NSString* ve = nil;
     NSString* ae = nil;
-    NSString* co = nil;
+    BOOL copyOthers = FALSE;
     
     METranscoder* transcoder = nil;
     NSArray *videoTracks = nil;
     NSArray *audioTracks = nil;
     
-    const char* shortopts = "V:D:d:i:o:v:a:c";
+    const char* shortopts = "VDdi:o:v:a:ch";
     static struct option longopts[] = {
         {"verbose", no_argument, NULL, 'V'},
         {"dump", no_argument, NULL, 'D'},
@@ -337,6 +354,7 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
         {"ve", required_argument, NULL, 'v'},
         {"ae", required_argument, NULL, 'a'},
         {"co", no_argument, NULL, 'c'},
+        {"help", no_argument, NULL, 'h'},
         {"meve", required_argument, NULL, -128},
         {"mevf", required_argument, NULL, -129},
         {"mex264", required_argument, NULL, -264},
@@ -372,7 +390,12 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
                 ae = val;
                 break;
             case 'c':
-                co = val;
+                // -co is a flag without argument; mark copyOthers true
+                copyOthers = TRUE;
+                break;
+            case 'h':
+                printUsage();
+                exit(EXIT_SUCCESS);
                 break;
             case -128:
                 meve = val;
@@ -386,9 +409,19 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
             case -265:
                 mex265 = val;
                 break;
-            default:
-                NSLog(@"ERROR: unknown parameter = \"%s\"", argv[optind]);
+            default: {
+                // Safely select a parameter string to print; guard against out-of-bounds optind
+                const char *paramStr = "unknown";
+                if (optind < argc && argv[optind]) {
+                    paramStr = argv[optind];
+                } else if (optind > 0 && argv[optind - 1]) {
+                    paramStr = argv[optind - 1];
+                } else if (optarg) {
+                    paramStr = optarg;
+                }
+                NSLog(@"ERROR: unknown parameter = \"%s\"", paramStr);
                 goto error;
+            }
                 break;
         }
     }
@@ -494,7 +527,7 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
             }
         }
     }
-    if (co) {
+    if (copyOthers) {
         transcoder.param[kCopyOtherMediaKey] = @YES;
     }
     if (verbose) {
