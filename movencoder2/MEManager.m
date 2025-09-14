@@ -1116,12 +1116,12 @@ end:
             goto end;
         }
         
-        {
-            // get AV_PICTURE_TYPE_xxx
-            size_t side_size = 0;
-            uint8_t *side = av_packet_get_side_data(self->encoded,
-                                                    AV_PKT_DATA_QUALITY_STATS,
-                                                    &side_size);
+        // get AV_PICTURE_TYPE_xxx
+        size_t side_size = 0;
+        uint8_t *side = av_packet_get_side_data(self->encoded,
+                                                AV_PKT_DATA_QUALITY_STATS,
+                                                &side_size);
+        if (side && side_size >= 5) {
             int picture_type = (int)side[4];
             char typeChar = av_get_picture_type_char(picture_type);
             char naloffset = encoded->data[4];
