@@ -66,62 +66,69 @@ static BOOL parseOptMEVE(NSString* param, MEManager* manager) {
     NSArray* optArray = [param componentsSeparatedByString:separator];
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
+        if (optParse.count < 2) {
+            NSLog(@"ERROR: Invalid option string: %@", opt);
+            goto error;
+        }
         NSString* key = optParse[0];
-        NSString* val = optParse[1];
-        if (optParse.count > 2) {
+        NSString* val = nil;
+        if (optParse.count == 2) {
+            val = optParse[1];
+        } else {
             // parsing "param=mode=1" => key:"param", val:"mode=1"
             NSMutableArray* optParse2 = [optParse mutableCopy];
             [optParse2 removeObjectAtIndex:0];
             val = [optParse2 componentsJoinedByString:equal];
         }
+        if (!key || key.length == 0) goto error;
         if ([key isEqualToString:@"c"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             videoEncoderSetting[kMEVECodecNameKey] = val; // NSString
         }
         if ([key isEqualToString:@"o"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSDictionary *codecOptions = parseCodecOptions(val);
             if (codecOptions.allKeys.count == 0) goto error;
             videoEncoderSetting[kMEVECodecOptionsKey] = codecOptions; // NSDictionary
         }
         if ([key isEqualToString:@"x264"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             videoEncoderSetting[kMEVEx264_paramsKey] = val; // NSString
         }
         if ([key isEqualToString:@"x265"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             videoEncoderSetting[kMEVEx265_paramsKey] = val; // NSString
         }
         if ([key isEqualToString:@"r"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSValue* timeValue = parseTime(val);
             if (nil == timeValue) goto error;
             videoEncoderSetting[kMEVECodecFrameRateKey] = timeValue; // NSValue of CMTime
         }
         if ([key isEqualToString:@"size"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSValue* sizeValue = parseSize(val);
             if (nil == sizeValue) goto error;
             videoEncoderSetting[kMEVECodecWxHKey] = sizeValue; // NSValue of NSSize
         }
         if ([key isEqualToString:@"par"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSValue* sizeValue = parseSize(val);
             if (nil == sizeValue) goto error;
             videoEncoderSetting[kMEVECodecPARKey] = sizeValue; // NSValue of NSSize
         }
         if ([key isEqualToString:@"f"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             // videoEncoderSetting[MEVideoFilter_FilterStringKey] = val; // NSString
             filterString = val;
         }
         if ([key isEqualToString:@"b"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber *doubleNumber = parseDouble(val);
             videoEncoderSetting[kMEVECodecBitRateKey] = doubleNumber;
         }
         if ([key isEqualToString:@"clean"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSValue* rectValue = parseRect(val);
             if (nil == rectValue) goto error;
             videoEncoderSetting[kMEVECleanApertureKey] = rectValue; // NSValue of NSRect;
@@ -150,34 +157,45 @@ static BOOL parseOptVE(NSString* param, METranscoder* coder) {
     NSArray* optArray = [param componentsSeparatedByString:separator];
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
+        if (optParse.count < 2) {
+            NSLog(@"ERROR: Invalid option string: %@", opt);
+            goto error;
+        }
         NSString* key = optParse[0];
-        NSString* val = optParse[1];
+        NSString* val = nil;
+        if (optParse.count == 2) {
+            val = optParse[1];
+        } else {
+            NSMutableArray* optParse2 = [optParse mutableCopy];
+            [optParse2 removeObjectAtIndex:0];
+            val = [optParse2 componentsJoinedByString:equal];
+        }
         if ([key isEqualToString:@"bitrate"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* bpsNum = parseDouble(val);
             if (nil == bpsNum) goto error;
             coder.param[kVideoKbpsKey] = @(bpsNum.doubleValue / 1000.0);
         }
         if ([key isEqualToString:@"field"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* copyFieldNum = parseBool(val);
             if (nil == copyFieldNum) goto error;
             coder.param[kCopyFieldKey] = copyFieldNum;
         }
         if ([key isEqualToString:@"nclc"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* copyNCLCNum = parseBool(val);
             if (nil == copyNCLCNum) goto error;
             coder.param[kCopyNCLCKey] = copyNCLCNum;
         }
         if ([key isEqualToString:@"encode"]) {
-            if (nil ==  val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* videoEncodeNum = parseBool(val);
             if (nil == videoEncodeNum) goto error;
             coder.param[kVideoEncodeKey] = videoEncodeNum;
         }
         if ([key isEqualToString:@"codec"]) {
-            if (!val) goto error;
+            if (!val || val.length == 0) goto error;
             val = [val stringByPaddingToLength:4 withString:@" " startingAtIndex:0];
             coder.param[kVideoCodecKey] = val;
         }
@@ -202,41 +220,52 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
     NSArray* optArray = [param componentsSeparatedByString:separator];
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
+        if (optParse.count < 2) {
+            NSLog(@"ERROR: Invalid option string: %@", opt);
+            goto error;
+        }
         NSString* key = optParse[0];
-        NSString* val = optParse[1];
+        NSString* val = nil;
+        if (optParse.count == 2) {
+            val = optParse[1];
+        } else {
+            NSMutableArray* optParse2 = [optParse mutableCopy];
+            [optParse2 removeObjectAtIndex:0];
+            val = [optParse2 componentsJoinedByString:equal];
+        }
         if ([key isEqualToString:@"depth"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* depthNum = parseInteger(val);
             if (nil == depthNum) goto error;
             coder.param[kLPCMDepthKey] = depthNum;
         }
         if ([key isEqualToString:@"bitrate"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* bpsNum = parseDouble(val);
             if (nil == bpsNum) goto error;
             coder.param[kAudioKbpsKey] = @(bpsNum.doubleValue / 1000);
         }
         if ([key isEqualToString:@"encode"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* audioEncodeNum = parseBool(val);
             if (nil == audioEncodeNum) goto error;
             coder.param[kAudioEncodeKey] = audioEncodeNum;
         }
         if ([key isEqualToString:@"codec"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             val = [val stringByPaddingToLength:4 withString:@" " startingAtIndex:0];
             coder.param[kAudioCodecKey] = val;
         }
         // Parse layoutTag (supports both integer and AAC layout name)
         if ([key isEqualToString:@"layout"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* layoutTagNum = parseLayoutTag(val);
             if (nil == layoutTagNum) goto error;
             coder.param[kAudioChannelLayoutTagKey] = layoutTagNum;
         }
         // Parse volume/gain in dB (range: -10.0 to +10.0)
         if ([key isEqualToString:@"volume"]) {
-            if (nil == val) goto error;
+            if (val == nil || val.length == 0) goto error;
             NSNumber* volumeNum = parseDouble(val);
             if (nil == volumeNum) goto error;
             double volumeDb = volumeNum.doubleValue;
@@ -318,7 +347,8 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
     int opt, longindex;
     opterr = 0;
     while ((opt = getopt_long_only(argc, argv, shortopts, longopts, &longindex)) != -1) {
-        NSString* val = optarg ? [NSString stringWithUTF8String:optarg] : @"";
+        // Use nil when optarg is absent so parsers can distinguish missing value
+        NSString* val = optarg ? [NSString stringWithUTF8String:optarg] : nil;
         switch (opt) {
             case 'V':
                 verbose = TRUE;
