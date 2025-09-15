@@ -554,43 +554,43 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
     if (!(input && output)) {
         NSLog(@"ERROR: Either input or output is not available.");
         goto error;
-    }
-    
-    // Comprehensive security validation for input/output paths
-    if (!isAllowedPath(input)) {
-        NSLog(@"ERROR: Input file path security validation failed: %@", input.path);
-        goto error;
-    }
-    if (!isAllowedPath(output)) {
-        NSLog(@"ERROR: Output file path security validation failed: %@", output.path);
-        goto error;
-    }
-    
-    // Additional validation: Check if input file exists and is readable
-    NSFileManager *fm = [NSFileManager defaultManager];
-    if (![fm fileExistsAtPath:input.path]) {
-        NSLog(@"ERROR: Input file does not exist: %@", input.path);
-        goto error;
-    }
-    if (![fm isReadableFileAtPath:input.path]) {
-        NSLog(@"ERROR: Input file is not readable: %@", input.path);
-        goto error;
-    }
-    
-    // Check output directory exists and is writable
-    NSString *outputDir = [output.path stringByDeletingLastPathComponent];
-    if (![fm fileExistsAtPath:outputDir]) {
-        NSLog(@"ERROR: Output directory does not exist: %@", outputDir);
-        goto error;
-    }
-    if (![fm isWritableFileAtPath:outputDir]) {
-        NSLog(@"ERROR: Output directory is not writable: %@", outputDir);
-        goto error;
-    }
-    
-    // Prevent overwriting existing files without explicit confirmation
-    if ([fm fileExistsAtPath:output.path]) {
-        NSLog(@"WARNING: Output file already exists and will be overwritten: %@", output.path);
+    } else {
+        // Comprehensive security validation for input/output paths
+        if (!isAllowedPath(input)) {
+            NSLog(@"ERROR: Input file path security validation failed: %@", input.path);
+            goto error;
+        }
+        if (!isAllowedPath(output)) {
+            NSLog(@"ERROR: Output file path security validation failed: %@", output.path);
+            goto error;
+        }
+        
+        // Additional validation: Check if input file exists and is readable
+        NSFileManager *fm = [NSFileManager defaultManager];
+        if (![fm fileExistsAtPath:input.path]) {
+            NSLog(@"ERROR: Input file does not exist: %@", input.path);
+            goto error;
+        }
+        if (![fm isReadableFileAtPath:input.path]) {
+            NSLog(@"ERROR: Input file is not readable: %@", input.path);
+            goto error;
+        }
+        
+        // Check output directory exists and is writable
+        NSString *outputDir = [output.path stringByDeletingLastPathComponent];
+        if (![fm fileExistsAtPath:outputDir]) {
+            NSLog(@"ERROR: Output directory does not exist: %@", outputDir);
+            goto error;
+        }
+        if (![fm isWritableFileAtPath:outputDir]) {
+            NSLog(@"ERROR: Output directory is not writable: %@", outputDir);
+            goto error;
+        }
+        
+        // Prevent overwriting existing files without explicit confirmation
+        if ([fm fileExistsAtPath:output.path]) {
+            NSLog(@"WARNING: Output file already exists and will be overwritten: %@", output.path);
+        }
     }
     
     // Quick Options Check
