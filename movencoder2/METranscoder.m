@@ -318,19 +318,20 @@ NS_ASSUME_NONNULL_BEGIN
     }
     
     //
-    if (!( CMTIME_IS_VALID(self.startTime)&&CMTIME_IS_VALID(self.endTime) )) {
+    if (!( CMTIME_IS_VALID(self.startTime) && CMTIME_IS_VALID(self.endTime) )) {
+        // Invalid startTime/endTime case: use full range of source movie
         self.startTime = kCMTimeZero;
         self.endTime = mov.duration;
     } else {
-        int compResult = CMTimeCompare(self.startTime, self.endTime);
-        if (compResult >= 0) {
+        // check specified startTime/endTime
+        int compResult = CMTIME_COMPARE_INLINE(self.startTime, <, self.endTime);
+        int compResult2 = CMTIME_COMPARE_INLINE(kCMTimeZero, <=, self.startTime);
+        if (!(compResult && compResult2)) {
+            // Invalid time range detected: reset to full range of source movie
             self.startTime = kCMTimeZero;
             self.endTime = mov.duration;
         }
     }
-    CMTimeRange maxRange = CMTimeRangeMake(self.startTime, self.endTime);
-    self.startTime = CMTimeClampToRange(self.startTime, maxRange);
-    self.endTime = CMTimeClampToRange(self.endTime, maxRange);
     self.writerIsBusy = TRUE;
     
     //
