@@ -25,6 +25,7 @@
  */
 
 #import "METranscoder+Internal.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -123,24 +124,26 @@ NS_ASSUME_NONNULL_BEGIN
         }
     } else {
         // If file doesn't exist, test if we can create it by attempting to create a temporary file
-        NSString* parentDir = [path stringByDeletingLastPathComponent];
-        NSString* filename = [path lastPathComponent];
-        NSString* tempPath = [parentDir stringByAppendingPathComponent:[NSString stringWithFormat:@".%@.tmp.%d", filename, getpid()]];
-        
-        // Try to create a temporary file to test write access
-        NSError* error = nil;
-        BOOL success = [@"test" writeToFile:tempPath 
-                                 atomically:NO 
-                                   encoding:NSUTF8StringEncoding 
+        @autoreleasepool {
+            NSString* parentDir = [path stringByDeletingLastPathComponent];
+            NSString* filename = [path lastPathComponent];
+            NSString* tempPath = [parentDir stringByAppendingPathComponent:[NSString stringWithFormat:@".%@.tmp.%d", filename, getpid()]];
+            
+            // Try to create a temporary file to test write access
+            NSError* error = nil;
+            BOOL success = [@"test" writeToFile:tempPath 
+                                     atomically:NO 
+                                       encoding:NSUTF8StringEncoding 
                                       error:&error];
         
-        if (success) {
-            // Clean up the temporary file
-            [mgr removeItemAtPath:tempPath error:nil];
-            return YES;
-        } else {
-            // Fallback to basic directory write check
-            return [mgr isWritableFileAtPath:parentDir];
+            if (success) {
+                // Clean up the temporary file
+                [mgr removeItemAtPath:tempPath error:nil];
+                return YES;
+            } else {
+                // Fallback to basic directory write check
+                return [mgr isWritableFileAtPath:parentDir];
+            }
         }
     }
 }
@@ -495,7 +498,7 @@ end:
         if (error) {
             *error = self.finalError;
         }
-        NSLog(@"[METranscoder] ERROR: Export session failed. \n%@", self.finalError);
+        NSLog(@"[METranscoder] ERROR: Export session failed. Error details: %@", sanitizeLogString([self.finalError description]));
     }
     
     //

@@ -63,12 +63,14 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize showProgress;
 
 char* createLabel(CMPersistentTrackID track) {
-    NSString* label = [NSString stringWithFormat:@"com.movencoder2.SBChannel.track%d", track];
-    const char *temp = label.UTF8String;
-    size_t size = strlen(temp) + 1;
-    char * queueLabel = malloc(size);
-    strlcpy(queueLabel, temp, size);
-    return queueLabel;
+    @autoreleasepool {
+        NSString* label = [NSString stringWithFormat:@"com.movencoder2.SBChannel.track%d", track];
+        const char *temp = label.UTF8String;
+        size_t size = strlen(temp) + 1;
+        char * queueLabel = malloc(size);
+        strlcpy(queueLabel, temp, size);
+        return queueLabel;
+    }
 }
 
 - (instancetype)initWithProducerME:(MEOutput*)meOutput
@@ -158,27 +160,29 @@ int countUp(SBChannel* self) {
 
         BOOL result = TRUE;
         while (meInput.isReadyForMoreMediaData && result) {
-            CMSampleBufferRef sb = [meOutput copyNextSampleBuffer];
-            if (sb) {
-                int count = countUp(wself);
-                
-                if (showProgress) {
-                    if (isToME) { // input
-                        dumpTiming(sb, meOutput.mediaType, tag, count);
+            @autoreleasepool {
+                CMSampleBufferRef sb = [meOutput copyNextSampleBuffer];
+                if (sb) {
+                    int count = countUp(wself);
+                    
+                    if (showProgress) {
+                        if (isToME) { // input
+                            dumpTiming(sb, meOutput.mediaType, tag, count);
+                        }
                     }
-                }
-                [delegate didReadBuffer:sb from:wself];
-                result = [meInput appendSampleBuffer:sb];
-                
-                if (showProgress) {
-                    if (isFromME || isPassThru) { // output
-                        dumpTiming(sb, meOutput.mediaType, tag, count);
+                    [delegate didReadBuffer:sb from:wself];
+                    result = [meInput appendSampleBuffer:sb];
+                    
+                    if (showProgress) {
+                        if (isFromME || isPassThru) { // output
+                            dumpTiming(sb, meOutput.mediaType, tag, count);
+                        }
                     }
+                    
+                    CFRelease(sb);
+                } else {
+                    result = FALSE;
                 }
-                
-                CFRelease(sb);
-            } else {
-                result = FALSE;
             }
         }
         if (!result) {

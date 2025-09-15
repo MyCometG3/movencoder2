@@ -88,11 +88,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) dispatch_queue_t inputQueue;
 @property (nonatomic, strong) dispatch_block_t inputBlock;
 @property (nonatomic, strong) dispatch_queue_t outputQueue;
-@property (nonatomic) BOOL queueing;
-@property (nonatomic) CMTimeScale time_base;
-@property (nonatomic, strong, nullable) __attribute__((NSObject)) CMFormatDescriptionRef desc;  // for output CMSampleBufferRef
-@property (nonatomic, strong, nullable) __attribute__((NSObject)) CVPixelBufferPoolRef cvpbpool;
-@property (nonatomic, strong, nullable) __attribute__((NSObject)) CFDictionaryRef pbAttachments; // for CVImageBufferRef
+@property (atomic) BOOL queueing;  // Made atomic - accessed across input/output queues
+@property (atomic) CMTimeScale time_base;  // Made atomic - accessed across input/output queues
+@property (atomic, strong, nullable) __attribute__((NSObject)) CMFormatDescriptionRef desc;  // Made atomic - for output CMSampleBufferRef
+@property (atomic, strong, nullable) __attribute__((NSObject)) CVPixelBufferPoolRef cvpbpool;  // Made atomic - accessed across queues
+@property (atomic, strong, nullable) __attribute__((NSObject)) CFDictionaryRef pbAttachments; // Made atomic - for CVImageBufferRef
 
 // private atomic
 @property (readwrite) BOOL videoFilterIsReady;
@@ -103,8 +103,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) BOOL videoFilterFlushed;
 @property (readwrite) BOOL videoEncoderFlushed;
 
-@property (readwrite) int64_t lastEnqueuedPTS; // for Filter
-@property (readwrite) int64_t lastDequeuedPTS; // for Filter
+@property (atomic, readwrite) int64_t lastEnqueuedPTS; // Made atomic - for Filter, accessed across queues
+@property (atomic, readwrite) int64_t lastDequeuedPTS; // Made atomic - for Filter, accessed across queues
 
 // public atomic redefined
 @property (readwrite) BOOL failed;
@@ -187,13 +187,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)cleanup
 {
-    avfilter_graph_free(&filter_graph);
-    
-    avcodec_free_context(&avctx);
-    
-    av_frame_free(&input);
-    av_frame_free(&filtered);
     av_packet_free(&encoded);
+    av_frame_free(&filtered);
+    av_frame_free(&input);
+    avcodec_free_context(&avctx);
+    avfilter_graph_free(&filter_graph);
+
+    self.desc = nil;
+    self.cvpbpool = nil;
+    self.pbAttachments = nil;
 }
 
 /* =================================================================================== */
@@ -534,23 +536,27 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             int bottom = (avctx->height - rect.origin.y - rect.size.height) / 2;
             
             if (uselibx264(self)) {
-                NSString *cropParam = [NSString stringWithFormat:@"overscan=crop:crop-rect=%d,%d,%d,%d", left,top,right,bottom];
-                NSString* x264_params = videoEncoderSetting[kMEVEx264_paramsKey];
-                if (x264_params) {
-                    NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x264_params];
-                    videoEncoderSetting[kMEVEx264_paramsKey] = newParams;
-                } else {
-                    videoEncoderSetting[kMEVEx264_paramsKey] = cropParam;
+                @autoreleasepool {
+                    NSString *cropParam = [NSString stringWithFormat:@"overscan=crop:crop-rect=%d,%d,%d,%d", left,top,right,bottom];
+                    NSString* x264_params = videoEncoderSetting[kMEVEx264_paramsKey];
+                    if (x264_params) {
+                        NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x264_params];
+                        videoEncoderSetting[kMEVEx264_paramsKey] = newParams;
+                    } else {
+                        videoEncoderSetting[kMEVEx264_paramsKey] = cropParam;
+                    }
                 }
             }
             if (uselibx265(self)) {
-                NSString *cropParam = [NSString stringWithFormat:@"display-window=%d,%d,%d,%d", left,top,right,bottom];
-                NSString* x265_params = videoEncoderSetting[kMEVEx265_paramsKey];
-                if (x265_params) {
-                    NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x265_params];
-                    videoEncoderSetting[kMEVEx265_paramsKey] = newParams;
-                } else {
-                    videoEncoderSetting[kMEVEx265_paramsKey] = cropParam;
+                @autoreleasepool {
+                    NSString *cropParam = [NSString stringWithFormat:@"display-window=%d,%d,%d,%d", left,top,right,bottom];
+                    NSString* x265_params = videoEncoderSetting[kMEVEx265_paramsKey];
+                    if (x265_params) {
+                        NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x265_params];
+                        videoEncoderSetting[kMEVEx265_paramsKey] = newParams;
+                    } else {
+                        videoEncoderSetting[kMEVEx265_paramsKey] = cropParam;
+                    }
                 }
             }
         }
@@ -564,15 +570,17 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
          */
         NSDictionary* codecOptions = videoEncoderSetting[kMEVECodecOptionsKey];
         if (codecOptions) {
-            for (NSString* key in codecOptions.allKeys) {
-                NSString* value = codecOptions[key];
-                
-                const char* _key = [key UTF8String];
-                const char* _value = [value UTF8String];
-                ret = av_dict_set(&opts, _key, _value, 0);
-                if (ret < 0) {
-                    NSLog(@"[MEManager] ERROR: Cannot update codecOptions.");
-                    goto end;
+            @autoreleasepool {
+                for (NSString* key in codecOptions.allKeys) {
+                    NSString* value = codecOptions[key];
+                    
+                    const char* _key = [key UTF8String];
+                    const char* _value = [value UTF8String];
+                    ret = av_dict_set(&opts, _key, _value, 0);
+                    if (ret < 0) {
+                        NSLog(@"[MEManager] ERROR: Cannot update codecOptions.");
+                        goto end;
+                    }
                 }
             }
         }
@@ -608,11 +616,13 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     char* buf;
     ret = av_dict_get_string(opts, &buf, '=', ':');
     if (ret == 0 && buf != NULL) {
-        NSString* codecOptString = [NSString stringWithUTF8String:buf];
-        av_freep(&buf);
-        
-        if (self.verbose) {
-            NSLog(@"[MEManager] codecOptString = %@", codecOptString);
+        @autoreleasepool {
+            NSString* codecOptString = [NSString stringWithUTF8String:buf];
+            av_freep(&buf);
+            
+            if (self.verbose) {
+                NSLog(@"[MEManager] codecOptString = %@", codecOptString);
+            }
         }
     }
     
@@ -1050,11 +1060,21 @@ end:
         // Get temp NAL buffer
         int tempSize = encoded->size;
         UInt8* tempPtr = av_malloc(tempSize);
-        assert(tempPtr != NULL);
+        if (!tempPtr) {
+            NSLog(@"[MEManager] ERROR: Failed to allocate %d bytes for NAL processing", tempSize);
+            goto end;
+        }
         
-        // Re-format NAL unit.
-        memcpy(tempPtr, encoded->data, tempSize);
-        avc_parse_nal_units(&tempPtr, &tempSize);    // This call does realloc buffer; may also be re-sized
+        // Re-format NAL unit with bounds checking
+        if (tempSize > 0 && encoded->data) {
+            memcpy(tempPtr, encoded->data, tempSize);
+            avc_parse_nal_units(&tempPtr, &tempSize);    // This call frees original buffer and allocates new one
+        } else {
+            NSLog(@"[MEManager] ERROR: Invalid data for NAL processing: tempSize=%d, encoded->data=%p", 
+                  tempSize, encoded->data);
+            av_free(tempPtr);
+            goto end;
+        }
         
         //
         OSStatus err = noErr;
@@ -1070,6 +1090,7 @@ end:
                                                  &bb);
         if (err) {
             NSLog(@"[MEManager] ERROR: Cannot setup CMBlockBuffer.");
+            av_free(tempPtr);
             goto end;
         }
         

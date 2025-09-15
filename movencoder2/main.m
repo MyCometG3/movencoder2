@@ -32,6 +32,7 @@
 #import "METranscoder.h"
 #import "MEManager.h"
 #import "MEAudioConverter.h"
+#import "MESecureLogging.h"
 #import <getopt.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -60,6 +61,130 @@ float initialDelayInSec = 5.0;
 #endif
 
 /* =================================================================================== */
+// MARK: - file path validation helper function
+/* =================================================================================== */
+
+// Enhanced path validation utility with comprehensive security checks
+static BOOL isAllowedPath(NSURL *fileURL) {
+    if (!fileURL) {
+        NSLog(@"[SECURITY] ERROR: File URL is nil");
+        return NO;
+    }
+    
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *targetPath = [[fileURL path] stringByStandardizingPath];
+    
+    // Validate that we have an absolute path
+    if (!targetPath || ![targetPath hasPrefix:@"/"]) {
+        NSLog(@"[SECURITY] ERROR: Path is not absolute: %@", sanitizeLogString(targetPath));
+        return NO;
+    }
+    
+    // Enhanced character validation - check for dangerous characters
+    NSCharacterSet *controlChars = [NSCharacterSet controlCharacterSet];
+    NSCharacterSet *forbiddenChars = [NSCharacterSet characterSetWithCharactersInString:@"~<>:|?*\""];
+    NSCharacterSet *combinedForbidden = [controlChars mutableCopy];
+    [(NSMutableCharacterSet*)combinedForbidden formUnionWithCharacterSet:forbiddenChars];
+    
+    if ([targetPath rangeOfCharacterFromSet:combinedForbidden].location != NSNotFound) {
+        NSLog(@"[SECURITY] ERROR: Path contains forbidden characters: %@", sanitizeLogString(targetPath));
+        return NO;
+    }
+    
+    // Enhanced path traversal detection (including encoded variants)
+    NSArray *dangerousPatterns = @[@"..", @"%2e%2e", @"%2E%2E", @"..%2f", @"..%2F", @"%2e%2e%2f", @"%2E%2E%2F"];
+    for (NSString *pattern in dangerousPatterns) {
+        if ([targetPath.lowercaseString containsString:pattern.lowercaseString]) {
+            NSLog(@"[SECURITY] ERROR: Path traversal attempt detected: %@", sanitizeLogString(targetPath));
+            return NO;
+        }
+    }
+    
+    // Check for dangerous system paths and special files
+    NSArray *forbiddenPaths = @[@"/dev/", @"/proc/", @"/sys/", @"/etc/", @"/var/root/", @"/root/", 
+                                @"/tmp/", @"/var/tmp/", @"/..", @"/.", @"/private/var/", @"/System/"];
+    for (NSString *forbidden in forbiddenPaths) {
+        if ([targetPath hasPrefix:forbidden]) {
+            NSLog(@"[SECURITY] ERROR: Access to system path denied: %@", sanitizeLogString(targetPath));
+            return NO;
+        }
+    }
+
+    // Get current user's home directory and validate safe roots
+    NSString *userPath = [fm.homeDirectoryForCurrentUser.path stringByStandardizingPath];
+    NSString *sharedPath = [@"/Users/Shared" stringByStandardizingPath];
+    
+    BOOL inAllowedRoot = NO;
+    NSString *allowedRoot = nil;
+    
+    // Check if path is under /Users/CurrentUser/
+    if ([targetPath hasPrefix:userPath]) {
+        inAllowedRoot = YES;
+        allowedRoot = @"user home";
+    } 
+    // Check if path is under /Users/Shared/
+    else if ([targetPath hasPrefix:sharedPath]) {
+        inAllowedRoot = YES;
+        allowedRoot = @"shared directory";
+    } 
+    // Check if path is under /Volumes/*/
+    else if ([targetPath hasPrefix:@"/Volumes/"]) {
+        @autoreleasepool {
+            NSArray *components = [targetPath pathComponents];
+            if (components.count >= 3 && ![components[2] isEqualToString:@""]) {
+                inAllowedRoot = YES;
+                allowedRoot = [NSString stringWithFormat:@"volume '%@'", components[2]];
+            }
+        }
+    }
+    
+    if (!inAllowedRoot) {
+        NSLog(@"[SECURITY] ERROR: Path not in allowed directory tree: %@", sanitizeLogString(targetPath));
+        NSLog(@"[SECURITY] INFO: Allowed roots - User: %@, Shared: %@, Volumes: /Volumes/*/", sanitizeLogString(userPath), sanitizeLogString(sharedPath));
+        return NO;
+    }
+    
+    // Enhanced symlink detection with error handling
+    NSError *error = nil;
+    NSDictionary *attrs = [fm attributesOfItemAtPath:targetPath error:&error];
+    
+    // If the file doesn't exist yet, check parent directory chain for symlinks
+    if (!attrs && error.code == NSFileReadNoSuchFileError) {
+        NSString *parentPath = [targetPath stringByDeletingLastPathComponent];
+        while (parentPath && ![parentPath isEqualToString:@"/"] && parentPath.length > 0) {
+            NSDictionary *parentAttrs = [fm attributesOfItemAtPath:parentPath error:nil];
+            if (parentAttrs && [[parentAttrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
+                NSLog(@"[SECURITY] ERROR: Parent directory is a symbolic link: %@", sanitizeLogString(parentPath));
+                return NO;
+            }
+            NSString *newParentPath = [parentPath stringByDeletingLastPathComponent];
+            if ([newParentPath isEqualToString:parentPath]) break; // Prevent infinite loop
+            parentPath = newParentPath;
+        }
+    } 
+    // If file exists, check if it's a symlink
+    else if (attrs && [[attrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
+        NSLog(@"[SECURITY] ERROR: File is a symbolic link: %@", sanitizeLogString(targetPath));
+        return NO;
+    }
+    
+    // Additional validation for special device files
+    if (attrs) {
+        NSString *fileType = [attrs fileType];
+        if ([fileType isEqualToString:NSFileTypeBlockSpecial] || 
+            [fileType isEqualToString:NSFileTypeCharacterSpecial] ||
+            [fileType isEqualToString:NSFileTypeSocket] ||
+            [fileType isEqualToString:NSFileTypeUnknown]) {
+            NSLog(@"[SECURITY] ERROR: File is a special device or unknown type: %@ (type: %@)", sanitizeLogString(targetPath), sanitizeLogString(fileType));
+            return NO;
+        }
+    }
+    
+    NSLog(@"[SECURITY] INFO: Path validation passed for %@ (allowed root: %@)", sanitizeLogString(targetPath), sanitizeLogString(allowedRoot));
+    return YES;
+}
+
+/* =================================================================================== */
 // MARK: - option parse function
 /* =================================================================================== */
 
@@ -84,7 +209,7 @@ static BOOL parseOptMEVE(NSString* param, MEManager* manager) {
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
         if (optParse.count < 2) {
-            NSLog(@"ERROR: Invalid option string: %@", opt);
+            NSLog(@"ERROR: Invalid option string: %@", sanitizeLogString(opt));
             goto error;
         }
         NSString* key = optParse[0];
@@ -175,7 +300,7 @@ static BOOL parseOptVE(NSString* param, METranscoder* coder) {
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
         if (optParse.count < 2) {
-            NSLog(@"ERROR: Invalid option string: %@", opt);
+            NSLog(@"ERROR: Invalid option string: %@", sanitizeLogString(opt));
             goto error;
         }
         NSString* key = optParse[0];
@@ -238,7 +363,7 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
         if (optParse.count < 2) {
-            NSLog(@"ERROR: Invalid option string: %@", opt);
+            NSLog(@"ERROR: Invalid option string: %@", sanitizeLogString(opt));
             goto error;
         }
         NSString* key = optParse[0];
@@ -326,7 +451,7 @@ error:
  extern NSString* const kAudioCodecKey;      // NSString representation of OSType
  */
 
-static METranscoder* validateOpt(int argc, char * const * argv) {
+static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
     BOOL verbose = FALSE;
     BOOL dump = FALSE;
     BOOL debug = FALSE;
@@ -365,9 +490,10 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
     int opt, longindex;
     opterr = 0;
     while ((opt = getopt_long_only(argc, argv, shortopts, longopts, &longindex)) != -1) {
-        // Use nil when optarg is absent so parsers can distinguish missing value
-        NSString* val = optarg ? [NSString stringWithUTF8String:optarg] : nil;
-        switch (opt) {
+        @autoreleasepool {
+            // Use nil when optarg is absent so parsers can distinguish missing value
+            NSString* val = optarg ? [NSString stringWithUTF8String:optarg] : nil;
+            switch (opt) {
             case 'V':
                 verbose = TRUE;
                 break;
@@ -424,13 +550,55 @@ static METranscoder* validateOpt(int argc, char * const * argv) {
             }
                 break;
         }
+        }
     }
     
-    // Quick Options Check
+    // Enhanced path validation and normalization
+    input = input ? [[input URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
+    output = output ? [[output URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
     if (!(input && output)) {
         NSLog(@"ERROR: Either input or output is not available.");
         goto error;
+    } else {
+        // Comprehensive security validation for input/output paths
+        if (!isAllowedPath(input)) {
+            NSLog(@"ERROR: Input file path security validation failed: %@", sanitizeLogString(input.path));
+            goto error;
+        }
+        if (!isAllowedPath(output)) {
+            NSLog(@"ERROR: Output file path security validation failed: %@", sanitizeLogString(output.path));
+            goto error;
+        }
+        
+        // Additional validation: Check if input file exists and is readable
+        NSFileManager *fm = [NSFileManager defaultManager];
+        if (![fm fileExistsAtPath:input.path]) {
+            NSLog(@"ERROR: Input file does not exist: %@", sanitizeLogString(input.path));
+            goto error;
+        }
+        if (![fm isReadableFileAtPath:input.path]) {
+            NSLog(@"ERROR: Input file is not readable: %@", sanitizeLogString(input.path));
+            goto error;
+        }
+        
+        // Check output directory exists and is writable
+        NSString *outputDir = [output.path stringByDeletingLastPathComponent];
+        if (![fm fileExistsAtPath:outputDir]) {
+            NSLog(@"ERROR: Output directory does not exist: %@", sanitizeLogString(outputDir));
+            goto error;
+        }
+        if (![fm isWritableFileAtPath:outputDir]) {
+            NSLog(@"ERROR: Output directory is not writable: %@", sanitizeLogString(outputDir));
+            goto error;
+        }
+        
+        // Prevent overwriting existing files without explicit confirmation
+        if ([fm fileExistsAtPath:output.path]) {
+            NSLog(@"WARNING: Output file already exists and will be overwritten: %@", sanitizeLogString(output.path));
+        }
     }
+    
+    // Quick Options Check
     if (ve != NULL) {
         if (meve || mex264 || mex265) {
             NSLog(@"ERROR: -ve is not compatible with -meve/-mex264/-mex265.");
@@ -620,7 +788,7 @@ int main(int argc, char * const *argv) {
                 finishMonitor(128 + lastSignal()); // 128 + SIGNUMBER
             }
             if (err) {
-                NSLog(@"Transcode failed(%@).", err);
+                NSLog(@"Transcode failed: %@", sanitizeLogString([err description]));
                 finishMonitor(EXIT_FAILURE);
             }
         };

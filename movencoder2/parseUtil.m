@@ -26,6 +26,7 @@
 
 #import "MECommon.h"
 #import "parseUtil.h"
+#import "MESecureLogging.h"
 #include <ctype.h>
 
 NSString* const separator = @";";
@@ -35,18 +36,19 @@ NSString* const optSeparator = @":";
 NS_ASSUME_NONNULL_BEGIN
 
 NSNumber* parseInteger(NSString* val) {
-    // Trim whitespace and newlines from input
-    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    
-    NSScanner *ns = [NSScanner scannerWithString:val];
-    long long theValue = 0;
-    if ([ns scanLongLong:&theValue]) {
-        // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
-        if (!ns.atEnd) {
-            NSString* suffix = nil;
-            NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
-            if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
-                if (suffix.length != 1) goto error; // reject multi-letter suffix like "MB"
+    @autoreleasepool {
+        // Trim whitespace and newlines from input
+        val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        
+        NSScanner *ns = [NSScanner scannerWithString:val];
+        long long theValue = 0;
+        if ([ns scanLongLong:&theValue]) {
+            // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
+            if (!ns.atEnd) {
+                NSString* suffix = nil;
+                NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
+                if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
+                    if (suffix.length != 1) goto error; // reject multi-letter suffix like "MB"
                 unichar ch = [suffix characterAtIndex:0];
                 long long multiplier = 1;
                 switch (toupper((int)ch)) {
@@ -58,7 +60,11 @@ NSNumber* parseInteger(NSString* val) {
                 }
                 // overflow check before multiplication
                 if (theValue > 0 && (unsigned long long)theValue > ULLONG_MAX / (unsigned long long)multiplier) goto error;
-                if (theValue < 0 && (unsigned long long)(-theValue) > ULLONG_MAX / (unsigned long long)multiplier) goto error;
+                if (theValue < 0) {
+                    // Handle INT64_MIN edge case: -INT64_MIN causes undefined behavior due to overflow
+                    if (theValue == INT64_MIN) goto error;
+                    if ((unsigned long long)(-theValue) > ULLONG_MAX / (unsigned long long)multiplier) goto error;
+                }
                 long long result = theValue * multiplier;
                 return [NSNumber numberWithLongLong:result];
             }
@@ -67,43 +73,46 @@ NSNumber* parseInteger(NSString* val) {
     }
 
 error:
-    NSLog(@"ERROR: '%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", val);
+    NSLog(@"ERROR: '%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
     return nil;
+    }
 }
 
 NSNumber* parseDouble(NSString* val) {
-    // Trim whitespace and newlines from input
-    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    
-    NSScanner *ns = [NSScanner scannerWithString:val];
-    double theValue = 0.0;
-    if ([ns scanDouble:&theValue]) {
-        // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
-        if (!ns.atEnd) {
-            NSString* suffix = nil;
-            NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
-            if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
-                if (suffix.length != 1) goto error; // reject multi-letter suffix
-                unichar ch = [suffix characterAtIndex:0];
-                double multiplier = 1.0;
-                switch (toupper((int)ch)) {
-                    case 'T': multiplier = 1e12; break;
-                    case 'G': multiplier = 1e9; break;
-                    case 'M': multiplier = 1e6; break;
-                    case 'K': multiplier = 1e3; break;
-                    default: goto error;
+    @autoreleasepool {
+        // Trim whitespace and newlines from input
+        val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        
+        NSScanner *ns = [NSScanner scannerWithString:val];
+        double theValue = 0.0;
+        if ([ns scanDouble:&theValue]) {
+            // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
+            if (!ns.atEnd) {
+                NSString* suffix = nil;
+                NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
+                if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
+                    if (suffix.length != 1) goto error; // reject multi-letter suffix
+                    unichar ch = [suffix characterAtIndex:0];
+                    double multiplier = 1.0;
+                    switch (toupper((int)ch)) {
+                        case 'T': multiplier = 1e12; break;
+                        case 'G': multiplier = 1e9; break;
+                        case 'M': multiplier = 1e6; break;
+                        case 'K': multiplier = 1e3; break;
+                        default: goto error;
+                    }
+                    double result = theValue * multiplier;
+                    if (!isfinite(result)) goto error;
+                    return [NSNumber numberWithDouble:result];
                 }
-                double result = theValue * multiplier;
-                if (!isfinite(result)) goto error;
-                return [NSNumber numberWithDouble:result];
             }
+            return [NSNumber numberWithDouble:theValue];
         }
-        return [NSNumber numberWithDouble:theValue];
-    }
 
 error:
-    NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", val);
-    return nil;
+        NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
+        return nil;
+    }
 }
 
 NSValue* parseSize(NSString* val) {
@@ -128,7 +137,7 @@ NSValue* parseSize(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Size", val);
+    NSLog(@"ERROR: %@ : not Size", sanitizeLogString(val));
     return nil;
 }
 
@@ -157,7 +166,7 @@ NSValue* parseRect(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Rect", val);
+    NSLog(@"ERROR: %@ : not Rect", sanitizeLogString(val));
     return nil;
 }
 
@@ -205,7 +214,7 @@ NSValue* parseTime(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Time", val);
+    NSLog(@"ERROR: %@ : not Time", sanitizeLogString(val));
     return nil;
 }
 
@@ -225,7 +234,7 @@ NSNumber* parseBool(NSString* val) {
     if (isNo) return @NO;
     
 error:
-    NSLog(@"ERROR: '%@' is not a valid boolean value (expected: YES/NO, TRUE/FALSE, ON/OFF, 1/0)", val);
+    NSLog(@"ERROR: '%@' is not a valid boolean value (expected: YES/NO, TRUE/FALSE, ON/OFF, 1/0)", sanitizeLogString(val));
     return nil;
 }
 
@@ -256,21 +265,18 @@ NSDictionary* parseCodecOptions(NSString* val) {
     }
     
     if (skipped.count) {
-        NSLog(@"ERROR: Invalid codec options format in '%@', skipped options: %@", val, skipped);
+        NSLog(@"ERROR: Invalid codec options format in '%@', skipped options: %@", sanitizeLogString(val), sanitizeLogString([skipped description]));
     }
     
     if (options.allKeys.count) {
         return [options copy];
     }
     
-    NSLog(@"ERROR: '%@' contains no valid codec options (expected format: key1=value1:key2=value2)", val);
+    NSLog(@"ERROR: '%@' contains no valid codec options (expected format: key1=value1:key2=value2)", sanitizeLogString(val));
     return nil;
 }
 
 NSNumber* parseLayoutTag(NSString* val) {
-    // First, try to interpret as an integer value
-    NSNumber* num = parseInteger(val);
-    if (num != nil) return num;
     // Constant name to value table (AAC layouts only)
     static NSDictionary<NSString*, NSNumber*>* table = nil;
     static dispatch_once_t onceToken;
@@ -293,7 +299,12 @@ NSNumber* parseLayoutTag(NSString* val) {
     });
     NSNumber* tag = table[val];
     if (tag != nil) return tag;
-    NSLog(@"ERROR: %@ : not valid AAC layout name or integer", val);
+    
+    // Fallback: Try to interpret as an integer value
+    NSNumber* num = parseInteger(val);
+    if (num != nil) return num;
+    
+    NSLog(@"ERROR: %@ : not valid AAC layout name or integer", sanitizeLogString(val));
     return nil;
 }
 

@@ -62,6 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (assign) BOOL failed;                       // atomic override
 @property (assign) AVAssetWriterStatus writerStatus;  // atomic override
 @property (assign) AVAssetReaderStatus readerStatus;  // atomic override
+@property (strong, nonatomic) NSMutableData *audioBufferListPool;
 
 @end
 
@@ -100,6 +101,8 @@ NS_ASSUME_NONNULL_BEGIN
         self.endTime = kCMTimeInvalid;
         
         self.maxInputBufferCount = 10;
+        
+        self.audioBufferListPool = [NSMutableData data];
     }
     return self;
 }
@@ -118,24 +121,25 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)cleanup
 {
-    dispatch_sync(_inputQueue, ^{
-        for (NSValue* value in _inputBufferQueue) {
+    // Use dispatch_async for cleanup to prevent deadlock between input and output queues
+    dispatch_async(_inputQueue, ^{
+        for (NSValue* value in self->_inputBufferQueue) {
             CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
             if (sampleBuffer) {
                 CFRelease(sampleBuffer);
             }
         }
-        [_inputBufferQueue removeAllObjects];
+        [self->_inputBufferQueue removeAllObjects];
     });
     
-    dispatch_sync(_outputQueue, ^{
-        for (NSValue* value in _outputBufferQueue) {
+    dispatch_async(_outputQueue, ^{
+        for (NSValue* value in self->_outputBufferQueue) {
             CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
             if (sampleBuffer) {
                 CFRelease(sampleBuffer);
             }
         }
-        [_outputBufferQueue removeAllObjects];
+        [self->_outputBufferQueue removeAllObjects];
     });
 }
 
@@ -177,13 +181,20 @@ NS_ASSUME_NONNULL_BEGIN
         sampleBuffer, &ablSize, NULL, 0, kCFAllocatorDefault, kCFAllocatorDefault, 0, NULL);
     if (st != noErr || ablSize == 0) goto cleanup;
 
-    abl = (AudioBufferList*)malloc(ablSize);
-    if (!abl) goto cleanup;
-
-    st = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
-        sampleBuffer, NULL, abl, ablSize, kCFAllocatorDefault, kCFAllocatorDefault, 0, &retainedBB);
-    if (st != noErr) goto cleanup;
-    if (abl->mNumberBuffers == 0) goto cleanup;
+    if (self.audioBufferListPool.length < ablSize) {
+        [self.audioBufferListPool setLength:ablSize];
+    }
+    abl = (AudioBufferList*)[self.audioBufferListPool mutableBytes];
+    memset(abl, 0, ablSize);
+    st = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(sampleBuffer,
+                                                                 NULL,
+                                                                 abl,
+                                                                 ablSize,
+                                                                 kCFAllocatorDefault,
+                                                                 kCFAllocatorDefault,
+                                                                 0,
+                                                                 &retainedBB);
+    if (st != noErr || abl->mNumberBuffers == 0) goto cleanup;
 
     // Create destination PCM buffer
     pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format
@@ -255,7 +266,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 cleanup:
     if (retainedBB) CFRelease(retainedBB);
-    if (abl) free(abl);
     return pcm;
 }
 
@@ -413,10 +423,10 @@ cleanup:
         // Store the sample buffer for processing
         CFRetain(sb);
         NSValue* value = [NSValue valueWithPointer:sb];
-        [_inputBufferQueue addObject:value];
+        [self->_inputBufferQueue addObject:value];
         
         // Trigger processing if converter is available
-        if (_audioConverter && self.sourceFormat && self.destinationFormat) {
+        if (self->_audioConverter && self.sourceFormat && self.destinationFormat) {
             [self processNextBuffer];
         }
     });
@@ -434,7 +444,7 @@ cleanup:
     NSUInteger limit = self.maxInputBufferCount;
     __block BOOL ready;
     dispatch_sync(_inputQueue, ^{
-        ready = (limit > 0) ? (_inputBufferQueue.count < limit) : NO;
+        ready = (limit > 0) ? (self->_inputBufferQueue.count < limit) : NO;
     });
     return ready;
 }
@@ -442,31 +452,32 @@ cleanup:
 - (void)markAsFinished
 {
     dispatch_sync(_inputQueue, ^{
-        _inputFinished = YES;
+        self->_inputFinished = YES;
         // Process any remaining buffers
-        while (_inputBufferQueue.count > 0 && _audioConverter) {
+        while (self->_inputBufferQueue.count > 0 && self->_audioConverter) {
             [self processNextBuffer];
         }
-        // Mark output as finished
-        dispatch_sync(_outputQueue, ^{
-            _outputFinished = YES;
-        });
         
         // Signal semaphore to unblock any waiting threads
-        dispatch_semaphore_signal(_outputDataSemaphore);
+        dispatch_semaphore_signal(self->_outputDataSemaphore);
+    });
+    
+    // Mark output as finished separately to avoid nested dispatch_sync deadlock
+    dispatch_async(_outputQueue, ^{
+        self->_outputFinished = YES;
     });
 }
 
 - (void)requestMediaDataWhenReadyOnQueue:(dispatch_queue_t)queue usingBlock:(RequestHandler)block
 {
     dispatch_sync(_inputQueue, ^{
-        _inputRequestQueue = queue;
-        _inputRequestHandler = [block copy];
+        self->_inputRequestQueue = queue;
+        self->_inputRequestHandler = [block copy];
         
         // Initialize the audio converter if not already done
-        if (!_audioConverter && self.sourceFormat && self.destinationFormat) {
-            _audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
-            if (!_audioConverter) {
+        if (!self->_audioConverter && self.sourceFormat && self.destinationFormat) {
+            self->_audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
+            if (!self->_audioConverter) {
                 self.failed = YES;
                 if (self.verbose) {
                     NSLog(@"[MEAudioConverter] Failed to create AVAudioConverter");
@@ -476,8 +487,8 @@ cleanup:
         }
         
         // Start the processing loop
-        if (_inputRequestQueue && _inputRequestHandler) {
-            dispatch_async(_inputRequestQueue, _inputRequestHandler);
+        if (self->_inputRequestQueue && self->_inputRequestHandler) {
+            dispatch_async(self->_inputRequestQueue, self->_inputRequestHandler);
         }
     });
 }
@@ -525,18 +536,18 @@ cleanup:
                     
                     // Rebuild CMSampleBuffer
                     CMTime pts = CMSampleBufferGetPresentationTimeStamp(inputSampleBuffer);
-                    CMSampleBufferRef outputSampleBuffer = [self createSampleBufferFromPCMBuffer:outputPCMBuffer 
-                                                                         withPresentationTimeStamp:pts 
-                                                                                            format:self.destinationFormat];
+                    CMSampleBufferRef outputSampleBuffer = [self createSampleBufferFromPCMBuffer:outputPCMBuffer
+                                                                       withPresentationTimeStamp:pts
+                                                                                          format:self.destinationFormat];
                     if (outputSampleBuffer) {
-                        // Add to output queue
-                        dispatch_sync(_outputQueue, ^{
+                        // Add to output queue using async to prevent deadlock
+                        dispatch_async(_outputQueue, ^{
                             NSValue* outputValue = [NSValue valueWithPointer:outputSampleBuffer];
-                            [_outputBufferQueue addObject:outputValue];
+                            [self->_outputBufferQueue addObject:outputValue];
+                            
+                            // Signal that new data is available
+                            dispatch_semaphore_signal(self->_outputDataSemaphore);
                         });
-                        
-                        // Signal that new data is available
-                        dispatch_semaphore_signal(_outputDataSemaphore);
                     }
                 } else if (convertError) {
                     if (self.verbose) {
@@ -572,12 +583,12 @@ cleanup:
     while (!self.failed) {
         // Check if data is immediately available
         dispatch_sync(_outputQueue, ^{
-            if (_outputBufferQueue.count > 0) {
-                NSValue* value = _outputBufferQueue.firstObject;
-                [_outputBufferQueue removeObjectAtIndex:0];
+            if (self->_outputBufferQueue.count > 0) {
+                NSValue* value = self->_outputBufferQueue.firstObject;
+                [self->_outputBufferQueue removeObjectAtIndex:0];
                 result = (CMSampleBufferRef)[value pointerValue];
                 // Don't release here as this method should return a retained reference
-            } else if (_inputFinished) {
+            } else if (self->_inputFinished) {
                 // Only return NULL when input is finished and no more buffers available
                 result = NULL;
             }
