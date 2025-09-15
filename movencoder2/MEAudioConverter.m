@@ -426,7 +426,7 @@ cleanup:
         [self->_inputBufferQueue addObject:value];
         
         // Trigger processing if converter is available
-        if (self->_audioConverter && self->sourceFormat && self->destinationFormat) {
+        if (self->_audioConverter && self.sourceFormat && self.destinationFormat) {
             [self processNextBuffer];
         }
     });
@@ -475,11 +475,11 @@ cleanup:
         self->_inputRequestHandler = [block copy];
         
         // Initialize the audio converter if not already done
-        if (!self->_audioConverter && self->sourceFormat && self->destinationFormat) {
-            self->_audioConverter = [[AVAudioConverter alloc] initFromFormat:self->sourceFormat toFormat:self->destinationFormat];
+        if (!self->_audioConverter && self.sourceFormat && self.destinationFormat) {
+            self->_audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
             if (!self->_audioConverter) {
-                self->failed = YES;
-                if (self->verbose) {
+                self.failed = YES;
+                if (self.verbose) {
                     NSLog(@"[MEAudioConverter] Failed to create AVAudioConverter");
                 }
                 return;
