@@ -105,18 +105,44 @@ NS_ASSUME_NONNULL_BEGIN
 {
     NSFileManager* mgr = [NSFileManager defaultManager];
     NSString* path = [self.outputURL path];
-    if (mgr && path) {
-        BOOL exist = [mgr fileExistsAtPath:path];
-        BOOL delete = [mgr isDeletableFileAtPath:path];
-        BOOL create = [mgr isWritableFileAtPath:[path stringByDeletingLastPathComponent]];
-        if (exist && delete && create) {
+    if (!mgr || !path) {
+        return NO;
+    }
+    
+    BOOL fileExists = [mgr fileExistsAtPath:path];
+    
+    if (fileExists) {
+        // If file exists, try to test write access by attempting to open it for writing
+        NSFileHandle* fileHandle = [NSFileHandle fileHandleForWritingAtPath:path];
+        if (fileHandle) {
+            [fileHandle closeFile];
             return YES;
+        } else {
+            // If direct file access fails, check if we can delete and recreate
+            return [mgr isDeletableFileAtPath:path];
         }
-        if (!exist && create) {
+    } else {
+        // If file doesn't exist, test if we can create it by attempting to create a temporary file
+        NSString* parentDir = [path stringByDeletingLastPathComponent];
+        NSString* filename = [path lastPathComponent];
+        NSString* tempPath = [parentDir stringByAppendingPathComponent:[NSString stringWithFormat:@".%@.tmp.%d", filename, getpid()]];
+        
+        // Try to create a temporary file to test write access
+        NSError* error = nil;
+        BOOL success = [@"test" writeToFile:tempPath 
+                                 atomically:NO 
+                                   encoding:NSUTF8StringEncoding 
+                                      error:&error];
+        
+        if (success) {
+            // Clean up the temporary file
+            [mgr removeItemAtPath:tempPath error:nil];
             return YES;
+        } else {
+            // Fallback to basic directory write check
+            return [mgr isWritableFileAtPath:parentDir];
         }
     }
-    return NO;
 }
 
 - (BOOL)validate
@@ -332,6 +358,9 @@ NS_ASSUME_NONNULL_BEGIN
             self.endTime = mov.duration;
         }
     }
+    CMTimeRange maxRange = CMTimeRangeMake(self.startTime, self.endTime);
+    self.startTime = CMTimeClampToRange(self.startTime, maxRange);
+    self.endTime = CMTimeClampToRange(self.endTime, maxRange);
     self.writerIsBusy = TRUE;
     
     //
