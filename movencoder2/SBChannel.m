@@ -158,27 +158,29 @@ int countUp(SBChannel* self) {
 
         BOOL result = TRUE;
         while (meInput.isReadyForMoreMediaData && result) {
-            CMSampleBufferRef sb = [meOutput copyNextSampleBuffer];
-            if (sb) {
-                int count = countUp(wself);
-                
-                if (showProgress) {
-                    if (isToME) { // input
-                        dumpTiming(sb, meOutput.mediaType, tag, count);
+            @autoreleasepool {
+                CMSampleBufferRef sb = [meOutput copyNextSampleBuffer];
+                if (sb) {
+                    int count = countUp(wself);
+                    
+                    if (showProgress) {
+                        if (isToME) { // input
+                            dumpTiming(sb, meOutput.mediaType, tag, count);
+                        }
                     }
-                }
-                [delegate didReadBuffer:sb from:wself];
-                result = [meInput appendSampleBuffer:sb];
-                
-                if (showProgress) {
-                    if (isFromME || isPassThru) { // output
-                        dumpTiming(sb, meOutput.mediaType, tag, count);
+                    [delegate didReadBuffer:sb from:wself];
+                    result = [meInput appendSampleBuffer:sb];
+                    
+                    if (showProgress) {
+                        if (isFromME || isPassThru) { // output
+                            dumpTiming(sb, meOutput.mediaType, tag, count);
+                        }
                     }
+                    
+                    CFRelease(sb);
+                } else {
+                    result = FALSE;
                 }
-                
-                CFRelease(sb);
-            } else {
-                result = FALSE;
             }
         }
         if (!result) {

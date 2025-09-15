@@ -62,6 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (assign) BOOL failed;                       // atomic override
 @property (assign) AVAssetWriterStatus writerStatus;  // atomic override
 @property (assign) AVAssetReaderStatus readerStatus;  // atomic override
+@property (strong, nonatomic) NSMutableData *audioBufferListPool;
 
 @end
 
@@ -100,6 +101,8 @@ NS_ASSUME_NONNULL_BEGIN
         self.endTime = kCMTimeInvalid;
         
         self.maxInputBufferCount = 10;
+        
+        self.audioBufferListPool = [NSMutableData data];
     }
     return self;
 }
@@ -177,30 +180,25 @@ NS_ASSUME_NONNULL_BEGIN
         sampleBuffer, &ablSize, NULL, 0, kCFAllocatorDefault, kCFAllocatorDefault, 0, NULL);
     if (st != noErr || ablSize == 0) goto cleanup;
 
-    abl = (AudioBufferList*)malloc(ablSize);
-    if (!abl) {
-        NSLog(@"[MEAudioConverter] Failed to allocate AudioBufferList of size %zu bytes", ablSize);
-        goto cleanup;
+    if (self.audioBufferListPool.length < ablSize) {
+        [self.audioBufferListPool setLength:ablSize];
     }
-
-    st = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
-        sampleBuffer, NULL, abl, ablSize, kCFAllocatorDefault, kCFAllocatorDefault, 0, &retainedBB);
-    if (st != noErr) {
-        NSLog(@"[MEAudioConverter] Failed to get AudioBufferList: OSStatus %d", (int)st);
-        goto cleanup;
-    }
-    if (abl->mNumberBuffers == 0) {
-        NSLog(@"[MEAudioConverter] AudioBufferList contains no buffers");
-        goto cleanup;
-    }
+    abl = (AudioBufferList*)[self.audioBufferListPool mutableBytes];
+    memset(abl, 0, ablSize);
+    st = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(sampleBuffer,
+                                                                 NULL,
+                                                                 abl,
+                                                                 ablSize,
+                                                                 kCFAllocatorDefault,
+                                                                 kCFAllocatorDefault,
+                                                                 0,
+                                                                 &retainedBB);
+    if (st != noErr || abl->mNumberBuffers == 0) goto cleanup;
 
     // Create destination PCM buffer
     pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format
                                         frameCapacity:(AVAudioFrameCount)sampleCount];
-    if (!pcm) {
-        NSLog(@"[MEAudioConverter] Failed to create destination PCM buffer");
-        goto cleanup;
-    }
+    if (!pcm) goto cleanup;
     pcm.frameLength = (AVAudioFrameCount)sampleCount;
 
     const UInt32 ch = format.channelCount;
@@ -266,14 +264,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 
 cleanup:
-    if (retainedBB) {
-        CFRelease(retainedBB);
-        retainedBB = NULL;
-    }
-    if (abl) {
-        free(abl);
-        abl = NULL;
-    }
+    if (retainedBB) CFRelease(retainedBB);
     return pcm;
 }
 
@@ -543,9 +534,9 @@ cleanup:
                     
                     // Rebuild CMSampleBuffer
                     CMTime pts = CMSampleBufferGetPresentationTimeStamp(inputSampleBuffer);
-                    CMSampleBufferRef outputSampleBuffer = [self createSampleBufferFromPCMBuffer:outputPCMBuffer 
-                                                                         withPresentationTimeStamp:pts 
-                                                                                            format:self.destinationFormat];
+                    CMSampleBufferRef outputSampleBuffer = [self createSampleBufferFromPCMBuffer:outputPCMBuffer
+                                                                       withPresentationTimeStamp:pts
+                                                                                          format:self.destinationFormat];
                     if (outputSampleBuffer) {
                         // Add to output queue
                         dispatch_sync(_outputQueue, ^{
