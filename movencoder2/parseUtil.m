@@ -27,7 +27,7 @@
 #import "MECommon.h"
 #import "parseUtil.h"
 #include <ctype.h>
-#include <limits.h>
+#include <stdint.h>
 
 NSString* const separator = @";";
 NSString* const equal = @"=";
@@ -60,8 +60,8 @@ NSNumber* parseInteger(NSString* val) {
                 // overflow check before multiplication
                 if (theValue > 0 && (unsigned long long)theValue > ULLONG_MAX / (unsigned long long)multiplier) goto error;
                 if (theValue < 0) {
-                    // Handle LLONG_MIN edge case: -LLONG_MIN causes undefined behavior due to overflow
-                    if (theValue == LLONG_MIN) goto error;
+                    // Handle INT64_MIN edge case: -INT64_MIN causes undefined behavior due to overflow
+                    if (theValue == INT64_MIN) goto error;
                     if ((unsigned long long)(-theValue) > ULLONG_MAX / (unsigned long long)multiplier) goto error;
                 }
                 long long result = theValue * multiplier;
