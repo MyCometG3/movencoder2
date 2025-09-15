@@ -27,7 +27,6 @@
 #import "MECommon.h"
 #import "parseUtil.h"
 #include <ctype.h>
-#include <stdint.h>
 
 NSString* const separator = @";";
 NSString* const equal = @"=";
