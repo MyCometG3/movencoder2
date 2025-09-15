@@ -272,9 +272,6 @@ NSDictionary* parseCodecOptions(NSString* val) {
 }
 
 NSNumber* parseLayoutTag(NSString* val) {
-    // First, try to interpret as an integer value
-    NSNumber* num = parseInteger(val);
-    if (num != nil) return num;
     // Constant name to value table (AAC layouts only)
     static NSDictionary<NSString*, NSNumber*>* table = nil;
     static dispatch_once_t onceToken;
@@ -297,6 +294,11 @@ NSNumber* parseLayoutTag(NSString* val) {
     });
     NSNumber* tag = table[val];
     if (tag != nil) return tag;
+    
+    // Fallback: Try to interpret as an integer value
+    NSNumber* num = parseInteger(val);
+    if (num != nil) return num;
+    
     NSLog(@"ERROR: %@ : not valid AAC layout name or integer", val);
     return nil;
 }
