@@ -60,6 +60,55 @@ float initialDelayInSec = 5.0;
 #endif
 
 /* =================================================================================== */
+// MARK: - file path validation helper function
+/* =================================================================================== */
+
+// Path validation utility
+static BOOL isAllowedPath(NSURL *fileURL) {
+    // Allow only under /Users/CurrentUser/ and /Users/Shared/ (system volume), or /Volumes/*/
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *targetPath = [[fileURL path] stringByStandardizingPath];
+
+    // Get current user's home directory
+    NSString *userPath = [fm.homeDirectoryForCurrentUser.path stringByStandardizingPath];
+    // Get /Users/Shared directory
+    NSString *sharedPath = @"/Users/Shared";
+
+    // Check if path is under /Users/CurrentUser/
+    if ([targetPath hasPrefix:userPath]) {
+        // fall through to common checks below
+    } else if ([targetPath hasPrefix:sharedPath]) {
+        // fall through to common checks below
+    } else if ([targetPath hasPrefix:@"/Volumes/"]) {
+        // Allow under /Volumes/*/ (but not /Volumes/ directly)
+        NSArray *components = [targetPath pathComponents];
+        if (!(components.count >= 3 && ![components[2] isEqualToString:@""])) {
+            return NO;
+        }
+        // fall through to common checks below
+    } else {
+        // Not in any allowed root
+        return NO;
+    }
+
+    // Common forbidden pattern checks
+    NSCharacterSet *forbiddenSet = [NSCharacterSet characterSetWithCharactersInString:@"\0~"];
+    if ([targetPath rangeOfCharacterFromSet:forbiddenSet].location != NSNotFound ||
+        [targetPath containsString:@".."] || [targetPath containsString:@"/dev/"])
+    {
+        NSLog(@"ERROR: File name contains forbidden characters.");
+        return NO;
+    }
+    // Symlink check
+    NSDictionary *attrs = [fm attributesOfItemAtPath:targetPath error:nil];
+    if ([[attrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
+        NSLog(@"ERROR: File is a symbolic link.");
+        return NO;
+    }
+    return YES;
+}
+
+/* =================================================================================== */
 // MARK: - option parse function
 /* =================================================================================== */
 
@@ -426,11 +475,20 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
         }
     }
     
-    // Quick Options Check
+    // Path validation and normalization
+    input = input ? [[input URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
+    output = output ? [[output URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
     if (!(input && output)) {
         NSLog(@"ERROR: Either input or output is not available.");
         goto error;
     }
+    // Validate allowed paths using isAllowedPath() (now includes forbidden pattern and symlink checks)
+    if (!isAllowedPath(input) || !isAllowedPath(output)) {
+        NSLog(@"ERROR: Input/output file is not in an allowed directory or is invalid.");
+        goto error;
+    }
+    
+    // Quick Options Check
     if (ve != NULL) {
         if (meve || mex264 || mex265) {
             NSLog(@"ERROR: -ve is not compatible with -meve/-mex264/-mex265.");
