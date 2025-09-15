@@ -23,6 +23,8 @@
 - ✅ Unsafe C string handling in parameter parsing (METranscoder+prepareChannels.m:38-46) - **FULLY RESOLVED**
 - ✅ Integer overflow vulnerability in parseUtil LLONG_MIN edge case (parseUtil.m:61-65) - **FULLY RESOLVED**
 - ✅ **NEW**: Race condition in MEManager queue operations (MEManager.m:88-95, 106-107) - **FULLY RESOLVED**
+- ✅ **NEW**: Resource cleanup order dependencies (MEManager.m:188-199) - **FULLY RESOLVED**
+- ✅ **NEW**: Deadlock risks in nested dispatch_sync operations (MEAudioConverter.m:121, MEManager.m:260) - **FULLY RESOLVED**
 - ✅ **NEW**: Memory efficiency improvements with pool reuse in MEAudioConverter (commit 45ddeaa)
 - ✅ **NEW**: Autoreleasepool optimization in SBChannel for reduced memory pressure (commit 45ddeaa)
 - ✅ **NEW**: Comprehensive file path validation and security hardening (commit bacb571)
@@ -486,10 +488,21 @@ The project depends on:
 @property (atomic, readwrite) int64_t lastDequeuedPTS;
 ```
 
-### Deadlock Risks  
+### ✅ **RESOLVED** - Deadlock Risks  
 **File:** `MEAudioConverter.m:121`, `MEManager.m:260`
 
-Nested `dispatch_sync` calls to different queues could potentially deadlock if queue dependencies form cycles.
+**Status:** ✅ **FULLY RESOLVED**
+
+**Issue:** Nested `dispatch_sync` calls to different queues could potentially deadlock if queue dependencies form cycles.
+
+**Resolution Applied:**
+- **MEAudioConverter cleanup method** - Replaced nested `dispatch_sync` calls with `dispatch_async` to prevent deadlock between input and output queues
+- **MEAudioConverter markAsFinished method** - Separated nested sync operations, using async for output queue updates  
+- **MEAudioConverter processNextBuffer** - Changed output queue synchronization from sync to async when called from input queue context
+- **MEManager implementation** - Already properly protected with `dispatch_get_specific()` pattern to avoid nested sync calls
+
+**Technical Details:**
+The deadlock risk occurred when cleanup operations synchronized on both input and output queues sequentially, potentially creating circular wait conditions. Fixed by using asynchronous dispatch for queue operations that don't require immediate completion, while maintaining proper resource cleanup ordering.
 
 ## Performance Review
 
