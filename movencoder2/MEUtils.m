@@ -835,45 +835,59 @@ CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx) {
     }
     
     if ([sps count] * [pps count] > 0) {
-        // put SPS/PPS payload into NALs stream
+        // put SPS/PPS payload into NALs stream (with 4-byte start codes for internal concatenation)
         NSData *spsNALs = payload2NALs(sps);
         NSData *ppsNALs = payload2NALs(pps);
         NSData *extNALs = payload2NALs(ext);
         
-        // create VideoFormatDescription using NALs stream
-        if ([extNALs length]) {
+        // Helper to strip 4-byte start code
+        void (^strip4)(NSData* data, const uint8_t** outPtr, size_t* outSize) = ^(NSData* data, const uint8_t** outPtr, size_t* outSize) {
+            if (!data) { *outPtr = NULL; *outSize = 0; return; }
+            size_t len = data.length;
+            if (len <= 4) { *outPtr = NULL; *outSize = 0; return; }
+            *outPtr = ((const uint8_t*)data.bytes) + 4;
+            *outSize = len - 4;
+        };
+        
+        // create VideoFormatDescription using NALs stream (without start codes)
+        if (extNALs.length > 0) {
             int numPS = 3;
-            const uint8_t* const paramSetPtr[3] = {
-                [spsNALs bytes], [ppsNALs bytes], [extNALs bytes]};
-            const size_t paramSetSize[3] = {
-                [spsNALs length]-4, [ppsNALs length]-4, [extNALs length]-4};
-            int nalUnitHeaderLength = 4;
-            CMFormatDescriptionRef formatDescription = NULL;
-            OSStatus err = CMVideoFormatDescriptionCreateFromH264ParameterSets(kCFAllocatorDefault,
-                                                                               numPS,
-                                                                               paramSetPtr,
-                                                                               paramSetSize,
-                                                                               nalUnitHeaderLength,
-                                                                               &formatDescription);
-            if (err == noErr && formatDescription) {
-                desc = formatDescription;
+            const uint8_t* paramSetPtr[3] = { NULL, NULL, NULL };
+            size_t paramSetSize[3] = { 0, 0, 0 };
+            strip4(spsNALs, &paramSetPtr[0], &paramSetSize[0]);
+            strip4(ppsNALs, &paramSetPtr[1], &paramSetSize[1]);
+            strip4(extNALs, &paramSetPtr[2], &paramSetSize[2]);
+            if (paramSetPtr[0] && paramSetPtr[1]) {
+                int nalUnitHeaderLength = 4;
+                CMFormatDescriptionRef formatDescription = NULL;
+                OSStatus err = CMVideoFormatDescriptionCreateFromH264ParameterSets(kCFAllocatorDefault,
+                                                                                   numPS,
+                                                                                   paramSetPtr,
+                                                                                   paramSetSize,
+                                                                                   nalUnitHeaderLength,
+                                                                                   &formatDescription);
+                if (err == noErr && formatDescription) {
+                    desc = formatDescription;
+                }
             }
         } else {
             int numPS = 2;
-            const uint8_t* const paramSetPtr[2] = {
-                [spsNALs bytes]+4, [ppsNALs bytes]+4};
-            const size_t paramSetSize[2] = {
-                [spsNALs length]-4, [ppsNALs length]-4};
-            int nalUnitHeaderLength = 4;
-            CMFormatDescriptionRef formatDescription = NULL;
-            OSStatus err = CMVideoFormatDescriptionCreateFromH264ParameterSets(kCFAllocatorDefault,
-                                                                               numPS,
-                                                                               paramSetPtr,
-                                                                               paramSetSize,
-                                                                               nalUnitHeaderLength,
-                                                                               &formatDescription);
-            if (err == noErr && formatDescription) {
-                desc = formatDescription;
+            const uint8_t* paramSetPtr[2] = { NULL, NULL };
+            size_t paramSetSize[2] = { 0, 0 };
+            strip4(spsNALs, &paramSetPtr[0], &paramSetSize[0]);
+            strip4(ppsNALs, &paramSetPtr[1], &paramSetSize[1]);
+            if (paramSetPtr[0] && paramSetPtr[1]) {
+                int nalUnitHeaderLength = 4;
+                CMFormatDescriptionRef formatDescription = NULL;
+                OSStatus err = CMVideoFormatDescriptionCreateFromH264ParameterSets(kCFAllocatorDefault,
+                                                                                   numPS,
+                                                                                   paramSetPtr,
+                                                                                   paramSetSize,
+                                                                                   nalUnitHeaderLength,
+                                                                                   &formatDescription);
+                if (err == noErr && formatDescription) {
+                    desc = formatDescription;
+                }
             }
         }
     }
@@ -933,41 +947,44 @@ CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx) {
     }
     
     if ([vps count] * [sps count] * [pps count]) {
-        // put payload into NALs stream
+        // put payload into NALs stream (with 4-byte start codes internally)
         NSData *vpsNALs = payload2NALs(vps);
         NSData *spsNALs = payload2NALs(sps);
         NSData *ppsNALs = payload2NALs(pps);
         NSData *seipreNALs = payload2NALs(seipre);
         NSData *seisufNALs = payload2NALs(seisuf);
         
-        // create VideoFormatDescription using NALs stream
-        int numPS = 3;
-        const uint8_t* paramSetPtr[5] = {
-            [vpsNALs bytes], [spsNALs bytes], [ppsNALs bytes]};
-        size_t paramSetSize[5] = {
-            [vpsNALs length], [spsNALs length], [ppsNALs length]};
-        if ([seipreNALs length] > 0) {
-            paramSetPtr[numPS] = [seipreNALs bytes];
-            paramSetSize[numPS] = [seipreNALs length];
-            numPS++;
-        }
-        if ([seisufNALs length] > 0) {
-            paramSetPtr[numPS] = [seisufNALs bytes];
-            paramSetSize[numPS] = [seisufNALs length];
-            numPS++;
-        }
+        // Helper to strip 4-byte start code
+        void (^strip4)(NSData* data, const uint8_t** outPtr, size_t* outSize) = ^(NSData* data, const uint8_t** outPtr, size_t* outSize) {
+            if (!data) { *outPtr = NULL; *outSize = 0; return; }
+            size_t len = data.length;
+            if (len <= 4) { *outPtr = NULL; *outSize = 0; return; }
+            *outPtr = ((const uint8_t*)data.bytes) + 4;
+            *outSize = len - 4;
+        };
         
-        int nalUnitHeaderLength = 4;
-        CMFormatDescriptionRef formatDescription = NULL;
-        OSStatus err = CMVideoFormatDescriptionCreateFromHEVCParameterSets(kCFAllocatorDefault,
-                                                                           numPS,
-                                                                           paramSetPtr,
-                                                                           paramSetSize,
-                                                                           nalUnitHeaderLength,
-                                                                           NULL,
-                                                                           &formatDescription);
-        if (err == noErr && formatDescription) {
-            desc = formatDescription;
+        int numPS = 3;
+        const uint8_t* paramSetPtr[5] = { NULL, NULL, NULL, NULL, NULL };
+        size_t paramSetSize[5] = { 0, 0, 0, 0, 0 };
+        strip4(vpsNALs, &paramSetPtr[0], &paramSetSize[0]);
+        strip4(spsNALs, &paramSetPtr[1], &paramSetSize[1]);
+        strip4(ppsNALs, &paramSetPtr[2], &paramSetSize[2]);
+        if (seipreNALs.length > 4) { strip4(seipreNALs, &paramSetPtr[numPS], &paramSetSize[numPS]); if (paramSetPtr[numPS]) numPS++; }
+        if (seisufNALs.length > 4) { strip4(seisufNALs, &paramSetPtr[numPS], &paramSetSize[numPS]); if (paramSetPtr[numPS]) numPS++; }
+        
+        if (paramSetPtr[0] && paramSetPtr[1] && paramSetPtr[2]) {
+            int nalUnitHeaderLength = 4;
+            CMFormatDescriptionRef formatDescription = NULL;
+            OSStatus err = CMVideoFormatDescriptionCreateFromHEVCParameterSets(kCFAllocatorDefault,
+                                                                               numPS,
+                                                                               paramSetPtr,
+                                                                               paramSetSize,
+                                                                               nalUnitHeaderLength,
+                                                                               NULL,
+                                                                               &formatDescription);
+            if (err == noErr && formatDescription) {
+                desc = formatDescription;
+            }
         }
     }
     

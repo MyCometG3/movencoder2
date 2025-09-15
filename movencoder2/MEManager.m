@@ -1124,47 +1124,65 @@ end:
         if (side && side_size >= 5) {
             int picture_type = (int)side[4];
             char typeChar = av_get_picture_type_char(picture_type);
-            char naloffset = encoded->data[4];
-            int nal_ref_idc = (0x60 & naloffset) >> 5;
-            int nal_unit_type = (0x1f & naloffset);
+            enum AVCodecID cid = self->avctx ? self->avctx->codec_id : AV_CODEC_ID_NONE;
+            BOOL isKey = (self->encoded->flags & AV_PKT_FLAG_KEY) != 0;
 #if 0
-            // TODO: debug log
-            NSString* isKey = (encoded->flags & AV_PKT_FLAG_KEY) ? @"KEY" : @"";
-            NSLog(@"[MEManager] %d (%c) ; %2x, %d, %d %@", picture_type, typeChar, (int)naloffset, nal_ref_idc, nal_unit_type, isKey);
+            NSString* isKeyStr = isKey ? @"KEY" : @"";
+            NSLog(@"[MEManager] picType=%c codec=%d %@", typeChar, (int)cid, isKeyStr);
 #endif
             CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sb, YES);
             CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
             CFDictionaryAddValue(dict, kCMSampleAttachmentKey_EarlierDisplayTimesAllowed, kCFBooleanTrue);
-            if (typeChar == 'I') { // X264_TYPE_IDR or X264_TYPE_I
-                if (nal_unit_type == 5) { // IDR
+            
+            if (cid == AV_CODEC_ID_H264) {
+                // H.264 specific refinement using NAL header (first NAL after 4-byte length)
+                if (encoded->size >= 5) {
+                    const uint8_t firstNalHdr = encoded->data[4];
+                    int nal_ref_idc = (0x60 & firstNalHdr) >> 5;
+                    int nal_unit_type = (0x1f & firstNalHdr);
+                    if (typeChar == 'I') {
+                        if (nal_unit_type == 5) { // IDR
+                            CFDictionaryAddValue(dict, kCMSampleAttachmentKey_DependsOnOthers, kCFBooleanFalse);
+                        } else {
+                            // Non-IDR I (partial sync)
+                            CFDictionaryAddValue(dict, kCMSampleAttachmentKey_PartialSync, kCFBooleanTrue);
+                            CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
+                            CFBooleanRef required = (nal_ref_idc != 0x00) ? kCFBooleanTrue : kCFBooleanFalse;
+                            CFDictionaryAddValue(dict, kCMSampleAttachmentKey_IsDependedOnByOthers, required);
+                        }
+                        return sb;
+                    }
+                    if (typeChar == 'P') {
+                        CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
+                        CFDictionaryAddValue(dict, kCMSampleAttachmentKey_DependsOnOthers, kCFBooleanTrue);
+                        return sb;
+                    }
+                    if (typeChar == 'B') {
+                        CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
+                        CFDictionaryAddValue(dict, kCMSampleAttachmentKey_DependsOnOthers, kCFBooleanTrue);
+                        CFBooleanRef required = (nal_ref_idc != 0x00) ? kCFBooleanTrue : kCFBooleanFalse;
+                        CFDictionaryAddValue(dict, kCMSampleAttachmentKey_IsDependedOnByOthers, required);
+                        return sb;
+                    }
+                }
+                // Fall through to generic behavior if header unavailable
+            }
+            
+            // Generic and HEVC behavior
+            if (typeChar == 'I') {
+                if (isKey) {
+                    // Treat as sync sample
                     CFDictionaryAddValue(dict, kCMSampleAttachmentKey_DependsOnOthers, kCFBooleanFalse);
-                } else { // Non-IDR
-#if 1
-                    // Tag as Partial Sync sample
+                } else {
+                    // Open-GOP non-IDR I or CRA-like frames without full random access
                     CFDictionaryAddValue(dict, kCMSampleAttachmentKey_PartialSync, kCFBooleanTrue);
                     CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
-#else
-                    // Tag same as P frame sample
-                    CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
-                    CFDictionaryAddValue(dict, kCMSampleAttachmentKey_DependsOnOthers, kCFBooleanTrue);
-#endif
-                    //
-                    CFBooleanRef required = (nal_ref_idc != 0x00) ? kCFBooleanTrue : kCFBooleanFalse;
-                    CFDictionaryAddValue(dict, kCMSampleAttachmentKey_IsDependedOnByOthers, required);
                 }
                 return sb;
             }
-            if (typeChar == 'P') { // X264_TYPE_P
+            if (typeChar == 'P' || typeChar == 'B') {
                 CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
                 CFDictionaryAddValue(dict, kCMSampleAttachmentKey_DependsOnOthers, kCFBooleanTrue);
-                return sb;
-            }
-            if (typeChar == 'B') { // X264_TYPE_B or X264_TYPE_BREF
-                CFDictionaryAddValue(dict, kCMSampleAttachmentKey_NotSync, kCFBooleanTrue);
-                CFDictionaryAddValue(dict, kCMSampleAttachmentKey_DependsOnOthers, kCFBooleanTrue);
-                //
-                CFBooleanRef required = (nal_ref_idc != 0x00) ? kCFBooleanTrue : kCFBooleanFalse;
-                CFDictionaryAddValue(dict, kCMSampleAttachmentKey_IsDependedOnByOthers, required);
                 return sb;
             }
         }
