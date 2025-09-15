@@ -187,13 +187,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)cleanup
 {
-    avfilter_graph_free(&filter_graph);
-    
-    avcodec_free_context(&avctx);
-    
-    av_frame_free(&input);
-    av_frame_free(&filtered);
     av_packet_free(&encoded);
+    av_frame_free(&filtered);
+    av_frame_free(&input);
+    avcodec_free_context(&avctx);
+    avfilter_graph_free(&filter_graph);
+
+    self.desc = nil;
+    self.cvpbpool = nil;
+    self.pbAttachments = nil;
 }
 
 /* =================================================================================== */
