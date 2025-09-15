@@ -656,10 +656,6 @@ end:
         NSLog(@"[MEManager] ERROR: Invalid video filter parameters.");
         goto end;
     }
-    if (videoFilterString.length - 1 > sizeof(args)) {
-        NSLog(@"[MEManager] ERROR: Invalid video filter parameters.");
-        goto end;
-    }
     if (sb == NULL) {
         NSLog(@"[MEManager] ERROR: Invalid video filter parameters.");
         goto end;
