@@ -436,8 +436,6 @@ NS_ASSUME_NONNULL_BEGIN
                 dispatch_semaphore_wait(finishSem, DISPATCH_TIME_FOREVER);
             }
             
-            [war cancelReading];
-            [waw cancelWriting];
             [wself rwDidFinished];
             dispatch_semaphore_signal(waitSem);
         });
