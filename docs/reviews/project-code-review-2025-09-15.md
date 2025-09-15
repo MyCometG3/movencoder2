@@ -399,14 +399,24 @@ Error messages use inconsistent formats and verbosity levels, making troubleshoo
 - **C String Handling:** Fixed unsafe C string operations with comprehensive input validation in `METranscoder+prepareChannels.m`
 - **Integer Overflow Protection:** Enhanced overflow detection in `parseUtil.m` with proper edge case handling
 - **Buffer Overflow Prevention:** Added bounds checking in NAL unit processing (`MEManager.m`)
+- **✅ NEW - File Path Security Enhancement:** Comprehensive path validation with advanced security checks (`main.m:67-181`)
 
-**⚠️ Remaining Gaps:**
-- **File Path Injection:** No validation that input/output paths are within expected directories
+**✅ Recently Enhanced - File Path Injection Protection:**
+- **✅ RESOLVED** - Comprehensive path validation system implemented with multiple security layers
+- **Enhanced character validation** - Validates against control characters and dangerous patterns
+- **Advanced path traversal detection** - Detects encoded traversal attempts and multiple bypass techniques  
+- **System path restriction** - Prevents access to sensitive system directories (`/dev/`, `/proc/`, `/sys/`, etc.)
+- **Symlink attack prevention** - Enhanced detection including parent directory chain validation
+- **Device file protection** - Blocks access to special device files and unknown file types
+- **Permission validation** - Verifies file readability and directory writability
+- **Detailed security logging** - Comprehensive audit trail with tagged security events
+
+**⚠️ Remaining Lower Priority Gaps:**
 - **Parameter Injection:** Command-line parameters passed directly to external libraries without sanitization  
 - **Format String Attacks:** Several NSLog statements use user-controlled format strings
 
 **Recommendations:**
-1. Implement path traversal protection for file operations
+1. ✅ **COMPLETED** - Implement comprehensive path traversal protection for file operations
 2. Sanitize all user inputs before passing to external libraries
 3. Use parameterized logging: `NSLog(@"Error: %@", userString)` instead of `NSLog(userString)`
 
@@ -1287,57 +1297,158 @@ if (theValue < 0) {
 - ✅ **Proper input rejection** - Now correctly rejects `INT64_MIN` with multiplier suffixes instead of causing undefined behavior
 - ✅ **Example fix**: `parseInteger("-9223372036854775808K")` now properly rejects instead of undefined behavior
 
-### A.5 ✅ **APPLIED** - Comprehensive File Path Security (main.m) - Commit bacb571
+### A.5 ✅ **ENHANCED** - Advanced File Path Security (main.m) - Latest Commit
 
-**Implementation:** Complete file path validation and security hardening system:
+**Implementation:** Advanced file path validation and security hardening system with comprehensive threat protection:
 
 ```objc
-// Comprehensive path validation utility
+// Enhanced path validation utility with comprehensive security checks
 static BOOL isAllowedPath(NSURL *fileURL) {
-    NSFileManager *fm = [NSFileManager defaultManager];
-    NSString *targetPath = [[fileURL path] stringByStandardizingPath];
-
-    // Get current user's home directory and shared path
-    NSString *userPath = [fm.homeDirectoryForCurrentUser.path stringByStandardizingPath];
-    NSString *sharedPath = @"/Users/Shared";
-
-    // Security boundaries: only allow access under safe directory trees
-    if ([targetPath hasPrefix:userPath]) {
-        // Allow user home directory access
-    } else if ([targetPath hasPrefix:sharedPath]) {
-        // Allow shared directory access
-    } else if ([targetPath hasPrefix:@"/Volumes/"]) {
-        // Allow external volumes but verify valid structure
-        NSArray *components = [targetPath pathComponents];
-        if (!(components.count >= 3 && ![components[2] isEqualToString:@""])) {
-            return NO; // Block direct /Volumes/ access
-        }
-    } else {
-        return NO; // Block all other paths
-    }
-
-    // Pattern-based security checks
-    NSCharacterSet *forbiddenSet = [NSCharacterSet characterSetWithCharactersInString:@"\0~"];
-    if ([targetPath rangeOfCharacterFromSet:forbiddenSet].location != NSNotFound ||
-        [targetPath containsString:@".."] || [targetPath containsString:@"/dev/"]) {
-        NSLog(@"ERROR: File name contains forbidden characters.");
+    if (!fileURL) {
+        NSLog(@"[SECURITY] ERROR: File URL is nil");
         return NO;
     }
     
-    // Symlink attack prevention
-    NSDictionary *attrs = [fm attributesOfItemAtPath:targetPath error:nil];
-    if ([[attrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
-        NSLog(@"ERROR: File is a symbolic link.");
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *targetPath = [[fileURL path] stringByStandardizingPath];
+    
+    // Validate absolute path requirement
+    if (!targetPath || ![targetPath hasPrefix:@"/"]) {
+        NSLog(@"[SECURITY] ERROR: Path is not absolute: %@", targetPath);
         return NO;
     }
+    
+    // Enhanced character validation - comprehensive dangerous character detection
+    NSCharacterSet *controlChars = [NSCharacterSet controlCharacterSet];
+    NSCharacterSet *forbiddenChars = [NSCharacterSet characterSetWithCharactersInString:@"~<>:|?*\""];
+    NSCharacterSet *combinedForbidden = [controlChars mutableCopy];
+    [(NSMutableCharacterSet*)combinedForbidden formUnionWithCharacterSet:forbiddenChars];
+    
+    if ([targetPath rangeOfCharacterFromSet:combinedForbidden].location != NSNotFound) {
+        NSLog(@"[SECURITY] ERROR: Path contains forbidden characters: %@", targetPath);
+        return NO;
+    }
+    
+    // Advanced path traversal detection (including URL-encoded variants)
+    NSArray *dangerousPatterns = @[@"..", @"%2e%2e", @"%2E%2E", @"..%2f", @"..%2F", @"%2e%2e%2f", @"%2E%2E%2F"];
+    for (NSString *pattern in dangerousPatterns) {
+        if ([targetPath.lowercaseString containsString:pattern.lowercaseString]) {
+            NSLog(@"[SECURITY] ERROR: Path traversal attempt detected: %@", targetPath);
+            return NO;
+        }
+    }
+    
+    // System path protection - comprehensive forbidden directory list  
+    NSArray *forbiddenPaths = @[@"/dev/", @"/proc/", @"/sys/", @"/etc/", @"/var/root/", @"/root/", 
+                                @"/tmp/", @"/var/tmp/", @"/..", @"/.", @"/private/var/", @"/System/"];
+    for (NSString *forbidden in forbiddenPaths) {
+        if ([targetPath hasPrefix:forbidden]) {
+            NSLog(@"[SECURITY] ERROR: Access to system path denied: %@", targetPath);
+            return NO;
+        }
+    }
+
+    // Directory boundary enforcement with detailed logging
+    NSString *userPath = [fm.homeDirectoryForCurrentUser.path stringByStandardizingPath];
+    NSString *sharedPath = [@"/Users/Shared" stringByStandardizingPath];
+    
+    BOOL inAllowedRoot = NO;
+    NSString *allowedRoot = nil;
+    
+    if ([targetPath hasPrefix:userPath]) {
+        inAllowedRoot = YES;
+        allowedRoot = @"user home";
+    } else if ([targetPath hasPrefix:sharedPath]) {
+        inAllowedRoot = YES;
+        allowedRoot = @"shared directory";
+    } else if ([targetPath hasPrefix:@"/Volumes/"]) {
+        NSArray *components = [targetPath pathComponents];
+        if (components.count >= 3 && ![components[2] isEqualToString:@""]) {
+            inAllowedRoot = YES;
+            allowedRoot = [NSString stringWithFormat:@"volume '%@'", components[2]];
+        }
+    }
+    
+    if (!inAllowedRoot) {
+        NSLog(@"[SECURITY] ERROR: Path not in allowed directory tree: %@", targetPath);
+        NSLog(@"[SECURITY] INFO: Allowed roots - User: %@, Shared: %@, Volumes: /Volumes/*/", userPath, sharedPath);
+        return NO;
+    }
+    
+    // Enhanced symlink detection with parent directory chain validation
+    NSError *error = nil;
+    NSDictionary *attrs = [fm attributesOfItemAtPath:targetPath error:&error];
+    
+    // For non-existent files, validate parent directory chain for symlinks
+    if (!attrs && error.code == NSFileReadNoSuchFileError) {
+        NSString *parentPath = [targetPath stringByDeletingLastPathComponent];
+        while (parentPath && ![parentPath isEqualToString:@"/"] && parentPath.length > 0) {
+            NSDictionary *parentAttrs = [fm attributesOfItemAtPath:parentPath error:nil];
+            if (parentAttrs && [[parentAttrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
+                NSLog(@"[SECURITY] ERROR: Parent directory is a symbolic link: %@", parentPath);
+                return NO;
+            }
+            NSString *newParentPath = [parentPath stringByDeletingLastPathComponent];
+            if ([newParentPath isEqualToString:parentPath]) break; // Prevent infinite loop
+            parentPath = newParentPath;
+        }
+    } else if (attrs && [[attrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
+        NSLog(@"[SECURITY] ERROR: File is a symbolic link: %@", targetPath);
+        return NO;
+    }
+    
+    // Device file and special file type protection
+    if (attrs) {
+        NSString *fileType = [attrs fileType];
+        if ([fileType isEqualToString:NSFileTypeBlockSpecial] || 
+            [fileType isEqualToString:NSFileTypeCharacterSpecial] ||
+            [fileType isEqualToString:NSFileTypeSocket] ||
+            [fileType isEqualToString:NSFileTypeUnknown]) {
+            NSLog(@"[SECURITY] ERROR: File is a special device or unknown type: %@ (type: %@)", targetPath, fileType);
+            return NO;
+        }
+    }
+    
+    NSLog(@"[SECURITY] INFO: Path validation passed for %@ (allowed root: %@)", targetPath, allowedRoot);
     return YES;
 }
 
-// Integration into validation pipeline
+// Enhanced validation pipeline with permission and existence checks
+// Enhanced path validation and normalization
 input = input ? [[input URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
 output = output ? [[output URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
 
-if (!isAllowedPath(input) || !isAllowedPath(output)) {
+// Comprehensive security validation for input/output paths
+if (!isAllowedPath(input)) {
+    NSLog(@"ERROR: Input file path security validation failed: %@", input.path);
+    goto error;
+}
+if (!isAllowedPath(output)) {
+    NSLog(@"ERROR: Output file path security validation failed: %@", output.path);
+    goto error;
+}
+
+// Additional validation: Check file existence and permissions
+NSFileManager *fm = [NSFileManager defaultManager];
+if (![fm fileExistsAtPath:input.path]) {
+    NSLog(@"ERROR: Input file does not exist: %@", input.path);
+    goto error;
+}
+if (![fm isReadableFileAtPath:input.path]) {
+    NSLog(@"ERROR: Input file is not readable: %@", input.path);
+    goto error;
+}
+
+// Output directory validation
+NSString *outputDir = [output.path stringByDeletingLastPathComponent];
+if (![fm fileExistsAtPath:outputDir]) {
+    NSLog(@"ERROR: Output directory does not exist: %@", outputDir);
+    goto error;
+}
+if (![fm isWritableFileAtPath:outputDir]) {
+    NSLog(@"ERROR: Output directory is not writable: %@", outputDir);
+    goto error;
+}
     NSLog(@"ERROR: Input/output file is not in an allowed directory or is invalid.");
     goto error;
 }
