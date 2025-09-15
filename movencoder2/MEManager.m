@@ -966,7 +966,7 @@ end:
     
     // Fill PixelBuffer attachments using properties of filtered AVFrame
     if (pb && pbAttachments) {
-        //CVBufferSetAttachments(pb, pbAttachments, kCVAttachmentMode_ShouldPropagate);
+        CVBufferSetAttachments(pb, pbAttachments, kCVAttachmentMode_ShouldPropagate);
     }
     
     // Create formatDescription for PixelBuffer
