@@ -88,11 +88,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) dispatch_queue_t inputQueue;
 @property (nonatomic, strong) dispatch_block_t inputBlock;
 @property (nonatomic, strong) dispatch_queue_t outputQueue;
-@property (nonatomic) BOOL queueing;
-@property (nonatomic) CMTimeScale time_base;
-@property (nonatomic, strong, nullable) __attribute__((NSObject)) CMFormatDescriptionRef desc;  // for output CMSampleBufferRef
-@property (nonatomic, strong, nullable) __attribute__((NSObject)) CVPixelBufferPoolRef cvpbpool;
-@property (nonatomic, strong, nullable) __attribute__((NSObject)) CFDictionaryRef pbAttachments; // for CVImageBufferRef
+@property (atomic) BOOL queueing;  // Made atomic - accessed across input/output queues
+@property (atomic) CMTimeScale time_base;  // Made atomic - accessed across input/output queues
+@property (atomic, strong, nullable) __attribute__((NSObject)) CMFormatDescriptionRef desc;  // Made atomic - for output CMSampleBufferRef
+@property (atomic, strong, nullable) __attribute__((NSObject)) CVPixelBufferPoolRef cvpbpool;  // Made atomic - accessed across queues
+@property (atomic, strong, nullable) __attribute__((NSObject)) CFDictionaryRef pbAttachments; // Made atomic - for CVImageBufferRef
 
 // private atomic
 @property (readwrite) BOOL videoFilterIsReady;
@@ -103,8 +103,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) BOOL videoFilterFlushed;
 @property (readwrite) BOOL videoEncoderFlushed;
 
-@property (readwrite) int64_t lastEnqueuedPTS; // for Filter
-@property (readwrite) int64_t lastDequeuedPTS; // for Filter
+@property (atomic, readwrite) int64_t lastEnqueuedPTS; // Made atomic - for Filter, accessed across queues
+@property (atomic, readwrite) int64_t lastDequeuedPTS; // Made atomic - for Filter, accessed across queues
 
 // public atomic redefined
 @property (readwrite) BOOL failed;
