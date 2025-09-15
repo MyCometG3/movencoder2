@@ -1050,11 +1050,29 @@ end:
         // Get temp NAL buffer
         int tempSize = encoded->size;
         UInt8* tempPtr = av_malloc(tempSize);
-        assert(tempPtr != NULL);
+        if (!tempPtr) {
+            NSLog(@"[MEManager] ERROR: Failed to allocate %d bytes for NAL processing", tempSize);
+            goto end;
+        }
         
-        // Re-format NAL unit.
-        memcpy(tempPtr, encoded->data, tempSize);
-        avc_parse_nal_units(&tempPtr, &tempSize);    // This call does realloc buffer; may also be re-sized
+        // Create backup pointer for proper cleanup
+        UInt8* originalPtr = tempPtr;
+        
+        // Re-format NAL unit with bounds checking
+        if (tempSize >= encoded->size) {
+            memcpy(tempPtr, encoded->data, tempSize);
+            avc_parse_nal_units(&tempPtr, &tempSize);    // This call does realloc buffer; may also be re-sized
+            
+            // If reallocation happened, free the original pointer
+            if (tempPtr != originalPtr) {
+                av_free(originalPtr);
+            }
+        } else {
+            NSLog(@"[MEManager] ERROR: Buffer size mismatch in NAL processing: tempSize=%d, dataSize=%d", 
+                  tempSize, encoded->size);
+            av_free(originalPtr);
+            goto end;
+        }
         
         //
         OSStatus err = noErr;
@@ -1070,6 +1088,7 @@ end:
                                                  &bb);
         if (err) {
             NSLog(@"[MEManager] ERROR: Cannot setup CMBlockBuffer.");
+            av_free(tempPtr);
             goto end;
         }
         
