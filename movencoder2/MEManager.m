@@ -1055,22 +1055,14 @@ end:
             goto end;
         }
         
-        // Create backup pointer for proper cleanup
-        UInt8* originalPtr = tempPtr;
-        
         // Re-format NAL unit with bounds checking
-        if (tempSize >= encoded->size) {
+        if (tempSize > 0 && encoded->data) {
             memcpy(tempPtr, encoded->data, tempSize);
-            avc_parse_nal_units(&tempPtr, &tempSize);    // This call does realloc buffer; may also be re-sized
-            
-            // If reallocation happened, free the original pointer
-            if (tempPtr != originalPtr) {
-                av_free(originalPtr);
-            }
+            avc_parse_nal_units(&tempPtr, &tempSize);    // This call frees original buffer and allocates new one
         } else {
-            NSLog(@"[MEManager] ERROR: Buffer size mismatch in NAL processing: tempSize=%d, dataSize=%d", 
-                  tempSize, encoded->size);
-            av_free(originalPtr);
+            NSLog(@"[MEManager] ERROR: Invalid data for NAL processing: tempSize=%d, encoded->data=%p", 
+                  tempSize, encoded->data);
+            av_free(tempPtr);
             goto end;
         }
         
