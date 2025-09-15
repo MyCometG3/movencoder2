@@ -26,6 +26,7 @@
 
 #import "MECommon.h"
 #import "parseUtil.h"
+#import "MESecureLogging.h"
 #include <ctype.h>
 
 NSString* const separator = @";";
@@ -71,7 +72,7 @@ NSNumber* parseInteger(NSString* val) {
     }
 
 error:
-    NSLog(@"ERROR: '%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", val);
+    NSLog(@"ERROR: '%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
     return nil;
 }
 
@@ -106,7 +107,7 @@ NSNumber* parseDouble(NSString* val) {
     }
 
 error:
-    NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", val);
+    NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
     return nil;
 }
 
@@ -132,7 +133,7 @@ NSValue* parseSize(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Size", val);
+    NSLog(@"ERROR: %@ : not Size", sanitizeLogString(val));
     return nil;
 }
 
@@ -161,7 +162,7 @@ NSValue* parseRect(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Rect", val);
+    NSLog(@"ERROR: %@ : not Rect", sanitizeLogString(val));
     return nil;
 }
 
@@ -209,7 +210,7 @@ NSValue* parseTime(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Time", val);
+    NSLog(@"ERROR: %@ : not Time", sanitizeLogString(val));
     return nil;
 }
 
@@ -229,7 +230,7 @@ NSNumber* parseBool(NSString* val) {
     if (isNo) return @NO;
     
 error:
-    NSLog(@"ERROR: '%@' is not a valid boolean value (expected: YES/NO, TRUE/FALSE, ON/OFF, 1/0)", val);
+    NSLog(@"ERROR: '%@' is not a valid boolean value (expected: YES/NO, TRUE/FALSE, ON/OFF, 1/0)", sanitizeLogString(val));
     return nil;
 }
 
@@ -260,14 +261,14 @@ NSDictionary* parseCodecOptions(NSString* val) {
     }
     
     if (skipped.count) {
-        NSLog(@"ERROR: Invalid codec options format in '%@', skipped options: %@", val, skipped);
+        NSLog(@"ERROR: Invalid codec options format in '%@', skipped options: %@", sanitizeLogString(val), sanitizeLogString([skipped description]));
     }
     
     if (options.allKeys.count) {
         return [options copy];
     }
     
-    NSLog(@"ERROR: '%@' contains no valid codec options (expected format: key1=value1:key2=value2)", val);
+    NSLog(@"ERROR: '%@' contains no valid codec options (expected format: key1=value1:key2=value2)", sanitizeLogString(val));
     return nil;
 }
 
@@ -299,7 +300,7 @@ NSNumber* parseLayoutTag(NSString* val) {
     NSNumber* num = parseInteger(val);
     if (num != nil) return num;
     
-    NSLog(@"ERROR: %@ : not valid AAC layout name or integer", val);
+    NSLog(@"ERROR: %@ : not valid AAC layout name or integer", sanitizeLogString(val));
     return nil;
 }
 

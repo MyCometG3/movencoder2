@@ -25,6 +25,7 @@
  */
 
 #import "METranscoder+Internal.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -495,7 +496,7 @@ end:
         if (error) {
             *error = self.finalError;
         }
-        NSLog(@"[METranscoder] ERROR: Export session failed. \n%@", self.finalError);
+        NSLog(@"[METranscoder] ERROR: Export session failed. Error details: %@", sanitizeLogString([self.finalError description]));
     }
     
     //
