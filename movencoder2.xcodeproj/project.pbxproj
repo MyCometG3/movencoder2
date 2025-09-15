@@ -28,6 +28,7 @@
 		16B81255218D701000E24173 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B81254218D701000E24173 /* main.m */; };
 		16B8125C218D72AD00E24173 /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125B218D72AD00E24173 /* monitorUtil.m */; };
 		16B81260218D754600E24173 /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125F218D754600E24173 /* METranscoder.m */; };
+		16CA58622E7850420080658C /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
 		16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
 		16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
 		16ED624A2E6C86BD00152AD8 /* METranscoder+prepareChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62492E6C86BD00152AD8 /* METranscoder+prepareChannels.m */; };
@@ -82,6 +83,8 @@
 		16B8125D218D72BB00E24173 /* monitorUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = monitorUtil.h; sourceTree = "<group>"; };
 		16B8125E218D754600E24173 /* METranscoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METranscoder.h; sourceTree = "<group>"; };
 		16B8125F218D754600E24173 /* METranscoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscoder.m; sourceTree = "<group>"; };
+		16CA58602E7850420080658C /* MESecureLogging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESecureLogging.h; sourceTree = "<group>"; };
+		16CA58612E7850420080658C /* MESecureLogging.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESecureLogging.m; sourceTree = "<group>"; };
 		16D36C9222B5B4D7006E3DBF /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
 		16D36C9422B5B549006E3DBF /* parseUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parseUtil.h; sourceTree = "<group>"; };
 		16ED62412E6BD1F800152AD8 /* MECommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MECommon.h; sourceTree = "<group>"; };
@@ -189,6 +192,8 @@
 				16B8125B218D72AD00E24173 /* monitorUtil.m */,
 				16ED62412E6BD1F800152AD8 /* MECommon.h */,
 				16ED62422E6BD1F800152AD8 /* MECommon.m */,
+				16CA58602E7850420080658C /* MESecureLogging.h */,
+				16CA58612E7850420080658C /* MESecureLogging.m */,
 				16B8125E218D754600E24173 /* METranscoder.h */,
 				16ED624C2E6C878C00152AD8 /* METranscoder+Internal.h */,
 				16B8125F218D754600E24173 /* METranscoder.m */,
@@ -274,6 +279,7 @@
 				1613EE172E69BB01001F7E56 /* MEAudioConverter.m in Sources */,
 				16741CEE21A92DD1000EEC78 /* MEOutput.m in Sources */,
 				16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */,
+				16CA58622E7850420080658C /* MESecureLogging.m in Sources */,
 				16741CF121B37DCD000EEC78 /* MEManager.m in Sources */,
 				16ED624A2E6C86BD00152AD8 /* METranscoder+prepareChannels.m in Sources */,
 				16ED624B2E6C86BD00152AD8 /* METranscoder+paramParser.m in Sources */,
