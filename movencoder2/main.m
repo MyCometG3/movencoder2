@@ -326,7 +326,7 @@ error:
  extern NSString* const kAudioCodecKey;      // NSString representation of OSType
  */
 
-static METranscoder* validateOpt(int argc, char * const * argv) {
+static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
     BOOL verbose = FALSE;
     BOOL dump = FALSE;
     BOOL debug = FALSE;
