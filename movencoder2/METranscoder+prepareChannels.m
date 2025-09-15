@@ -37,9 +37,34 @@ NS_ASSUME_NONNULL_BEGIN
 uint32_t formatIDFor(NSString* fourCC)
 {
     uint32_t result = 0;
-    const char* str = [fourCC cStringUsingEncoding:NSASCIIStringEncoding];
-    if (str && strlen(str) >= 4) {
-        uint32_t c0 = str[0], c1 = str[1], c2 = str[2], c3 = str[3];
+    
+    // Validate input string
+    if (!fourCC || [fourCC length] < 4) {
+        return 0;
+    }
+    
+    // Use safer UTF-8 encoding and validate length
+    const char* str = [fourCC UTF8String];
+    if (!str) {
+        return 0;
+    }
+    
+    // Use NSString length instead of strlen for safety
+    NSUInteger length = [fourCC length];
+    if (length >= 4) {
+        // Validate that characters are printable ASCII (safer than just checking encoding)
+        for (NSUInteger i = 0; i < 4; i++) {
+            unichar ch = [fourCC characterAtIndex:i];
+            if (ch < 32 || ch > 126) {  // Not printable ASCII
+                return 0;
+            }
+        }
+        
+        // Safe access using validated bounds
+        uint32_t c0 = (unsigned char)str[0];
+        uint32_t c1 = (unsigned char)str[1]; 
+        uint32_t c2 = (unsigned char)str[2];
+        uint32_t c3 = (unsigned char)str[3];
         result = (c0<<24) + (c1<<16) + (c2<<8) + (c3);
     }
     return result;
