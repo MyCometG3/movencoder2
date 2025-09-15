@@ -602,9 +602,21 @@ int main(int argc, char * const *argv) {
             }
             if (cancel) {
                 //NSLog(@"Transcode canceled.");
-                while (transcoder.writerIsBusy) {
-                    usleep(USEC_PER_SEC / 20);
+                
+                // Wait for writer to finish with timeout to prevent infinite loop
+                const NSTimeInterval timeoutSeconds = 10.0; // 10 second timeout
+                const NSTimeInterval pollInterval = 0.05; // 50ms poll interval
+                NSTimeInterval elapsed = 0.0;
+                
+                while (transcoder.writerIsBusy && elapsed < timeoutSeconds) {
+                    usleep((useconds_t)(pollInterval * USEC_PER_SEC));
+                    elapsed += pollInterval;
                 }
+                
+                if (transcoder.writerIsBusy) {
+                    NSLog(@"WARNING: Writer still busy after %.1f seconds timeout, aborting...", timeoutSeconds);
+                }
+                
                 finishMonitor(128 + lastSignal()); // 128 + SIGNUMBER
             }
             if (err) {
