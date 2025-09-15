@@ -70,96 +70,98 @@ Xcode 16.4
 #### Command line sample 1
 Using AVFoundation with HW h264 encoder with yuv422, and abr mode:
 
-    $ movencoder2 -verbose \
-        -mevf "format=yuv422p, yadif=0:-1:0, format=uyvy422" \
-        -ve "encode=y;codec=avc1;nclc=y;field=1;bitrate=5M" \
-        -ae "encode=y;codec=aac;bitrate=192k" \
-        -in /Users/foo/Movies/in.mov -out /Users/foo/Movies/out.mov
+    $ movencoder2 --verbose \
+        --mevf "format=yuv422p, yadif=0:-1:0, format=uyvy422" \
+        --ve "encode=y;codec=avc1;nclc=y;field=1;bitrate=5M" \
+        --ae "encode=y;codec=aac;bitrate=192k" \
+        --in /Users/foo/Movies/in.mov --out /Users/foo/Movies/out.mov
 
 #### Command line sample 2
 Using libx264 with yuv420, and crf mode; x264 High profile level 4.1:
 
-    $ movencoder2 -verbose \
-        -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
-        -meve "c=libx264;r=30000:1001;o=preset=medium:profile=high" \
-        -mex264 "level=4.1:vbv-maxrate=62500:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3" \
-        -ae "encode=y;codec=aac;bitrate=192k" \
-        -in /Users/foo/Movies/cam.mov -out /Users/foo/Movies/out.mov
+    $ movencoder2 --verbose \
+        --mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
+        --meve "c=libx264;r=30000:1001;o=preset=medium:profile=high" \
+        --mex264 "level=4.1:vbv-maxrate=62500:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3" \
+        --ae "encode=y;codec=aac;bitrate=192k" \
+        --in /Users/foo/Movies/cam.mov --out /Users/foo/Movies/out.mov
 
 Another form of above example:
 
-    $ movencoder2 -verbose \
-        -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
-        -meve "c=libx264;r=30000:1001;o=preset=medium:profile=high\
+    $ movencoder2 --verbose \
+        --mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
+        --meve "c=libx264;r=30000:1001;o=preset=medium:profile=high\
         :level=4.1:maxrate=62.5M:bufsize=62.5M:crf=19:g=60:keyint_min=6:bf=3"
-        -ae "encode=y;codec=aac;bitrate=192k" \
-        -in /Users/foo/Movies/in.mov -out /Users/foo/Movies/out.mov
+        --ae "encode=y;codec=aac;bitrate=192k" \
+        --in /Users/foo/Movies/in.mov --out /Users/foo/Movies/out.mov
 
 #### Command line sample 3
 Using libx264 with yuv420, and abr mode; 1440x1080 16:9 30fps x264 High profile level 4.0 abr 5.0Mbps:
 
-        $ movencoder2 -verbose \
-            -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
-            -meve "c=libx264;r=30000:1001;par=4:3;b=5M;o=preset=medium:profile=high" \
-            -mex264 "level=4.0:vbv-maxrate=25000:vbv-bufsize=25000:keyint=60:min-keyint=6:bframes=3" \
-            -ae "encode=y;codec=aac;bitrate=192k" \
-            -in /Users/foo/Movies/in.mov -out /Users/foo/Movies/out.mov
+        $ movencoder2 --verbose \
+            --mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
+            --meve "c=libx264;r=30000:1001;par=4:3;b=5M;o=preset=medium:profile=high" \
+            --mex264 "level=4.0:vbv-maxrate=25000:vbv-bufsize=25000:keyint=60:min-keyint=6:bframes=3" \
+            --ae "encode=y;codec=aac;bitrate=192k" \
+            --in /Users/foo/Movies/in.mov --out /Users/foo/Movies/out.mov
 
 #### Command line sample 4
 Using libx264 with yuv420, and abr mode; 720x480 16:9 with c.a. 30fps x264 Main profile level 3.0 abr 2.0Mbps:
 
-        $ movencoder2 -verbose \
-            -mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
-            -meve "c=libx264;r=30000:1001;par=40:33;b=2M;clean=704:480:4:0;o=preset=medium:profile=main" \
-            -mex264 "level=3.0:vbv-maxrate=10000:vbv-bufsize=10000:keyint=60:min-keyint=6:bframes=3" \
-            -ae "encode=y;codec=aac;bitrate=128k" \
-            -in /Users/foo/Movies/SD16x9.mov -out /Users/foo/Movies/out.mov
+        $ movencoder2 --verbose \
+            --mevf "format=yuv422p, yadif=0:-1:0, format=yuv420p" \
+            --meve "c=libx264;r=30000:1001;par=40:33;b=2M;clean=704:480:4:0;o=preset=medium:profile=main" \
+            --mex264 "level=3.0:vbv-maxrate=10000:vbv-bufsize=10000:keyint=60:min-keyint=6:bframes=3" \
+            --ae "encode=y;codec=aac;bitrate=128k" \
+            --in /Users/foo/Movies/SD16x9.mov --out /Users/foo/Movies/out.mov
 
 #### Command line sample 5
 Using volume/gain control to boost audio by 3dB:
 
-        $ movencoder2 -verbose \
-            -ae "encode=y;codec=aac;bitrate=192k;volume=+3.0" \
-            -in /Users/foo/Movies/quiet_audio.mov -out /Users/foo/Movies/louder_out.mov
+        $ movencoder2 --verbose \
+            --ae "encode=y;codec=aac;bitrate=192k;volume=+3.0" \
+            --in /Users/foo/Movies/quiet_audio.mov --out /Users/foo/Movies/louder_out.mov
 
 Or to reduce audio by 2dB:
 
-        $ movencoder2 -verbose \
-            -ae "encode=y;codec=aac;bitrate=192k;volume=-2.0" \
-            -in /Users/foo/Movies/loud_audio.mov -out /Users/foo/Movies/quieter_out.mov
+        $ movencoder2 --verbose \
+            --ae "encode=y;codec=aac;bitrate=192k;volume=-2.0" \
+            --in /Users/foo/Movies/loud_audio.mov --out /Users/foo/Movies/quieter_out.mov
 
 ---
 
 #### Generic Options
-    -verbose
+    -h, --help
+        Show this help
+    -V, --verbose
         show some informative details.
-    -debug
+    -d, --debug
         set AV_LOG_DEBUG for av_log().
-    -dump
+    -D, --dump
         show internal SampleBufferChannel progress.
-    -in file
+    -i, --in <file>
         input movie file path.
-    -out file
+    -o, --out <file>
         output movie file path.
-    -ve "args"
+    -v, --ve "args"
         Video Encoder. AVFoundation video encoder options.
-    -ae "args"
+    -a, --ae "args"
         Audio Encoder. AVFoundation audio encoder options.
-    -co
+    -c, --co
         Copy Others. Copy non-A/V tracks into output movie.
-    -meve "args"
+    --meve "args"
         libavcodec based video encoder string. i.e. ffmpeg -h encoder=libx264
-    -mevf "args"
+    --mevf "args"
         libavilter based video filter string. i.e. ffmpeg -vf "args"
-    -x264 "args"
+    --mex264 "args"
         libx264 based video encoder string. i.e. x264 -h long
-    -x265 "args"
+    --mex265 "args"
         libx265 based video encoder string. i.e. x265 -h long
 
-#### Arguments (-ve)
+#### Arguments (--ve)
     These arguments are for AVFoundation based video encoder.
     every parameters are separated by semi-colon (;).
-    e.g. -ve "encode=y;codec=avc1;nclc=y;field=y;bitrate=5M"
+    e.g. --ve "encode=y;codec=avc1;nclc=y;field=y;bitrate=5M"
 
     encode=boolean
         transcode via AVFoundation. Should be y/yes.
@@ -172,10 +174,10 @@ Or to reduce audio by 2dB:
     nclc=boolean
         put nclc atom into output video sampledescription.
 
-#### Arguments (-ae)
+#### Arguments (--ae)
     These arguments are for AVFoundation based audio encoder.
     every parameters are separated by semi-colon (;).
-    e.g. -ae "encode=y;codec=aac;bitrate=192k"
+    e.g. --ae "encode=y;codec=aac;bitrate=192k"
 
     encode=boolean
         transcode audio using AVFoundation (yes/no)
@@ -190,10 +192,10 @@ Or to reduce audio by 2dB:
     volume=numeric
         gain/volume control in dB (e.g. +3.0, -1.5, 0.0, range: -10.0 to +10.0)
 
-#### Arguments (-meve)
+#### Arguments (--meve)
     These arguments are for libavcodec based video encoder.
     every parameters are separated by semi-colon (;).
-    e.g. -meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high:level=4.1"
+    e.g. --meve "c=libx264;r=30000:1001;par=40:33;b=5M;clean=704:480:4:0;o=preset=medium:profile=high:level=4.1"
 
     c=string
         formatName or libName string video encoder. required.
@@ -223,29 +225,29 @@ Or to reduce audio by 2dB:
         NOTE: This does not crop.
         e.g. clean=704,480,4,0
     f=string
-        same as -mevf option.
+        same as --mevf option.
     x264=string
-        same as -x264 option.
+        same as --mex264 option.
     x265=string
-        same as -x265 option.
+        same as --mex265 option.
 
 #### Arguments (-mevf)
     These arguments are for libavfilter based video filter.
     every parameters are separated by comma (,).
-    e.g. -mevf "format=yuv422p,yadif=0:-1:0,format=uyvy422"
+    e.g. --mevf "format=yuv422p,yadif=0:-1:0,format=uyvy422"
 
     reference: ffmpeg -filters; ffmpeg -h filter=format; ffmpeg -h filter=yadif;
 
-#### Arguments (-mex264)
+#### Arguments (--mex264)
     These arguments are optional, for libx264 based video encoder.
-    NOTE:preset and profile should be -meve "o=preset=xxx:profile=xxx".
-    e.g. -mex264 "level=4.1:vbv-maxrate=50000:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3"
+    NOTE:preset and profile should be --meve "o=preset=xxx:profile=xxx".
+    e.g. --mex264 "level=4.1:vbv-maxrate=50000:vbv-bufsize=62500:crf=19:keyint=60:min-keyint=6:bframes=3"
 
     reference: x264 -h; x264 --longhelp; x264 --fullhelp;
 
-#### Arguments (-mex265)
+#### Arguments (--mex265)
     These arguments are optional, for libx265 based video encoder.
-    NOTE:preset and tune should be -meve "o=preset=xxx:tune=xxx".
+    NOTE:preset and tune should be --meve "o=preset=xxx:tune=xxx".
 
     reference: x265 -h; x265 --fullhelp;
 
