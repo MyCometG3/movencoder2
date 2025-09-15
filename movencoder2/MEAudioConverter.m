@@ -121,7 +121,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)cleanup
 {
-    dispatch_sync(_inputQueue, ^{
+    // Use dispatch_async for cleanup to prevent deadlock between input and output queues
+    dispatch_async(_inputQueue, ^{
         for (NSValue* value in _inputBufferQueue) {
             CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
             if (sampleBuffer) {
@@ -131,7 +132,7 @@ NS_ASSUME_NONNULL_BEGIN
         [_inputBufferQueue removeAllObjects];
     });
     
-    dispatch_sync(_outputQueue, ^{
+    dispatch_async(_outputQueue, ^{
         for (NSValue* value in _outputBufferQueue) {
             CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
             if (sampleBuffer) {
@@ -456,13 +457,14 @@ cleanup:
         while (_inputBufferQueue.count > 0 && _audioConverter) {
             [self processNextBuffer];
         }
-        // Mark output as finished
-        dispatch_sync(_outputQueue, ^{
-            _outputFinished = YES;
-        });
         
         // Signal semaphore to unblock any waiting threads
         dispatch_semaphore_signal(_outputDataSemaphore);
+    });
+    
+    // Mark output as finished separately to avoid nested dispatch_sync deadlock
+    dispatch_async(_outputQueue, ^{
+        _outputFinished = YES;
     });
 }
 
@@ -538,14 +540,14 @@ cleanup:
                                                                        withPresentationTimeStamp:pts
                                                                                           format:self.destinationFormat];
                     if (outputSampleBuffer) {
-                        // Add to output queue
-                        dispatch_sync(_outputQueue, ^{
+                        // Add to output queue using async to prevent deadlock
+                        dispatch_async(_outputQueue, ^{
                             NSValue* outputValue = [NSValue valueWithPointer:outputSampleBuffer];
                             [_outputBufferQueue addObject:outputValue];
+                            
+                            // Signal that new data is available
+                            dispatch_semaphore_signal(_outputDataSemaphore);
                         });
-                        
-                        // Signal that new data is available
-                        dispatch_semaphore_signal(_outputDataSemaphore);
                     }
                 } else if (convertError) {
                     if (self.verbose) {
