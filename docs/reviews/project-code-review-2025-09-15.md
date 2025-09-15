@@ -357,15 +357,24 @@ User-provided parameters are parsed with minimal validation:
 
 #### 8. Resource Cleanup Order Dependencies
 **File:** `MEManager.m:189-196`  
-**Risk:** Use-after-free, crashes during cleanup
+**Risk:** Use-after-free, crashes during cleanup  
+**Status:** 🟢 RESOLVED
 
 ```objc
-avfilter_graph_free(&filter_graph);
-avcodec_free_context(&avctx);
+av_packet_free(&encoded);
+av_frame_free(&filtered);
 av_frame_free(&input);
+avcodec_free_context(&avctx);
+avfilter_graph_free(&filter_graph);
 ```
 
-**Issue:** Resource cleanup order may matter for some dependencies but isn't explicitly documented or guaranteed.
+**RESOLVED:** Resource cleanup order has been corrected to follow proper dependency order:
+1. Free packets first (least dependent)
+2. Free frames before filter graph (prevents use-after-free)
+3. Free codec context before filter graph
+4. Free filter graph last (manages frame memory dependencies)
+
+**Fix applied in commit:** f8e5aab
 
 ### Low Severity Issues
 
