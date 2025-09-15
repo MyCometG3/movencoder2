@@ -536,23 +536,27 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             int bottom = (avctx->height - rect.origin.y - rect.size.height) / 2;
             
             if (uselibx264(self)) {
-                NSString *cropParam = [NSString stringWithFormat:@"overscan=crop:crop-rect=%d,%d,%d,%d", left,top,right,bottom];
-                NSString* x264_params = videoEncoderSetting[kMEVEx264_paramsKey];
-                if (x264_params) {
-                    NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x264_params];
-                    videoEncoderSetting[kMEVEx264_paramsKey] = newParams;
-                } else {
-                    videoEncoderSetting[kMEVEx264_paramsKey] = cropParam;
+                @autoreleasepool {
+                    NSString *cropParam = [NSString stringWithFormat:@"overscan=crop:crop-rect=%d,%d,%d,%d", left,top,right,bottom];
+                    NSString* x264_params = videoEncoderSetting[kMEVEx264_paramsKey];
+                    if (x264_params) {
+                        NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x264_params];
+                        videoEncoderSetting[kMEVEx264_paramsKey] = newParams;
+                    } else {
+                        videoEncoderSetting[kMEVEx264_paramsKey] = cropParam;
+                    }
                 }
             }
             if (uselibx265(self)) {
-                NSString *cropParam = [NSString stringWithFormat:@"display-window=%d,%d,%d,%d", left,top,right,bottom];
-                NSString* x265_params = videoEncoderSetting[kMEVEx265_paramsKey];
-                if (x265_params) {
-                    NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x265_params];
-                    videoEncoderSetting[kMEVEx265_paramsKey] = newParams;
-                } else {
-                    videoEncoderSetting[kMEVEx265_paramsKey] = cropParam;
+                @autoreleasepool {
+                    NSString *cropParam = [NSString stringWithFormat:@"display-window=%d,%d,%d,%d", left,top,right,bottom];
+                    NSString* x265_params = videoEncoderSetting[kMEVEx265_paramsKey];
+                    if (x265_params) {
+                        NSString *newParams = [cropParam stringByAppendingFormat:@":%@", x265_params];
+                        videoEncoderSetting[kMEVEx265_paramsKey] = newParams;
+                    } else {
+                        videoEncoderSetting[kMEVEx265_paramsKey] = cropParam;
+                    }
                 }
             }
         }
@@ -566,15 +570,17 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
          */
         NSDictionary* codecOptions = videoEncoderSetting[kMEVECodecOptionsKey];
         if (codecOptions) {
-            for (NSString* key in codecOptions.allKeys) {
-                NSString* value = codecOptions[key];
-                
-                const char* _key = [key UTF8String];
-                const char* _value = [value UTF8String];
-                ret = av_dict_set(&opts, _key, _value, 0);
-                if (ret < 0) {
-                    NSLog(@"[MEManager] ERROR: Cannot update codecOptions.");
-                    goto end;
+            @autoreleasepool {
+                for (NSString* key in codecOptions.allKeys) {
+                    NSString* value = codecOptions[key];
+                    
+                    const char* _key = [key UTF8String];
+                    const char* _value = [value UTF8String];
+                    ret = av_dict_set(&opts, _key, _value, 0);
+                    if (ret < 0) {
+                        NSLog(@"[MEManager] ERROR: Cannot update codecOptions.");
+                        goto end;
+                    }
                 }
             }
         }
@@ -610,11 +616,13 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     char* buf;
     ret = av_dict_get_string(opts, &buf, '=', ':');
     if (ret == 0 && buf != NULL) {
-        NSString* codecOptString = [NSString stringWithUTF8String:buf];
-        av_freep(&buf);
-        
-        if (self.verbose) {
-            NSLog(@"[MEManager] codecOptString = %@", codecOptString);
+        @autoreleasepool {
+            NSString* codecOptString = [NSString stringWithUTF8String:buf];
+            av_freep(&buf);
+            
+            if (self.verbose) {
+                NSLog(@"[MEManager] codecOptString = %@", codecOptString);
+            }
         }
     }
     

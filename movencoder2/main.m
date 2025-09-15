@@ -129,10 +129,12 @@ static BOOL isAllowedPath(NSURL *fileURL) {
     } 
     // Check if path is under /Volumes/*/
     else if ([targetPath hasPrefix:@"/Volumes/"]) {
-        NSArray *components = [targetPath pathComponents];
-        if (components.count >= 3 && ![components[2] isEqualToString:@""]) {
-            inAllowedRoot = YES;
-            allowedRoot = [NSString stringWithFormat:@"volume '%@'", components[2]];
+        @autoreleasepool {
+            NSArray *components = [targetPath pathComponents];
+            if (components.count >= 3 && ![components[2] isEqualToString:@""]) {
+                inAllowedRoot = YES;
+                allowedRoot = [NSString stringWithFormat:@"volume '%@'", components[2]];
+            }
         }
     }
     
@@ -488,9 +490,10 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
     int opt, longindex;
     opterr = 0;
     while ((opt = getopt_long_only(argc, argv, shortopts, longopts, &longindex)) != -1) {
-        // Use nil when optarg is absent so parsers can distinguish missing value
-        NSString* val = optarg ? [NSString stringWithUTF8String:optarg] : nil;
-        switch (opt) {
+        @autoreleasepool {
+            // Use nil when optarg is absent so parsers can distinguish missing value
+            NSString* val = optarg ? [NSString stringWithUTF8String:optarg] : nil;
+            switch (opt) {
             case 'V':
                 verbose = TRUE;
                 break;
@@ -546,6 +549,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
                 goto error;
             }
                 break;
+        }
         }
     }
     

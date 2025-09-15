@@ -63,12 +63,14 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize showProgress;
 
 char* createLabel(CMPersistentTrackID track) {
-    NSString* label = [NSString stringWithFormat:@"com.movencoder2.SBChannel.track%d", track];
-    const char *temp = label.UTF8String;
-    size_t size = strlen(temp) + 1;
-    char * queueLabel = malloc(size);
-    strlcpy(queueLabel, temp, size);
-    return queueLabel;
+    @autoreleasepool {
+        NSString* label = [NSString stringWithFormat:@"com.movencoder2.SBChannel.track%d", track];
+        const char *temp = label.UTF8String;
+        size_t size = strlen(temp) + 1;
+        char * queueLabel = malloc(size);
+        strlcpy(queueLabel, temp, size);
+        return queueLabel;
+    }
 }
 
 - (instancetype)initWithProducerME:(MEOutput*)meOutput

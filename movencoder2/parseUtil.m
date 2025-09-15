@@ -36,18 +36,19 @@ NSString* const optSeparator = @":";
 NS_ASSUME_NONNULL_BEGIN
 
 NSNumber* parseInteger(NSString* val) {
-    // Trim whitespace and newlines from input
-    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    
-    NSScanner *ns = [NSScanner scannerWithString:val];
-    long long theValue = 0;
-    if ([ns scanLongLong:&theValue]) {
-        // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
-        if (!ns.atEnd) {
-            NSString* suffix = nil;
-            NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
-            if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
-                if (suffix.length != 1) goto error; // reject multi-letter suffix like "MB"
+    @autoreleasepool {
+        // Trim whitespace and newlines from input
+        val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        
+        NSScanner *ns = [NSScanner scannerWithString:val];
+        long long theValue = 0;
+        if ([ns scanLongLong:&theValue]) {
+            // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
+            if (!ns.atEnd) {
+                NSString* suffix = nil;
+                NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
+                if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
+                    if (suffix.length != 1) goto error; // reject multi-letter suffix like "MB"
                 unichar ch = [suffix characterAtIndex:0];
                 long long multiplier = 1;
                 switch (toupper((int)ch)) {
@@ -74,41 +75,44 @@ NSNumber* parseInteger(NSString* val) {
 error:
     NSLog(@"ERROR: '%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
     return nil;
+    }
 }
 
 NSNumber* parseDouble(NSString* val) {
-    // Trim whitespace and newlines from input
-    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    
-    NSScanner *ns = [NSScanner scannerWithString:val];
-    double theValue = 0.0;
-    if ([ns scanDouble:&theValue]) {
-        // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
-        if (!ns.atEnd) {
-            NSString* suffix = nil;
-            NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
-            if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
-                if (suffix.length != 1) goto error; // reject multi-letter suffix
-                unichar ch = [suffix characterAtIndex:0];
-                double multiplier = 1.0;
-                switch (toupper((int)ch)) {
-                    case 'T': multiplier = 1e12; break;
-                    case 'G': multiplier = 1e9; break;
-                    case 'M': multiplier = 1e6; break;
-                    case 'K': multiplier = 1e3; break;
-                    default: goto error;
+    @autoreleasepool {
+        // Trim whitespace and newlines from input
+        val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        
+        NSScanner *ns = [NSScanner scannerWithString:val];
+        double theValue = 0.0;
+        if ([ns scanDouble:&theValue]) {
+            // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
+            if (!ns.atEnd) {
+                NSString* suffix = nil;
+                NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
+                if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
+                    if (suffix.length != 1) goto error; // reject multi-letter suffix
+                    unichar ch = [suffix characterAtIndex:0];
+                    double multiplier = 1.0;
+                    switch (toupper((int)ch)) {
+                        case 'T': multiplier = 1e12; break;
+                        case 'G': multiplier = 1e9; break;
+                        case 'M': multiplier = 1e6; break;
+                        case 'K': multiplier = 1e3; break;
+                        default: goto error;
+                    }
+                    double result = theValue * multiplier;
+                    if (!isfinite(result)) goto error;
+                    return [NSNumber numberWithDouble:result];
                 }
-                double result = theValue * multiplier;
-                if (!isfinite(result)) goto error;
-                return [NSNumber numberWithDouble:result];
             }
+            return [NSNumber numberWithDouble:theValue];
         }
-        return [NSNumber numberWithDouble:theValue];
-    }
 
 error:
-    NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
-    return nil;
+        NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
+        return nil;
+    }
 }
 
 NSValue* parseSize(NSString* val) {
