@@ -35,6 +35,9 @@ NSString* const optSeparator = @":";
 NS_ASSUME_NONNULL_BEGIN
 
 NSNumber* parseInteger(NSString* val) {
+    // Trim whitespace and newlines from input
+    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    
     NSScanner *ns = [NSScanner scannerWithString:val];
     long long theValue = 0;
     if ([ns scanLongLong:&theValue]) {
@@ -64,11 +67,14 @@ NSNumber* parseInteger(NSString* val) {
     }
 
 error:
-    NSLog(@"ERROR: %@ : not Integer", val);
+    NSLog(@"ERROR: '%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", val);
     return nil;
 }
 
 NSNumber* parseDouble(NSString* val) {
+    // Trim whitespace and newlines from input
+    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    
     NSScanner *ns = [NSScanner scannerWithString:val];
     double theValue = 0.0;
     if ([ns scanDouble:&theValue]) {
@@ -96,7 +102,7 @@ NSNumber* parseDouble(NSString* val) {
     }
 
 error:
-    NSLog(@"ERROR: %@ : not Double", val);
+    NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", val);
     return nil;
 }
 
@@ -204,6 +210,9 @@ error:
 }
 
 NSNumber* parseBool(NSString* val) {
+    // Trim whitespace and newlines from input
+    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    
     BOOL (^oneOf)(NSArray*, NSString*) = ^(NSArray* array, NSString* value) {
         for (NSString* item in array)
             if ([item caseInsensitiveCompare:value] == NSOrderedSame)
@@ -216,33 +225,45 @@ NSNumber* parseBool(NSString* val) {
     if (isNo) return @NO;
     
 error:
-    NSLog(@"ERROR: %@ : not Boolean", val);
+    NSLog(@"ERROR: '%@' is not a valid boolean value (expected: YES/NO, TRUE/FALSE, ON/OFF, 1/0)", val);
     return nil;
 }
 
 NSDictionary* parseCodecOptions(NSString* val) {
+    // Trim whitespace and newlines from input
+    val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    
     NSMutableArray* skipped = [NSMutableArray new];
     NSMutableDictionary *options = [NSMutableDictionary new];
     NSArray *optArray = [val componentsSeparatedByString:optSeparator];
-    for (NSString* opt in optArray) {
+    for (NSString* optOriginal in optArray) {
+        // Trim each option as well
+        NSString* opt = [optOriginal stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if (opt.length == 0) continue; // Skip empty options
+        
         NSArray *optParse = [opt componentsSeparatedByString:equal];
         if (optParse.count == 2) {
-            NSString* optKey = optParse[0];
-            NSString* optVal = optParse[1];
-            options[optKey] = optVal;
+            NSString* optKey = [optParse[0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            NSString* optVal = [optParse[1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            if (optKey.length > 0) {
+                options[optKey] = optVal;
+            } else {
+                [skipped addObject:opt];
+            }
         } else {
             [skipped addObject:opt];
         }
     }
+    
     if (skipped.count) {
-        NSLog(@"ERROR: Skipped = %@", skipped);
+        NSLog(@"ERROR: Invalid codec options format in '%@', skipped options: %@", val, skipped);
     }
+    
     if (options.allKeys.count) {
         return [options copy];
     }
     
-error:
-    NSLog(@"ERROR: %@ : not codec options", val);
+    NSLog(@"ERROR: '%@' contains no valid codec options (expected format: key1=value1:key2=value2)", val);
     return nil;
 }
 
