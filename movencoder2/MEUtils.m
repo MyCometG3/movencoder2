@@ -691,7 +691,7 @@ CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered) {
         int trc = filtered->color_trc;
         if (trc != AVCOL_TRC_UNSPECIFIED) {
             CFStringRef value = NULL;
-            value = CVColorPrimariesGetStringForIntegerCodePoint(trc);
+            value = CVTransferFunctionGetStringForIntegerCodePoint(trc);
             if (value) {
                 CFDictionaryAddValue(dict, kCVImageBufferTransferFunctionKey, value);
                 
