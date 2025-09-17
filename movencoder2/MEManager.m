@@ -27,6 +27,7 @@
 #import "MECommon.h"
 #import "MEManager.h"
 #import "MEUtils.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -314,7 +315,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     if (self.videoEncoderIsReady)
         return TRUE;
     if (!(videoEncoderSetting && videoEncoderSetting.count)) {
-        NSLog(@"[MEManager] ERROR: Invalid video encoder parameters.");
+        SecureErrorLogf(@"[MEManager] ERROR: Invalid video encoder parameters.");
         goto end;
     }
     
@@ -325,19 +326,19 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     {
         NSString* codecName = videoEncoderSetting[kMEVECodecNameKey]; // i.e. @"libx264"
         if (!codecName) {
-            NSLog(@"[MEManager] ERROR: Cannot find video encoder name.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot find video encoder name.");
             goto end;
         }
         
         codec = avcodec_find_encoder_by_name([codecName UTF8String]);
         if (!codec) {
-            NSLog(@"[MEManager] ERROR: Cannot find video encoder.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot find video encoder.");
             goto end;
         }
         
         avctx = avcodec_alloc_context3(codec);
         if (!avctx) {
-            NSLog(@"[MEManager] ERROR: Cannot allocate encoder context.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot allocate encoder context.");
             goto end;
         }
     }
@@ -348,39 +349,39 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         if (sb) {
             int width = 0, height = 0;
             if (CMSBGetWidthHeight(sb, &width, &height) == FALSE) {
-                NSLog(@"[MEManager] ERROR: Cannot validate dimensions.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate dimensions.");
                 goto end;
             }
             
             AVRational timebase_q = av_make_q(1, time_base);
 #if 0
             if (CMSBGetTimeBase(sb, &timebase_q) == FALSE) {
-                NSLog(@"[MEManager] ERROR: Cannot validate timebase.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate timebase.");
                 goto end;
             }
 #endif
             AVRational sample_aspect_ratio = av_make_q(1, 1);
             if (CMSBGetAspectRatio(sb, &sample_aspect_ratio) == FALSE) {
-                NSLog(@"[MEManager] ERROR: Cannot validate aspect ratio.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate aspect ratio.");
                 goto end;
             }
             
             //// WARNING: non-propagated into decoded 2vuy SampleBuffer ////
             int fieldCount = 1, top_field_first = 0;
             if (CMSBGetFieldInfo(sb, &fieldCount, &top_field_first) == FALSE) {
-                NSLog(@"[MEManager] ERROR: Cannot validate field info.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate field info.");
                 goto end;
             }
             
             int colorspace = 0;
             if (CMSBGetColorSPC(sb, &colorspace) == FALSE) {
-                NSLog(@"[MEManager] ERROR: Cannot validate color space.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate color space.");
                 goto end;
             }
             
             int color_range = 0;
             if (CMSBGetColorRange(sb, &color_range) == FALSE) {
-                NSLog(@"[MEManager] ERROR: Cannot validate color range.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate color range.");
                 goto end;
             }
             
@@ -392,7 +393,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
                 (CMSBGetColorTRC_FDE(sourceExtensions, &color_trc) == FALSE) // source SB
 #endif
             {
-                NSLog(@"[MEManager] ERROR: Cannot validate color trc.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate color trc.");
                 goto end;
             }
             
@@ -404,15 +405,15 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
                 (CMSBGetColorPRI_FDE(sourceExtensions, &color_primaries) == FALSE) // source SB
 #endif
             {
-                NSLog(@"[MEManager] ERROR: Cannot validate color primaries.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate color primaries.");
                 goto end;
             }
             
             int chroma_location = 0;
             if (CMSBGetChromaLoc(sb, &chroma_location) == FALSE) {
-                NSLog(@"[MEManager] ERROR: Cannot validate chroma location.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate chroma location.");
                 goto end;
-            }
+             }
             
             struct AVFPixelFormatSpec encodeFormat = {};
             if (CMSBGetPixelFormatSpec(sb, &encodeFormat)) {
@@ -441,9 +442,9 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         } else {
             // Use filtered frame and buffersink context
             if (!self.filteredValid) {
-                NSLog(@"[MEManager] ERROR: Cannot get source filtered video frame.");
-                goto end;
-            }
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot get source filtered video frame.");
+                 goto end;
+             }
             
             struct AVFPixelFormatSpec encodeFormat = {};
             if (AVFrameGetPixelFormatSpec(filtered, &encodeFormat)) {
@@ -476,8 +477,8 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         if (fpsValue) {
             CMTime fraction = [fpsValue CMTimeValue];
             if (!CMTIME_IS_VALID(fraction)) {
-                NSLog(@"[MEManager] ERROR: Cannot validate fpsValue");
-                goto end;
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate fpsValue");
+                 goto end;
             }
             // fps CMTime; e.g. 60000/2002 = 30000/1001 = 29.97fps
             int timebase = (int32_t)fraction.value;
@@ -506,8 +507,8 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
                 BOOL hDiff = (avctx->width != rawSize.width);
                 BOOL vDiff = (avctx->height != rawSize.height);
                 if (hDiff || vDiff) {
-                    NSLog(@"[MEManager] Ignroing -meve \"size=%d:%d\"",
-                          (int)rawSize.width, (int)rawSize.height);
+                    SecureLogf(@"[MEManager] Ignroing -meve \"size=%d:%d\"",
+                               (int)rawSize.width, (int)rawSize.height);
                 }
             }
             if (aspectValue) {
@@ -515,13 +516,13 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
                 BOOL hDiff = (avctx->sample_aspect_ratio.num != aspect.width);
                 BOOL vDiff = (avctx->sample_aspect_ratio.den != aspect.height);
                 if (hDiff || vDiff) {
-                    NSLog(@"[MEManager] Ignroing -meve \"par=%d:%d\"",
-                          (int)aspect.width, (int)aspect.height);
+                    SecureLogf(@"[MEManager] Ignroing -meve \"par=%d:%d\"",
+                               (int)aspect.width, (int)aspect.height);
                 }
             }
         }
     }
-    
+
     // Setup encoder options
     {
 #if 0
@@ -578,7 +579,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
                     const char* _value = [value UTF8String];
                     ret = av_dict_set(&opts, _key, _value, 0);
                     if (ret < 0) {
-                        NSLog(@"[MEManager] ERROR: Cannot update codecOptions.");
+                        SecureErrorLogf(@"[MEManager] ERROR: Cannot update codecOptions.");
                         goto end;
                     }
                 }
@@ -596,7 +597,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             if (params) {
                 ret = av_dict_set(&opts, "x264-params", [params UTF8String], 0);
                 if (ret < 0) {
-                    NSLog(@"[MEManager] ERROR: Cannot update x264-params.");
+                    SecureErrorLogf(@"[MEManager] ERROR: Cannot update x264-params.");
                     goto end;
                 }
             }
@@ -606,7 +607,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             if (params) {
                 ret = av_dict_set(&opts, "x265-params", [params UTF8String], 0);
                 if (ret < 0) {
-                    NSLog(@"[MEManager] ERROR: Cannot update x265-params.");
+                    SecureErrorLogf(@"[MEManager] ERROR: Cannot update x265-params.");
                     goto end;
                 }
             }
@@ -621,19 +622,19 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             av_freep(&buf);
             
             if (self.verbose) {
-                NSLog(@"[MEManager] codecOptString = %@", codecOptString);
+                SecureDebugLogf(@"[MEManager] codecOptString = %@", codecOptString);
             }
-        }
+         }
     }
     
     // Initialize encoder
-    NSLog(@"");
+    SecureLogf(@"");
     ret = avcodec_open2(avctx, codec, &opts);
     if (ret < 0) {
-        NSLog(@"[MEManager] ERROR: Cannot open video encoder.");
+        SecureErrorLogf(@"[MEManager] ERROR: Cannot open video encoder.");
         goto end;
     }
-    NSLog(@"");
+    SecureLogf(@"");
 
     self.videoEncoderIsReady = TRUE;
     
@@ -663,11 +664,11 @@ end:
         return TRUE;
     }
     if (!(videoFilterString && videoFilterString.length)) {
-        NSLog(@"[MEManager] ERROR: Invalid video filter parameters.");
+        SecureErrorLogf(@"[MEManager] ERROR: Invalid video filter parameters.");
         goto end;
     }
     if (sb == NULL) {
-        NSLog(@"[MEManager] ERROR: Invalid video filter parameters.");
+        SecureErrorLogf(@"[MEManager] ERROR: Invalid video filter parameters.");
         goto end;
     }
     
@@ -675,18 +676,18 @@ end:
     {
         int width = 0, height = 0;
         if (CMSBGetWidthHeight(sb, &width, &height) == FALSE) {
-            NSLog(@"[MEManager] ERROR: Cannot validate dimensions.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate dimensions.");
             goto end;
         }
         AVRational sample_aspect_ratio = av_make_q(1, 1);
         if (CMSBGetAspectRatio(sb, &sample_aspect_ratio) == FALSE) {
-            NSLog(@"[MEManager] ERROR: Cannot validate aspect ratio.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate aspect ratio.");
             goto end;
         }
         
         pxl_fmt_filter = AVFPixelFormatSpecNone;
         if (!(CMSBGetPixelFormatSpec(sb, &pxl_fmt_filter) && pxl_fmt_filter.avf_id != 0)) {
-            NSLog(@"[MEManager] ERROR: Cannot validate pixel_format.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate pixel_format.");
             goto end;
         }
         
@@ -695,7 +696,7 @@ end:
             if (CMSBGetTimeBase(sb, &timebase_q)) {
                 time_base = timebase_q.den;
             } else {
-                NSLog(@"[MEManager] ERROR: Cannot validate timebase.");
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate timebase.");
                 goto end;
             }
         }
@@ -707,7 +708,7 @@ end:
                  sample_aspect_ratio.num, sample_aspect_ratio.den);
         
         if (self.verbose) {
-            NSLog(@"[MEManager] avfilter.buffer = %@", [NSString stringWithUTF8String:args]);
+            SecureDebugLogf(@"[MEManager] avfilter.buffer = %@", [NSString stringWithUTF8String:args]);
         }
     }
     
@@ -724,7 +725,7 @@ end:
         ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
                                            args, NULL, filter_graph);
         if (ret < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot create buffer source");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer source");
             goto end;
         }
         
@@ -732,7 +733,7 @@ end:
         const AVFilter *buffersink = avfilter_get_by_name("buffersink");
         buffersink_ctx = avfilter_graph_alloc_filter(filter_graph, buffersink, "out");
         if (!buffersink_ctx) {
-            NSLog(@"[MEManager] ERROR: Cannot create buffer sink");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer sink");
             goto end;
         }
         
@@ -749,13 +750,13 @@ end:
                              (int)size_bytes,
                              AV_OPT_SEARCH_CHILDREN);
         if (ret < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot set output pixel format");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot set output pixel format");
             goto end;
         }
         
         ret = avfilter_init_str(buffersink_ctx, NULL);
         if (ret < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot initialize buffer sink");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot initialize buffer sink");
             goto end;
         }
         
@@ -791,12 +792,12 @@ end:
         filters_descr = av_strdup([videoFilterString UTF8String]);
         if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
                                             &inputs, &outputs, NULL)) < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot parse filter descriptions. (%d)", ret);
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot parse filter descriptions. (%d)", ret);
             goto end;
         }
         
         if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot configure filter graph. (%d)", ret);
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot configure filter graph. (%d)", ret);
             goto end;
         }
     }
@@ -808,7 +809,7 @@ end:
     if (self.verbose) {
         char* dump = avfilter_graph_dump(filter_graph, NULL);
         if (dump) {
-            NSLog(@"[MEManager] avfilter_graph_dump() returned %lu bytes.", strlen(dump));
+            SecureDebugLogf(@"[MEManager] avfilter_graph_dump() returned %lu bytes.", (unsigned long)strlen(dump));
             av_log(NULL, AV_LOG_INFO, "%s\n", dump);
         }
         av_free(dump);
@@ -836,7 +837,7 @@ end:
         if (CMSBGetTimeBase(sb, &timebase_q)) {
             time_base = timebase_q.den;
         } else {
-            NSLog(@"[MEManager] ERROR: Cannot validate timebase.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate timebase.");
             goto end;
         }
     }
@@ -845,7 +846,7 @@ end:
     if (!input) {
         input = av_frame_alloc(); // allocate frame
         if (!input) {
-            NSLog(@"[MEManager] ERROR: Cannot allocate a video frame.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot allocate a video frame.");
             goto end;
         }
     }
@@ -856,7 +857,7 @@ end:
         int width, height;
         BOOL result = CMSBGetWidthHeight(sb, &width, &height);
         if (!result) {
-            NSLog(@"[MEManager] ERROR: Cannot get rectangle values.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot get rectangle values.");
             goto end;
         }
         
@@ -872,20 +873,20 @@ end:
         int ret = AVERROR_UNKNOWN;
         ret = av_frame_get_buffer(input, 0); // allocate new buffer
         if (ret < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot allocate data for the video frame.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot allocate data for the video frame.");
             goto end;
         }
         
         ret = av_frame_make_writable(input);
         if (ret < 0) {
-            NSLog(@"[MEManager] ERROR: Cannot make the video frame writable");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot make the video frame writable");
             goto end;
         }
         
         // fill input AVFrame parameters
         result = CMSBCopyParametersToAVFrame(sb, input, time_base);
         if (!result) {
-            NSLog(@"[MEManager] ERROR: Cannot fill property values.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot fill property values.");
             goto end;
         }
         
@@ -918,7 +919,7 @@ end:
         // copy image data into input AVFrame buffer
         result = CMSBCopyImageBufferToAVFrame(sb, input);
         if (!result) {
-            NSLog(@"[MEManager] ERROR: Cannot copy image buffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot copy image buffer.");
             goto end;
         }
 
@@ -943,7 +944,7 @@ end:
     OSStatus err = noErr;
 
     if (!useVideoFilter(self)) {
-        NSLog(@"[MEManager] ERROR: Invalid state detected.");
+        SecureErrorLogf(@"[MEManager] ERROR: Invalid state detected.");
         goto end;
     }
     
@@ -951,7 +952,7 @@ end:
     if (filtered && !cvpbpool) {
         cvpbpool = AVFrameCreateCVPixelBufferPool(filtered);
         if (!cvpbpool) {
-            NSLog(@"[MEManager] ERROR: Cannot setup CVPixelBufferPool.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CVPixelBufferPool.");
             goto end;
         }
     }
@@ -960,7 +961,7 @@ end:
     if (filtered && !pbAttachments) {
         pbAttachments = AVFrameCreateCVBufferAttachments(filtered);
         if (!pbAttachments) {
-            NSLog(@"[MEManager] ERROR: Cannot setup CVBufferAttachments.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CVBufferAttachments.");
             goto end;
         }
     }
@@ -969,7 +970,7 @@ end:
     if (filtered && cvpbpool) {
         pb = AVFrameCreateCVPixelBuffer(filtered, cvpbpool);
         if (!pb) {
-            NSLog(@"[MEManager] ERROR: Cannot setup CVPixelBuffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CVPixelBuffer.");
             goto end;
         }
     }
@@ -1004,7 +1005,7 @@ end:
                                                        &info,
                                                        &sbForPB);
         if (err || !sbForPB) {
-            NSLog(@"[MEManager] ERROR: Cannot setup uncompressed CMSampleBuffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup uncompressed CMSampleBuffer.");
             goto end;
         }
         sb = sbForPB;
@@ -1028,7 +1029,7 @@ end:
 -(nullable CMSampleBufferRef)createCompressedSampleBuffer
 {
     if (!useVideoEncoder(self)) {
-        NSLog(@"[MEManager] ERROR: Invalid state detected.");
+        SecureErrorLogf(@"[MEManager] ERROR: Invalid state detected.");
         goto end;
     }
     
@@ -1040,7 +1041,7 @@ end:
             desc = createDescriptionH265(avctx);
         }
         if (!desc) {
-            NSLog(@"[MEManager] ERROR: Cannot setup CMVideoFormatDescription.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CMVideoFormatDescription.");
             goto end;
         }
         
@@ -1050,7 +1051,7 @@ end:
             desc = createDescriptionWithAperture(desc, cleanApertureValue);
         }
         if (!desc) {
-            NSLog(@"[MEManager] ERROR: Cannot setup CMVideoFormatDescription with clean apreture.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CMVideoFormatDescription with clean apreture.");
             goto end;
         }
     }
@@ -1061,7 +1062,7 @@ end:
         int tempSize = encoded->size;
         UInt8* tempPtr = av_malloc(tempSize);
         if (!tempPtr) {
-            NSLog(@"[MEManager] ERROR: Failed to allocate %d bytes for NAL processing", tempSize);
+            SecureErrorLogf(@"[MEManager] ERROR: Failed to allocate %d bytes for NAL processing", tempSize);
             goto end;
         }
         
@@ -1070,7 +1071,7 @@ end:
             memcpy(tempPtr, encoded->data, tempSize);
             avc_parse_nal_units(&tempPtr, &tempSize);    // This call frees original buffer and allocates new one
         } else {
-            NSLog(@"[MEManager] ERROR: Invalid data for NAL processing: tempSize=%d, encoded->data=%p", 
+            SecureErrorLogf(@"[MEManager] ERROR: Invalid data for NAL processing: tempSize=%d, encoded->data=%p",
                   tempSize, encoded->data);
             av_free(tempPtr);
             goto end;
@@ -1089,7 +1090,7 @@ end:
                                                  kCMBlockBufferAssureMemoryNowFlag,
                                                  &bb);
         if (err) {
-            NSLog(@"[MEManager] ERROR: Cannot setup CMBlockBuffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CMBlockBuffer.");
             av_free(tempPtr);
             goto end;
         }
@@ -1101,7 +1102,7 @@ end:
                                             tempSize);                  // replacing size of data written from offset
         av_free(tempPtr);
         if (err) {
-            NSLog(@"[MEManager] ERROR: Cannot setup CMBlockBuffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CMBlockBuffer.");
             if (bb) CFRelease(bb);
             goto end;
         }
@@ -1129,7 +1130,7 @@ end:
                                         &sb);
         if (bb) CFRelease(bb);
         if (err) {
-            NSLog(@"[MEManager] ERROR: Cannot setup compressed CMSampleBuffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot setup compressed CMSampleBuffer.");
             goto end;
         }
         
@@ -1145,7 +1146,7 @@ end:
             BOOL isKey = (self->encoded->flags & AV_PKT_FLAG_KEY) != 0;
 #if 0
             NSString* isKeyStr = isKey ? @"KEY" : @"";
-            NSLog(@"[MEManager] picType=%c codec=%d %@", typeChar, (int)cid, isKeyStr);
+            SecureDebugLogf(@"[MEManager] picType=%c codec=%d %@", typeChar, (int)cid, isKeyStr);
 #endif
             CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sb, YES);
             CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
@@ -1231,7 +1232,7 @@ static BOOL shouldStopQueueing(MEManager* self) {
     return FALSE; // continue processing
     
 error:
-    NSLog(@"[MEManager] ERROR: either filter or encoder is not ready.");
+    SecureErrorLogf(@"[MEManager] ERROR: either filter or encoder is not ready.");
     self.failed = TRUE;
     self.writerStatus = AVAssetWriterStatusFailed;
     return TRUE;
@@ -1246,11 +1247,11 @@ static void enqueueToME(MEManager *self, int *ret) {
     if (useVideoFilter(self)) {
         if (self.videoFilterFlushed) return;
         if (!self.videoFilterIsReady) {
-            NSLog(@"[MEManager] ERROR: the filtergraph is not ready");
+            SecureErrorLogf(@"[MEManager] ERROR: the filtergraph is not ready");
             goto error;
         }
         if (self.videoFilterEOF) {
-            NSLog(@"[MEManager] ERROR: the filtergraph reached EOF.");
+            SecureErrorLogf(@"[MEManager] ERROR: the filtergraph reached EOF.");
             goto error;
         }
         if (inputFrameIsReady) {
@@ -1268,7 +1269,7 @@ static void enqueueToME(MEManager *self, int *ret) {
                 float pts0 = (float)self->_lastEnqueuedPTS/self->time_base;
                 float pts1 = (float)self->_lastDequeuedPTS/self->time_base;
                 float diff = fabsf(pts1-pts0);
-                NSLog(@"[Filter] enqueued:%8.2f, dequeued:%8.2f, diffInSec:%5.2f", pts0, pts1, diff );
+                SecureDebugLogf(@"[Filter] enqueued:%8.2f, dequeued:%8.2f, diffInSec:%5.2f", pts0, pts1, diff );
 #endif
             } else {
                 self.videoFilterFlushed = TRUE;
@@ -1281,17 +1282,17 @@ static void enqueueToME(MEManager *self, int *ret) {
             } else if (*ret == AVERROR_EOF) {
                 return;
             } else {
-                NSLog(@"[MEManager] ERROR: av_buffersrc_add_frame() returned %08X", *ret);
+                SecureErrorLogf(@"[MEManager] ERROR: av_buffersrc_add_frame() returned %08X", *ret);
             }
         }
     } else {
         if (self.videoEncoderFlushed) return;
         if (!self.videoEncoderIsReady) {
-            NSLog(@"[MEManager] ERROR: the encoder is not ready.");
+            SecureErrorLogf(@"[MEManager] ERROR: the encoder is not ready.");
             goto error;
         }
         if (self.videoEncoderEOF) {
-            NSLog(@"[MEManager] ERROR: the encoder reached EOF.");
+            SecureErrorLogf(@"[MEManager] ERROR: the encoder reached EOF.");
             goto error;
         }
         if (inputFrameIsReady) {
@@ -1313,7 +1314,7 @@ static void enqueueToME(MEManager *self, int *ret) {
             } else if (*ret == AVERROR_EOF) {
                 return;
             } else {
-                NSLog(@"[MEManager] ERROR: avcodec_send_frame() returned %08X", *ret);
+                SecureErrorLogf(@"[MEManager] ERROR: avcodec_send_frame() returned %08X", *ret);
             }
         }
     }
@@ -1336,7 +1337,7 @@ error:
             assert(sb != NULL); // prepareVideoFilterWith cannot accept NULL input
             BOOL result = [self prepareVideoFilterWith:sb];
             if (!result || !self.videoFilterIsReady) {
-                NSLog(@"[MEManager] ERROR: Failed to prepare the filter graph");
+                SecureErrorLogf(@"[MEManager] ERROR: Failed to prepare the filter graph");
                 goto error;
             }
         }
@@ -1348,7 +1349,7 @@ error:
             // prepareVideoEncoderWith CAN accept NULL input
             BOOL result = [self prepareVideoEncoderWith:sb];
             if (!result || !self.videoEncoderIsReady) {
-                NSLog(@"[MEManager] ERROR: Failed to prepare the encoder");
+                SecureErrorLogf(@"[MEManager] ERROR: Failed to prepare the encoder");
                 goto error;
             }
         }
@@ -1360,7 +1361,7 @@ error:
     if (sb) {                                               // Create AVFrame from CMSampleBuffer
         BOOL result = [self prepareInputFrameWith:sb];
         if (!result) {
-            NSLog(@"[MEManager] ERROR: Failed to prepare the input frame");
+            SecureErrorLogf(@"[MEManager] ERROR: Failed to prepare the input frame");
             goto error;
         }
     } else {
@@ -1386,7 +1387,7 @@ error:
                 
                 // Abort on unexpected errors (other than EAGAIN)
                 if (self.failed || (ret < 0 && ret != AVERROR(EAGAIN))) {
-                    NSLog(@"[MEManager] ERROR: Failed to enqueue the input frame (ret=%d)", ret);
+                    SecureErrorLogf(@"[MEManager] ERROR: Failed to enqueue the input frame (ret=%d)", ret);
                     return NO;
                 }
                 
@@ -1413,7 +1414,7 @@ error:
 
 - (void)markAsFinished
 {
-    NSLog(@"[MEManager] End of input stream detected.");
+    SecureLogf(@"[MEManager] End of input stream detected.");
     [self output_sync:^{
         int ret = 0;
         enqueueToME(self, &ret);
@@ -1464,7 +1465,7 @@ error:
 - (void)setNaturalSize:(CGSize)naturalSize
 {
     // TODO: Ignore for now
-    NSLog(@"[MEManager] ERROR: -setNaturalSize: is unsupported.");
+    SecureErrorLogf(@"[MEManager] ERROR: -setNaturalSize: is unsupported.");
 }
 
 /* =================================================================================== */
@@ -1477,14 +1478,14 @@ static void pullFilteredFrame(MEManager *self, int *ret) {
         self.filteredValid = FALSE;
         self->filtered = av_frame_alloc();                  // allocate frame
         if (!self->filtered) {
-            NSLog(@"[MEManager] ERROR: Failed to allocate a video frame.");
+            SecureErrorLogf(@"[MEManager] ERROR: Failed to allocate a video frame.");
             goto error;
         }
     }
     
     if (!self.videoFilterIsReady) {
         *ret = AVERROR_UNKNOWN;
-        NSLog(@"[MEManager] ERROR: the filtergraph is not ready.");
+        SecureErrorLogf(@"[MEManager] ERROR: the filtergraph is not ready.");
         goto error;
     }
     if (self.filteredValid) {
@@ -1513,7 +1514,7 @@ static void pullFilteredFrame(MEManager *self, int *ret) {
         self.videoFilterEOF = TRUE;
         return;
     } else {
-        NSLog(@"[MEManager] ERROR: Failed to av_buffersink_get_frame() (%d)", *ret);
+        SecureErrorLogf(@"[MEManager] ERROR: Failed to av_buffersink_get_frame() (%d)", *ret);
     }
 
 error:
@@ -1528,7 +1529,7 @@ static void pushFilteredFrame(MEManager *self, int *ret) {
     if (!self.videoEncoderIsReady) {                        // Prepare encoder after filtergraph
         BOOL result = [self prepareVideoEncoderWith:NULL];  // Pass NULL to use filtered frame
         if (!result || !self.videoEncoderIsReady) {
-            NSLog(@"[MEManager] ERROR: Failed to initialize the encoder");
+            SecureErrorLogf(@"[MEManager] ERROR: Failed to initialize the encoder");
             goto error;
         }
     }
@@ -1545,7 +1546,7 @@ static void pushFilteredFrame(MEManager *self, int *ret) {
             //self.writerStatus = AVAssetWriterStatusCompleted;
             return;
         } else {
-            NSLog(@"[MEManager] ERROR: failed to avcodec_send_frame().");
+            SecureErrorLogf(@"[MEManager] ERROR: failed to avcodec_send_frame().");
         }
     } else if (self.videoFilterEOF) {                       // Push flush frame into encoder
         *ret = avcodec_send_frame(self->avctx, NULL);
@@ -1558,10 +1559,10 @@ static void pushFilteredFrame(MEManager *self, int *ret) {
             //self.writerStatus = AVAssetWriterStatusCompleted;
             return;
         } else {
-            NSLog(@"[MEManager] ERROR: failed to flush the encoder.");
+            SecureErrorLogf(@"[MEManager] ERROR: failed to flush the encoder.");
         }
     } else {
-        NSLog(@"[MEManager] Force retry (pushFilteredFrame)");
+        SecureDebugLogf(@"[MEManager] Force retry (pushFilteredFrame)");
         *ret = AVERROR(EAGAIN);
         return;
     }
@@ -1577,14 +1578,14 @@ static void pullEncodedPacket(MEManager *self, int *ret) {
     if (!self->encoded) {                                   // Prepare encoded packet
         self->encoded = av_packet_alloc();
         if (!self->encoded) {
-            NSLog(@"[MEManager] ERROR: Failed to allocate a video packet.");
+            SecureErrorLogf(@"[MEManager] ERROR: Failed to allocate a video packet.");
             goto error;
         }
     }
     
     if (!self.videoEncoderIsReady) {
         *ret = AVERROR_UNKNOWN;
-        NSLog(@"[MEManager] ERROR: the encoder is not ready.");
+        SecureErrorLogf(@"[MEManager] ERROR: the encoder is not ready.");
         goto error;
     }
     
@@ -1599,7 +1600,7 @@ static void pullEncodedPacket(MEManager *self, int *ret) {
         self.readerStatus = AVAssetReaderStatusCompleted;
         return;
     } else {
-        NSLog(@"[MEManager] ERROR: Failed to avcodec_receive_packet().");
+        SecureErrorLogf(@"[MEManager] ERROR: Failed to avcodec_receive_packet().");
     }
 
 error:
@@ -1611,7 +1612,7 @@ static BOOL initialQueueing(MEManager *self) {
     if (self.inputBlock && self.inputQueue) {
         // Validate semaphores are initialized
         if (!self.eagainDelaySemaphore || !self.filterReadySemaphore || !self.encoderReadySemaphore) {
-            NSLog(@"[MEManager] ERROR: Semaphores not properly initialized.");
+            SecureErrorLogf(@"[MEManager] ERROR: Semaphores not properly initialized.");
             return FALSE;
         }
         
@@ -1634,7 +1635,7 @@ static BOOL initialQueueing(MEManager *self) {
                 waitOnSemaphore(self.filterReadySemaphore, 100);
             } while (CFAbsoluteTimeGetCurrent() < limit);
             if (!self.videoFilterIsReady) {
-                NSLog(@"[MEManager] ERROR: Filter graph is not ready.");
+                SecureErrorLogf(@"[MEManager] ERROR: Filter graph is not ready.");
                 goto error;
             }
         } else {
@@ -1645,13 +1646,13 @@ static BOOL initialQueueing(MEManager *self) {
                 waitOnSemaphore(self.encoderReadySemaphore, 100);
             } while (CFAbsoluteTimeGetCurrent() < limit);
             if (!self.videoEncoderIsReady) {
-                NSLog(@"[MEManager] ERROR: Encoder is not ready.");
+                SecureErrorLogf(@"[MEManager] ERROR: Encoder is not ready.");
                 goto error;
             }
         }
         return (!self.failed);
     } else {
-        NSLog(@"[MEManager] ERROR: input queue or block is invalid.");
+        SecureErrorLogf(@"[MEManager] ERROR: input queue or block is invalid.");
     }
     
 error:
@@ -1672,8 +1673,8 @@ error:
     
     if (!self.queueing) {
         if (self.verbose) {
-            NSLog(@"[MEManager] videoEncoderSettings = \n%@", self.videoEncoderSetting);
-            NSLog(@"[MEManager] videoFilterString = %@", self.videoFilterString);
+            SecureDebugLogf(@"[MEManager] videoEncoderSettings = \n%@", [self.videoEncoderSetting description]);
+            SecureDebugLogf(@"[MEManager] videoFilterString = %@", self.videoFilterString);
         }
         
         //CFAbsoluteTime start = CFAbsoluteTimeGetCurrent();
@@ -1684,7 +1685,7 @@ error:
         }
         
         //CFAbsoluteTime end = CFAbsoluteTimeGetCurrent();
-        //NSLog(@"[MEManager] initial delayed = %.3f", (end - start));
+        //SecureDebugLogf(@"[MEManager] initial delayed = %.3f", (end - start));
     }
     
     if (useVideoEncoder(self)) {                            // encode => output
@@ -1700,7 +1701,7 @@ error:
                         if (self.failed) goto error;
                         if (ret < 0) {
                             if (ret == AVERROR_EOF) {
-                                //NSLog(@"[MEManager] Filter graph detected EOF.");
+                                //SecureLogf(@"[MEManager] Filter graph detected EOF.");
                                 ret = 0;
                             }
                             if (ret == AVERROR(EAGAIN)) {
@@ -1708,7 +1709,7 @@ error:
                                 ret = 0;
                             }
                             if (ret < 0) {
-                                NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
+                                SecureErrorLogf(@"[MEManager] ERROR: Filter graph detected: %d", ret);
                                 goto error;
                             }
                         }
@@ -1723,7 +1724,7 @@ error:
                         if (self.failed) goto error;
                         if (ret < 0) {
                             if (ret == AVERROR_EOF) {
-                                // NSLog(@"[MEManager] Encoder detected EOF");
+                                // SecureLogf(@"[MEManager] Encoder detected EOF");
                                 ret = 0;
                             }
                             if (ret == AVERROR(EAGAIN)) {
@@ -1731,7 +1732,7 @@ error:
                                 ret = 0;
                             }
                             if (ret < 0) {
-                                NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
+                                SecureErrorLogf(@"[MEManager] ERROR: Filter graph detected: %d", ret);
                                 goto error;
                             }
                         }
@@ -1753,7 +1754,7 @@ error:
                     if (self.failed) goto error;
                     if (ret < 0) {
                         if (ret == AVERROR_EOF) {
-                            // NSLog(@"[MEManager] Encoder detected EOF");
+                            // SecureLogf(@"[MEManager] Encoder detected EOF");
                             ret = 0;
                         }
                         if (ret == AVERROR(EAGAIN)) {
@@ -1761,7 +1762,7 @@ error:
                             ret = 0;
                         }
                         if (ret < 0) {
-                            NSLog(@"[MEManager] ERROR: Encoder detected: %d", ret);
+                            SecureErrorLogf(@"[MEManager] ERROR: Encoder detected: %d", ret);
                             break;
                         }
                     }
@@ -1773,7 +1774,7 @@ error:
             } while(countEAGAIN > 0);                       // loop - blocking
         }
         if (self.videoFilterEOF && self.videoEncoderEOF) {
-            NSLog(@"[MEManager] End of output stream detected.");
+            SecureLogf(@"[MEManager] End of output stream detected.");
             return NULL;
         }
         if (ret == 0) {
@@ -1782,10 +1783,10 @@ error:
                 av_packet_unref(encoded);
                 return sb;
             } else {
-                NSLog(@"[MEManager] ERROR: Failed to createCompressedSampleBuffer.");
+                SecureErrorLogf(@"[MEManager] ERROR: Failed to createCompressedSampleBuffer.");
             }
         } else {
-            NSLog(@"[MEManager] ERROR: Unable to createCompressedSampleBuffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Unable to createCompressedSampleBuffer.");
         }
     } else {                                                // filtered => output
         {
@@ -1800,7 +1801,7 @@ error:
                         goto error;
                     } else {
                         if (ret == AVERROR_EOF) {
-                            //NSLog(@"[MEManager] Filter graph detected EOF.");
+                            //SecureLogf(@"[MEManager] Filter graph detected EOF.");
                             ret = 0;
                         }
                         if (ret == AVERROR(EAGAIN)) {
@@ -1808,7 +1809,7 @@ error:
                             ret = 0;
                         }
                         if (ret < 0) {
-                            NSLog(@"[MEManager] ERROR: Filter graph detected: %d", ret);
+                            SecureErrorLogf(@"[MEManager] ERROR: Filter graph detected: %d", ret);
                             break;
                         }
                     }
@@ -1822,7 +1823,7 @@ error:
             } while(countEAGAIN > 0);                       // loop - blocking
         }
         if (self.videoFilterEOF) {
-            NSLog(@"[MEManager] End of output stream detected.");
+            SecureLogf(@"[MEManager] End of output stream detected.");
             return NULL;
         }
         if (ret == 0) {
@@ -1832,10 +1833,10 @@ error:
                 av_frame_unref(filtered);
                 return sb;
             } else {
-                NSLog(@"[MEManager] ERROR: Failed to createUncompressedSampleBuffer.");
+                SecureErrorLogf(@"[MEManager] ERROR: Failed to createUncompressedSampleBuffer.");
             }
         } else {
-            NSLog(@"[MEManager] ERROR: Unable to createUncompressedSampleBuffer.");
+            SecureErrorLogf(@"[MEManager] ERROR: Unable to createUncompressedSampleBuffer.");
         }
     }
     

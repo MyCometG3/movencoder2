@@ -178,7 +178,7 @@ NS_ASSUME_NONNULL_BEGIN
     AVAssetReader* assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
                                                                 error:&error];
     if (!assetReader) {
-        NSLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
         if (error)
             self.finalError = error;
         return FALSE;
@@ -190,7 +190,7 @@ NS_ASSUME_NONNULL_BEGIN
                                                            fileType:AVFileTypeQuickTimeMovie
                                                               error:&error];
     if (!assetWriter) {
-        NSLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
         if (error)
             self.finalError = error;
         return FALSE;
@@ -377,7 +377,7 @@ NS_ASSUME_NONNULL_BEGIN
         goto end;
     }
     
-    NSLog(@"[METranscoder] Export session started.");
+    SecureLog(@"[METranscoder] Export session started.");
     
     aw = self.assetWriter;
     ar = self.assetReader;
@@ -483,9 +483,9 @@ NS_ASSUME_NONNULL_BEGIN
 end:
     self.writerIsBusy = FALSE;
     if (self.finalSuccess) {
-        NSLog(@"[METranscoder] Export session completed.");
+        SecureLog(@"[METranscoder] Export session completed.");
     } else if (self.cancelled) {
-        NSLog(@"[METranscoder] Export session cancelled.");
+        SecureLog(@"[METranscoder] Export session cancelled.");
     } else {
         if (!self.finalError) {
             NSError* err = nil;
@@ -498,12 +498,12 @@ end:
         if (error) {
             *error = self.finalError;
         }
-        NSLog(@"[METranscoder] ERROR: Export session failed. Error details: %@", sanitizeLogString([self.finalError description]));
+        SecureErrorLogf(@"[METranscoder] ERROR: Export session failed. Error details: %@", [self.finalError description]);
     }
     
     //
     self.timeStamp1 = CFAbsoluteTimeGetCurrent();
-    NSLog(@"[METranscoder] elapsed: %.2f sec", self.timeElapsed);
+    SecureLogf(@"[METranscoder] elapsed: %.2f sec", self.timeElapsed);
 
     return self.finalSuccess;
 }

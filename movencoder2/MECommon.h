@@ -29,13 +29,14 @@
 
 @import Foundation;
 @import AVFoundation;
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: - Common Macros
 /* =================================================================================== */
 
 #ifndef ALog
-#define ALog(fmt, ...) NSLog((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define ALog(fmt, ...) SecureDebugLogf((@"%s [Line %d] " fmt), __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
 #endif
 
 /* =================================================================================== */

@@ -29,6 +29,7 @@
 #import "MEInput.h"
 #import "MEOutput.h"
 #import "MEManager.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -118,7 +119,7 @@ void dumpTiming(CMSampleBufferRef sb, NSString* typeString, NSString* tag, int c
     int32_t ptsScale = pts.timescale;
     float dtime = CMTimeGetSeconds(dur);
     float ptime = CMTimeGetSeconds(pts);
-    NSLog(@"%@ [%@] : %lld/%d(%.2f), %lld/%d(%.2f) %d",
+    SecureLogf(@"%@ [%@] : %lld/%d(%.2f), %lld/%d(%.2f) %d",
           typeString, tag, dtsValue, dtsScale, dtime, ptsValue, ptsScale, ptime, count);
 }
 

@@ -25,6 +25,7 @@
  */
 
 #import "METranscoder+Internal.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -98,7 +99,7 @@ uint32_t formatIDFor(NSString* fourCC)
         BOOL awOK = [aw canAddInput:awInput];
         
         if (!(arOK && awOK)) {
-            NSLog(@"[METranscoder] Skipping track(%d) - unsupported", track.trackID);
+            SecureLogf(@"Skipping track(%d) - unsupported", track.trackID);
             continue;
         }
         
@@ -452,7 +453,7 @@ uint32_t formatIDFor(NSString* fourCC)
                     }
                 }
                 awInputSetting[AVEncoderBitRateKey] = prev;
-                NSLog(@"[METranscoder] Bitrate adjustment to %@ from %@", prev, @(self.audioBitRate));
+                SecureLogf(@"Bitrate adjustment to %@ from %@", prev, @(self.audioBitRate));
             }
         }
         
@@ -491,7 +492,7 @@ uint32_t formatIDFor(NSString* fourCC)
         CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
         if (!asbd) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - no audio format description", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - no audio format description", track.trackID);
             continue;
         }
         
@@ -548,7 +549,7 @@ uint32_t formatIDFor(NSString* fourCC)
                 avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:srcTag];
                 avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
             } else {
-                NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported channel count %d", track.trackID, numChannel);
+                SecureErrorLogf(@"Skipping audio track(%d) - unsupported channel count %d", track.trackID, numChannel);
                 continue;
             }
         }
@@ -567,7 +568,7 @@ uint32_t formatIDFor(NSString* fourCC)
         }
         
         if (!avacSrcLayout || !avacDstLayout) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - channel layout creation failed", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - channel layout creation failed", track.trackID);
             continue;
         }
         
@@ -628,7 +629,7 @@ uint32_t formatIDFor(NSString* fourCC)
         AVAudioFormat* dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
         
         if (!srcFormat || !intermediateFormat || !dstFormat) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported audio format detected", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - unsupported audio format detected", track.trackID);
             continue;
         }
         
@@ -653,12 +654,12 @@ uint32_t formatIDFor(NSString* fourCC)
                     }
                     
                     awInputSetting[AVEncoderBitRateKey] = closestBitrate;
-                    NSLog(@"[METranscoder] Bitrate adjustment to %@ from %@", closestBitrate, @(self.audioBitRate));
+                    SecureLogf(@"Bitrate adjustment to %@ from %@", closestBitrate, @(self.audioBitRate));
                     
                     // Recreate destination format with adjusted bitrate
                     dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
                     if (!dstFormat) {
-                        NSLog(@"[METranscoder] Skipping audio track(%d) - destination format recreation failed", track.trackID);
+                        SecureErrorLogf(@"Skipping audio track(%d) - destination format recreation failed", track.trackID);
                         continue;
                     }
                 }
@@ -682,7 +683,7 @@ uint32_t formatIDFor(NSString* fourCC)
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
         if (![ar canAddOutput:arOutput]) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - reader output not supported", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - reader output not supported", track.trackID);
             continue;
         }
         [ar addOutput:arOutput];
@@ -699,7 +700,7 @@ uint32_t formatIDFor(NSString* fourCC)
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                                          outputSettings:awInputSetting];
         if (![aw canAddInput:awInput]) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - writer input not supported", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - writer input not supported", track.trackID);
             continue;
         }
         [aw addInput:awInput];

@@ -26,6 +26,7 @@
 
 #import "MECommon.h"
 #import "monitorUtil.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -90,7 +91,7 @@ static void cancelAndExit(int code, cancel_block_t  _Nonnull can) {
     
     // Actual cleanup/exit operation should be performed in monitor_block_t
     
-    NSLog(@"Force quit"); // Hangup condition detected
+    SecureLog(@"Force quit"); // Hangup condition detected
     exitAsync(code, timerSource());
 }
 
@@ -128,12 +129,12 @@ void startMonitor(monitor_block_t mon, cancel_block_t can) {
     // install GCD based signal handler
     signalSrcInstaller(SIGINT, ^{
         printf("\n");
-        NSLog(@"SIGINT detected");
+        SecureLog(@"SIGINT detected");
         cancelAndExit(SIGINT, can); // never returns
     });
     signalSrcInstaller(SIGTERM, ^{
         printf("\n");
-        NSLog(@"SIGTERM detected");
+        SecureLog(@"SIGTERM detected");
         cancelAndExit(SIGTERM, can); // never returns
     });
 

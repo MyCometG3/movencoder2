@@ -67,7 +67,7 @@ float initialDelayInSec = 5.0;
 // Enhanced path validation utility with comprehensive security checks
 static BOOL isAllowedPath(NSURL *fileURL) {
     if (!fileURL) {
-        NSLog(@"[SECURITY] ERROR: File URL is nil");
+        SecureErrorLog(@"[SECURITY] ERROR: File URL is nil");
         return NO;
     }
     
@@ -76,7 +76,7 @@ static BOOL isAllowedPath(NSURL *fileURL) {
     
     // Validate that we have an absolute path
     if (!targetPath || ![targetPath hasPrefix:@"/"]) {
-        NSLog(@"[SECURITY] ERROR: Path is not absolute: %@", sanitizeLogString(targetPath));
+        SecureErrorLogf(@"[SECURITY] ERROR: Path is not absolute: %@", targetPath);
         return NO;
     }
     
@@ -87,7 +87,7 @@ static BOOL isAllowedPath(NSURL *fileURL) {
     [(NSMutableCharacterSet*)combinedForbidden formUnionWithCharacterSet:forbiddenChars];
     
     if ([targetPath rangeOfCharacterFromSet:combinedForbidden].location != NSNotFound) {
-        NSLog(@"[SECURITY] ERROR: Path contains forbidden characters: %@", sanitizeLogString(targetPath));
+        SecureErrorLogf(@"[SECURITY] ERROR: Path contains forbidden characters: %@", targetPath);
         return NO;
     }
     
@@ -95,17 +95,17 @@ static BOOL isAllowedPath(NSURL *fileURL) {
     NSArray *dangerousPatterns = @[@"..", @"%2e%2e", @"%2E%2E", @"..%2f", @"..%2F", @"%2e%2e%2f", @"%2E%2E%2F"];
     for (NSString *pattern in dangerousPatterns) {
         if ([targetPath.lowercaseString containsString:pattern.lowercaseString]) {
-            NSLog(@"[SECURITY] ERROR: Path traversal attempt detected: %@", sanitizeLogString(targetPath));
+            SecureErrorLogf(@"[SECURITY] ERROR: Path traversal attempt detected: %@", targetPath);
             return NO;
         }
     }
     
     // Check for dangerous system paths and special files
-    NSArray *forbiddenPaths = @[@"/dev/", @"/proc/", @"/sys/", @"/etc/", @"/var/root/", @"/root/", 
+    NSArray *forbiddenPaths = @[@"/dev/", @"/proc/", @"/sys/", @"/etc/", @"/var/root/", @"/root/",
                                 @"/tmp/", @"/var/tmp/", @"/..", @"/.", @"/private/var/", @"/System/"];
     for (NSString *forbidden in forbiddenPaths) {
         if ([targetPath hasPrefix:forbidden]) {
-            NSLog(@"[SECURITY] ERROR: Access to system path denied: %@", sanitizeLogString(targetPath));
+            SecureErrorLogf(@"[SECURITY] ERROR: Access to system path denied: %@", targetPath);
             return NO;
         }
     }
@@ -121,12 +121,12 @@ static BOOL isAllowedPath(NSURL *fileURL) {
     if ([targetPath hasPrefix:userPath]) {
         inAllowedRoot = YES;
         allowedRoot = @"user home";
-    } 
+    }
     // Check if path is under /Users/Shared/
     else if ([targetPath hasPrefix:sharedPath]) {
         inAllowedRoot = YES;
         allowedRoot = @"shared directory";
-    } 
+    }
     // Check if path is under /Volumes/*/
     else if ([targetPath hasPrefix:@"/Volumes/"]) {
         @autoreleasepool {
@@ -139,8 +139,8 @@ static BOOL isAllowedPath(NSURL *fileURL) {
     }
     
     if (!inAllowedRoot) {
-        NSLog(@"[SECURITY] ERROR: Path not in allowed directory tree: %@", sanitizeLogString(targetPath));
-        NSLog(@"[SECURITY] INFO: Allowed roots - User: %@, Shared: %@, Volumes: /Volumes/*/", sanitizeLogString(userPath), sanitizeLogString(sharedPath));
+        SecureErrorLogf(@"[SECURITY] ERROR: Path not in allowed directory tree: %@", targetPath);
+        SecureLogf(@"[SECURITY] INFO: Allowed roots - User: %@, Shared: %@, Volumes: /Volumes/*/", userPath, sharedPath);
         return NO;
     }
     
@@ -154,33 +154,33 @@ static BOOL isAllowedPath(NSURL *fileURL) {
         while (parentPath && ![parentPath isEqualToString:@"/"] && parentPath.length > 0) {
             NSDictionary *parentAttrs = [fm attributesOfItemAtPath:parentPath error:nil];
             if (parentAttrs && [[parentAttrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
-                NSLog(@"[SECURITY] ERROR: Parent directory is a symbolic link: %@", sanitizeLogString(parentPath));
+                SecureErrorLogf(@"[SECURITY] ERROR: Parent directory is a symbolic link: %@", parentPath);
                 return NO;
             }
             NSString *newParentPath = [parentPath stringByDeletingLastPathComponent];
             if ([newParentPath isEqualToString:parentPath]) break; // Prevent infinite loop
             parentPath = newParentPath;
         }
-    } 
+    }
     // If file exists, check if it's a symlink
     else if (attrs && [[attrs fileType] isEqualToString:NSFileTypeSymbolicLink]) {
-        NSLog(@"[SECURITY] ERROR: File is a symbolic link: %@", sanitizeLogString(targetPath));
+        SecureErrorLogf(@"[SECURITY] ERROR: File is a symbolic link: %@", targetPath);
         return NO;
     }
     
     // Additional validation for special device files
     if (attrs) {
         NSString *fileType = [attrs fileType];
-        if ([fileType isEqualToString:NSFileTypeBlockSpecial] || 
+        if ([fileType isEqualToString:NSFileTypeBlockSpecial] ||
             [fileType isEqualToString:NSFileTypeCharacterSpecial] ||
             [fileType isEqualToString:NSFileTypeSocket] ||
             [fileType isEqualToString:NSFileTypeUnknown]) {
-            NSLog(@"[SECURITY] ERROR: File is a special device or unknown type: %@ (type: %@)", sanitizeLogString(targetPath), sanitizeLogString(fileType));
+            SecureErrorLogf(@"[SECURITY] ERROR: File is a special device or unknown type: %@ (type: %@)", targetPath, fileType);
             return NO;
         }
     }
     
-    NSLog(@"[SECURITY] INFO: Path validation passed for %@ (allowed root: %@)", sanitizeLogString(targetPath), sanitizeLogString(allowedRoot));
+    SecureLogf(@"[SECURITY] INFO: Path validation passed for %@ (allowed root: %@)", targetPath, allowedRoot);
     return YES;
 }
 
@@ -209,7 +209,7 @@ static BOOL parseOptMEVE(NSString* param, MEManager* manager) {
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
         if (optParse.count < 2) {
-            NSLog(@"ERROR: Invalid option string: %@", sanitizeLogString(opt));
+            SecureErrorLogf(@"ERROR: Invalid option string: %@", opt);
             goto error;
         }
         NSString* key = optParse[0];
@@ -300,7 +300,7 @@ static BOOL parseOptVE(NSString* param, METranscoder* coder) {
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
         if (optParse.count < 2) {
-            NSLog(@"ERROR: Invalid option string: %@", sanitizeLogString(opt));
+            SecureErrorLogf(@"ERROR: Invalid option string: %@", opt);
             goto error;
         }
         NSString* key = optParse[0];
@@ -363,7 +363,7 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
     for (NSString* opt in optArray) {
         NSArray* optParse = [opt componentsSeparatedByString:equal];
         if (optParse.count < 2) {
-            NSLog(@"ERROR: Invalid option string: %@", sanitizeLogString(opt));
+            SecureErrorLogf(@"ERROR: Invalid option string: %@", opt);
             goto error;
         }
         NSString* key = optParse[0];
@@ -412,7 +412,7 @@ static BOOL parseOptAE(NSString* param, METranscoder* coder) {
             if (nil == volumeNum) goto error;
             double volumeDb = volumeNum.doubleValue;
             if (volumeDb < -10.0 || volumeDb > 10.0) {
-                NSLog(@"ERROR: volume parameter out of range (-10.0 to +10.0 dB): %f", volumeDb);
+                SecureErrorLogf(@"ERROR: volume parameter out of range (-10.0 to +10.0 dB): %f", volumeDb);
                 goto error;
             }
             coder.param[kAudioVolumeKey] = volumeNum;
@@ -545,7 +545,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
                 } else if (optarg) {
                     paramStr = optarg;
                 }
-                NSLog(@"ERROR: unknown parameter = \"%s\"", paramStr);
+                SecureErrorLogf(@"ERROR: unknown parameter = \"%s\"", paramStr);
                 goto error;
             }
                 break;
@@ -557,63 +557,63 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
     input = input ? [[input URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
     output = output ? [[output URLByResolvingSymlinksInPath] URLByStandardizingPath] : nil;
     if (!(input && output)) {
-        NSLog(@"ERROR: Either input or output is not available.");
+        SecureErrorLog(@"ERROR: Either input or output is not available.");
         goto error;
     } else {
         // Comprehensive security validation for input/output paths
         if (!isAllowedPath(input)) {
-            NSLog(@"ERROR: Input file path security validation failed: %@", sanitizeLogString(input.path));
+            SecureErrorLogf(@"ERROR: Input file path security validation failed: %@", input.path);
             goto error;
         }
         if (!isAllowedPath(output)) {
-            NSLog(@"ERROR: Output file path security validation failed: %@", sanitizeLogString(output.path));
+            SecureErrorLogf(@"ERROR: Output file path security validation failed: %@", output.path);
             goto error;
         }
         
         // Additional validation: Check if input file exists and is readable
         NSFileManager *fm = [NSFileManager defaultManager];
         if (![fm fileExistsAtPath:input.path]) {
-            NSLog(@"ERROR: Input file does not exist: %@", sanitizeLogString(input.path));
+            SecureErrorLogf(@"ERROR: Input file does not exist: %@", input.path);
             goto error;
         }
         if (![fm isReadableFileAtPath:input.path]) {
-            NSLog(@"ERROR: Input file is not readable: %@", sanitizeLogString(input.path));
+            SecureErrorLogf(@"ERROR: Input file is not readable: %@", input.path);
             goto error;
         }
         
         // Check output directory exists and is writable
         NSString *outputDir = [output.path stringByDeletingLastPathComponent];
         if (![fm fileExistsAtPath:outputDir]) {
-            NSLog(@"ERROR: Output directory does not exist: %@", sanitizeLogString(outputDir));
+            SecureErrorLogf(@"ERROR: Output directory does not exist: %@", outputDir);
             goto error;
         }
         if (![fm isWritableFileAtPath:outputDir]) {
-            NSLog(@"ERROR: Output directory is not writable: %@", sanitizeLogString(outputDir));
+            SecureErrorLogf(@"ERROR: Output directory is not writable: %@", outputDir);
             goto error;
         }
         
         // Prevent overwriting existing files without explicit confirmation
         if ([fm fileExistsAtPath:output.path]) {
-            NSLog(@"WARNING: Output file already exists and will be overwritten: %@", sanitizeLogString(output.path));
+            SecureLogf(@"WARNING: Output file already exists and will be overwritten: %@", output.path);
         }
     }
     
     // Quick Options Check
     if (ve != NULL) {
         if (meve || mex264 || mex265) {
-            NSLog(@"ERROR: -ve is not compatible with -meve/-mex264/-mex265.");
+            SecureErrorLog(@"ERROR: -ve is not compatible with -meve/-mex264/-mex265.");
             goto error;
         }
     }
     if (mex264 && mex265) {
-        NSLog(@"ERROR: Either -mex264 or -mex265 should be used.");
+        SecureErrorLog(@"ERROR: Either -mex264 or -mex265 should be used.");
         goto error;
     }
     
     // Instanciate METranscoder
     transcoder = [METranscoder transcoderWithInput:input output:output];
     if (!transcoder) {
-        NSLog(@"ERROR: Invalid input or output.");
+        SecureErrorLog(@"ERROR: Invalid input or output.");
         goto error;
     }
     
@@ -626,7 +626,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
     }
     if (meve || mevf) {
         if (videoTracks.count == 0) {
-            NSLog(@"ERROR: No video track is available.");
+            SecureErrorLog(@"ERROR: No video track is available.");
             goto error;
         }
         // setup MEManager for each video tracks
@@ -635,7 +635,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
             MEManager* manager = [MEManager new];
             if (meve) {
                 if (parseOptMEVE(meve, manager) == FALSE) {
-                    NSLog(@"ERROR: Video parameter meve is invalid.");
+                    SecureErrorLog(@"ERROR: Video parameter meve is invalid.");
                     goto error;
                 }
                 if (mex264) {
@@ -658,21 +658,21 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
     }
     if (ve) {
         if (videoTracks.count == 0) {
-            NSLog(@"ERROR: No video track is available.");
+            SecureErrorLog(@"ERROR: No video track is available.");
             goto error;
         }
         if (parseOptVE(ve, transcoder) == FALSE) {
-            NSLog(@"ERROR: Video parameter ve is invalid.");
+            SecureErrorLog(@"ERROR: Video parameter ve is invalid.");
             goto error;
         }
     }
     if (ae) {
         if (audioTracks.count == 0) {
-            NSLog(@"ERROR: No audio track is available.");
+            SecureErrorLog(@"ERROR: No audio track is available.");
             goto error;
         }
         if (parseOptAE(ae, transcoder) == FALSE) {
-            NSLog(@"ERROR: Audio parameter ae is invalid.");
+            SecureErrorLog(@"ERROR: Audio parameter ae is invalid.");
             goto error;
         }
         
@@ -687,7 +687,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
                     NSNumber* volumeNum = transcoder.param[kAudioVolumeKey];
                     audioConverter.volumeDb = volumeNum.doubleValue;
                     if (verbose) {
-                        NSLog(@"Setting audio volume to %.1f dB for track %d", audioConverter.volumeDb, trackID);
+                        SecureLogf(@"Setting audio volume to %.1f dB for track %d", audioConverter.volumeDb, trackID);
                     }
                 }
                 
@@ -712,7 +712,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
                 NSNumber* ptsNum = (NSNumber*)info[kProgressPTSKey];
                 NSNumber* trackID = (NSNumber*)info[kProgressTrackIDKey];
                 float progress = MIN(percent.floatValue, 99.99);
-                NSLog(@"%2d|%@|%@|%5.2f%%|dts:%7.2f|pts:%7.2f|cnt:%6d|",
+                SecureLogf(@"%2d|%@|%@|%5.2f%%|dts:%7.2f|pts:%7.2f|cnt:%6d|",
                       trackID.intValue, type, tag, progress,
                       dtsNum.floatValue, ptsNum.floatValue, count.intValue);
             }
@@ -730,7 +730,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
                     newProgress = [percent floatValue] * 2;
                     if (lastProgress < newProgress) {
                         wx.lastProgress = newProgress;
-                        NSLog(@"UpdatePercentPhase:(%5.1f%%)", [percent floatValue]);
+                        SecureLogf(@"UpdatePercentPhase:(%5.1f%%)", [percent floatValue]);
                     }
                 }
             }
@@ -765,11 +765,11 @@ int main(int argc, char * const *argv) {
             BOOL success = transcoder.finalSuccess;
             BOOL cancel = transcoder.cancelled;
             if (success) {
-                //NSLog(@"Transcode completed.");
+                //SecureErrorLogf(@"Transcode completed.");
                 finishMonitor(EXIT_SUCCESS);
             }
             if (cancel) {
-                //NSLog(@"Transcode canceled.");
+                //SecureErrorLogf(@"Transcode canceled.");
                 
                 // Wait for writer to finish with timeout to prevent infinite loop
                 const NSTimeInterval timeoutSeconds = 10.0; // 10 second timeout
@@ -782,13 +782,13 @@ int main(int argc, char * const *argv) {
                 }
                 
                 if (transcoder.writerIsBusy) {
-                    NSLog(@"WARNING: Writer still busy after %.1f seconds timeout, aborting...", timeoutSeconds);
+                    SecureLogf(@"WARNING: Writer still busy after %.1f seconds timeout, aborting...", timeoutSeconds);
                 }
                 
                 finishMonitor(128 + lastSignal()); // 128 + SIGNUMBER
             }
             if (err) {
-                NSLog(@"Transcode failed: %@", sanitizeLogString([err description]));
+                SecureErrorLogf(@"Transcode failed: %@", [err description]);
                 finishMonitor(EXIT_FAILURE);
             }
         };

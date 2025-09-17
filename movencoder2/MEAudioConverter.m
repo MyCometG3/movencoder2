@@ -26,6 +26,7 @@
 
 #import "MECommon.h"
 #import "MEAudioConverter.h"
+#import "MESecureLogging.h"
 #include <unistd.h>
 
 /* =================================================================================== */
@@ -480,7 +481,7 @@ cleanup:
             if (!self->_audioConverter) {
                 self.failed = YES;
                 if (self.verbose) {
-                    NSLog(@"[MEAudioConverter] Failed to create AVAudioConverter");
+                    SecureErrorLog(@"Failed to create AVAudioConverter");
                 }
                 return;
             }
@@ -551,7 +552,7 @@ cleanup:
                     }
                 } else if (convertError) {
                     if (self.verbose) {
-                        NSLog(@"[MEAudioConverter] Audio conversion error: %@", convertError);
+                        SecureErrorLogf(@"Audio conversion error: %@", convertError);
                     }
                     self.failed = YES;
                 }
@@ -716,7 +717,7 @@ cleanup:
         default:
             // Unsupported format, log warning
             if (self.verbose) {
-                NSLog(@"[MEAudioConverter] Volume adjustment not supported for format: %d", (int)buffer.format.commonFormat);
+                SecureLogf(@"Volume adjustment not supported for format: %d", (int)buffer.format.commonFormat);
             }
             break;
     }
