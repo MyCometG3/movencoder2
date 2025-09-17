@@ -1076,7 +1076,7 @@ end:
             goto end;
         }
         
-        //
+        // Create CMBlockBuffer
         OSStatus err = noErr;
         CMBlockBufferRef bb = NULL;
         err = CMBlockBufferCreateWithMemoryBlock(kCFAllocatorDefault,   // allocator of CMBlockBuffer
@@ -1094,19 +1094,19 @@ end:
             goto end;
         }
         
+        // Copy NAL buffer into CMBlockBuffer
         err = CMBlockBufferReplaceDataBytes(tempPtr,                    // Data source pointer
                                             bb,                         // target CMBlockBuffer
                                             0,                          // replacing offset of target memoryBlock
                                             tempSize);                  // replacing size of data written from offset
-        
-        // Free temp NAL buffer
         av_free(tempPtr);
-        
         if (err) {
             NSLog(@"[MEManager] ERROR: Cannot setup CMBlockBuffer.");
+            if (bb) CFRelease(bb);
             goto end;
         }
         
+        // Create CMSampleBuffer from CMBlockBuffer
         CMItemCount numSamples = 1;
         CMSampleTimingInfo info = {
             kCMTimeInvalid,
@@ -1127,7 +1127,7 @@ end:
                                         numSampleSizeEntries,
                                         sampleSizeArray,
                                         &sb);
-        CFRelease(bb);
+        if (bb) CFRelease(bb);
         if (err) {
             NSLog(@"[MEManager] ERROR: Cannot setup compressed CMSampleBuffer.");
             goto end;
