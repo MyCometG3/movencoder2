@@ -131,9 +131,9 @@ NS_ASSUME_NONNULL_BEGIN
             
             // Try to create a temporary file to test write access
             NSError* error = nil;
-            BOOL success = [@"test" writeToFile:tempPath 
-                                     atomically:NO 
-                                       encoding:NSUTF8StringEncoding 
+            BOOL success = [@"test" writeToFile:tempPath
+                                     atomically:NO
+                                       encoding:NSUTF8StringEncoding
                                       error:&error];
         
             if (success) {

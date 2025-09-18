@@ -63,7 +63,7 @@ uint32_t formatIDFor(NSString* fourCC)
         
         // Safe access using validated bounds
         uint32_t c0 = (unsigned char)str[0];
-        uint32_t c1 = (unsigned char)str[1]; 
+        uint32_t c1 = (unsigned char)str[1];
         uint32_t c2 = (unsigned char)str[2];
         uint32_t c3 = (unsigned char)str[3];
         result = (c0<<24) + (c1<<16) + (c2<<8) + (c3);
@@ -155,7 +155,11 @@ uint32_t formatIDFor(NSString* fourCC)
         CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
         
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
-        assert(asbd != NULL);
+        if (!asbd) {
+            SecureErrorLogf(@"Skipping audio track(%d) - no audio format description", track.trackID);
+            continue;
+        }
+        
         sampleRate = (int)asbd->mSampleRate;
         numChannel = (int)asbd->mChannelsPerFrame;
         
