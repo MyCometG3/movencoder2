@@ -199,9 +199,7 @@ int countUp(SBChannel* self) {
 
 - (void)cancel
 {
-    void* current = dispatch_get_specific(sbChannelQueueKey);
-    void* selfPtr = (__bridge void*)self;
-    if (current == selfPtr) {
+    if (dispatch_get_specific(sbChannelQueueKey) != NULL) {
         // already on the same queue; avoid dispatch_sync deadlock
         [self callCompletionHandlerIfNecessary];
     } else {
