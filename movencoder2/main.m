@@ -744,6 +744,21 @@ error:
     return nil;
 }
 
+static void busyWait(METranscoder *transcoder) {
+    const NSTimeInterval timeoutSeconds = 5.0; // 5 second timeout
+    const NSTimeInterval pollInterval = 0.05; // 50ms poll interval
+    NSTimeInterval elapsed = 0.0;
+    
+    while (transcoder.writerIsBusy && elapsed < timeoutSeconds) {
+        usleep((useconds_t)(pollInterval * USEC_PER_SEC));
+        elapsed += pollInterval;
+    }
+    
+    if (transcoder.writerIsBusy) {
+        SecureErrorLogf(@"WARNING: Writer still busy after %.1f seconds timeout, aborting...", timeoutSeconds);
+    }
+}
+
 /* =================================================================================== */
 // MARK: -
 /* =================================================================================== */
@@ -761,35 +776,28 @@ int main(int argc, char * const *argv) {
         
         // Setup signal handler
         monitor_block_t monitorHandler = ^{
+            NSString* info = nil;
+            NSString* errorInfo = nil;
             NSError* err = transcoder.finalError;
             BOOL success = transcoder.finalSuccess;
             BOOL cancel = transcoder.cancelled;
             if (success) {
-                //SecureErrorLogf(@"Transcode completed.");
-                finishMonitor(EXIT_SUCCESS);
+                busyWait(transcoder);
+                
+                info = @"Transcode completed.";
+                finishMonitor(EXIT_SUCCESS, info, errorInfo);
             }
             if (cancel) {
-                //SecureErrorLogf(@"Transcode canceled.");
+                busyWait(transcoder);
                 
-                // Wait for writer to finish with timeout to prevent infinite loop
-                const NSTimeInterval timeoutSeconds = 10.0; // 10 second timeout
-                const NSTimeInterval pollInterval = 0.05; // 50ms poll interval
-                NSTimeInterval elapsed = 0.0;
-                
-                while (transcoder.writerIsBusy && elapsed < timeoutSeconds) {
-                    usleep((useconds_t)(pollInterval * USEC_PER_SEC));
-                    elapsed += pollInterval;
-                }
-                
-                if (transcoder.writerIsBusy) {
-                    SecureLogf(@"WARNING: Writer still busy after %.1f seconds timeout, aborting...", timeoutSeconds);
-                }
-                
-                finishMonitor(128 + lastSignal()); // 128 + SIGNUMBER
+                info = @"Transcode canceled.";
+                finishMonitor(128 + lastSignal(), info, errorInfo); // 128 + SIGNUMBER
             }
             if (err) {
-                SecureErrorLogf(@"Transcode failed: %@", [err description]);
-                finishMonitor(EXIT_FAILURE);
+                busyWait(transcoder);
+                
+                errorInfo = [NSString stringWithFormat:@"Transcode failed: %@", [err description]];
+                finishMonitor(EXIT_FAILURE, info, errorInfo);
             }
         };
         cancel_block_t cancelHandler = ^{

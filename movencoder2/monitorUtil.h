@@ -35,7 +35,7 @@ typedef void (^monitor_block_t)(void);
 typedef void (^cancel_block_t)(void);
 
 void startMonitor(monitor_block_t mon, cancel_block_t can);
-void finishMonitor(int code) ;
+void finishMonitor(int code, NSString* _Nullable msg, NSString* _Nullable errMsg);
 int lastSignal(void);
 
 NS_ASSUME_NONNULL_END

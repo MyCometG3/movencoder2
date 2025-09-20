@@ -95,6 +95,13 @@ static void cancelAndExit(int code, cancel_block_t  _Nonnull can) {
     exitAsync(code, timerSource());
 }
 
+static void cancelAllHandlers(dispatch_source_t _Nullable srcToCancel) {
+    if (srcToCancel) {
+        dispatch_source_set_event_handler(srcToCancel, nil);
+        dispatch_source_set_cancel_handler(srcToCancel, nil);
+    }
+}
+
 static dispatch_source_t timerSrcInstaller(dispatch_block_t handler, dispatch_block_t completion) {
     dispatch_time_t start = dispatch_time(DISPATCH_TIME_NOW, hbInterval);
     dispatch_source_t src = timerSource();
@@ -111,6 +118,13 @@ static dispatch_source_t signalSrcInstaller(int code, dispatch_block_t handler) 
     dispatch_source_set_event_handler(src, handler);
     dispatch_resume(src);
     return src;
+}
+
+static void logInfoOrError(NSString * _Nullable msg, NSString * _Nullable errMsg) {
+    if (msg)
+        SecureLogf(@"%@", msg);
+    if (errMsg)
+        SecureErrorLogf(@"%@", errMsg);
 }
 
 /* =================================================================================== */
@@ -142,7 +156,9 @@ void startMonitor(monitor_block_t mon, cancel_block_t can) {
     dispatch_main();
 }
 
-void finishMonitor(int code) {
+void finishMonitor(int code, NSString* _Nullable msg, NSString* _Nullable errMsg) {
+    cancelAllHandlers(timerSource());
+    logInfoOrError(msg, errMsg);
     exitAsync(code, timerSource());
 }
 
