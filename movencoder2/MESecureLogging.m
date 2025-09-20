@@ -8,23 +8,41 @@
 #import "MESecureLogging.h"
 #import <stdarg.h>
 
+typedef NS_OPTIONS(NSUInteger, SanitizeOptions) {
+    SanitizeOptionsNone = 0,
+    SanitizeOptionsEscapePercent = 1 << 0,
+    SanitizeOptionsEscapeNewline = 1 << 1,
+    SanitizeOptionsEscapeTab = 1 << 2,
+    SanitizeOptionsEscapeCarriageReturn = 1 << 3
+};
+
+static NSString* sanitizeStringWithOptions(NSString* input, SanitizeOptions options) {
+    if (!input) return @"(null)";
+    
+    NSString* result = input;
+    
+    if (options & SanitizeOptionsEscapePercent) {
+        result = [result stringByReplacingOccurrencesOfString:@"%" withString:@"%%"];
+    }
+    if (options & SanitizeOptionsEscapeNewline) {
+        result = [result stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
+    }
+    if (options & SanitizeOptionsEscapeTab) {
+        result = [result stringByReplacingOccurrencesOfString:@"\t" withString:@"\\t"];
+    }
+    if (options & SanitizeOptionsEscapeCarriageReturn) {
+        result = [result stringByReplacingOccurrencesOfString:@"\r" withString:@"\\r"];
+    }
+    
+    return result;
+}
+
 static NSString* sanitizeForOutput(NSString* s) {
-    if (!s) return @"(null)";
-    // Replace actual control characters with escaped representations to avoid multiline/log injection
-    NSString* out = [s stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
-    out = [out stringByReplacingOccurrencesOfString:@"\r" withString:@"\\r"];
-    out = [out stringByReplacingOccurrencesOfString:@"\t" withString:@"\\t"];
-    return out;
+    return sanitizeStringWithOptions(s, SanitizeOptionsEscapeNewline | SanitizeOptionsEscapeTab | SanitizeOptionsEscapeCarriageReturn);
 }
 
 NSString* sanitizeLogString(NSString* input) {
-    if (!input) return @"(null)";
-    // Legacy behavior: escape '%' so that if this string was (incorrectly) used as a format it won't be interpreted.
-    // Also escape backslash-newline/tab sequences.
-    NSString* s = [input stringByReplacingOccurrencesOfString:@"%" withString:@"%%"];
-    s = [s stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
-    s = [s stringByReplacingOccurrencesOfString:@"\t" withString:@"\\t"];
-    return s;
+    return sanitizeStringWithOptions(input, SanitizeOptionsEscapePercent | SanitizeOptionsEscapeNewline | SanitizeOptionsEscapeTab);
 }
 
 void SecureLog(NSString* message) {
