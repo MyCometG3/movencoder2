@@ -175,4 +175,4 @@ static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
 
 NS_ASSUME_NONNULL_END
 
-#endif // !METranscoder_Internal_h
+#endif /* METranscoder_Internal_h */
