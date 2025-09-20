@@ -1035,6 +1035,111 @@ error:
     return NULL;
 }
 
+CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inDesc, AVFrame* filtered) {
+    if (!inDesc || !filtered) {
+        return NULL;
+    }
+    
+    // Prepare extensions dictionary
+    CFDictionaryRef inExt = CMFormatDescriptionGetExtensions(inDesc);
+    CFMutableDictionaryRef outExt = NULL;
+    if (inExt) {
+        outExt = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, inExt);
+    } else {
+        outExt = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+                                           &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    }
+    if (!outExt) {
+        return NULL;
+    }
+    
+    // Add YCbCr matrix extension
+    int spc = filtered->colorspace;
+    if (spc != AVCOL_SPC_UNSPECIFIED) {
+        CFStringRef value = CVYCbCrMatrixGetStringForIntegerCodePoint(spc);
+        if (value) {
+            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_YCbCrMatrix, value);
+        }
+    }
+    
+    // Add color primaries extension
+    int color_primaries = filtered->color_primaries;
+    if (color_primaries != AVCOL_PRI_UNSPECIFIED) {
+        CFStringRef value = CVColorPrimariesGetStringForIntegerCodePoint(color_primaries);
+        if (value) {
+            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_ColorPrimaries, value);
+        }
+    }
+    
+    // Add transfer function extension
+    int color_trc = filtered->color_trc;
+    if (color_trc != AVCOL_TRC_UNSPECIFIED) {
+        CFStringRef value = CVTransferFunctionGetStringForIntegerCodePoint(color_trc);
+        if (value) {
+            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_TransferFunction, value);
+        }
+        
+        // Add gamma level if needed
+        if (value == kCMFormatDescriptionTransferFunction_UseGamma) {
+            CFNumberRef gamma = NULL;
+            if (color_trc == AVCOL_TRC_GAMMA22) {
+                gamma = (__bridge CFNumberRef)@(2.2F);
+            } else if (color_trc == AVCOL_TRC_GAMMA28) {
+                gamma = (__bridge CFNumberRef)@(2.8F);
+            }
+            if (gamma) {
+                CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_GammaLevel, gamma);
+            }
+        }
+    }
+    
+    // Add chroma location extension for top and bottom fields
+    int chroma_location = filtered->chroma_location;
+    if (chroma_location != AVCHROMA_LOC_UNSPECIFIED) {
+        CFStringRef value = NULL;
+        switch (chroma_location) {
+            case AVCHROMA_LOC_LEFT:
+                value = kCMFormatDescriptionChromaLocation_Left;
+                break;
+            case AVCHROMA_LOC_CENTER:
+                value = kCMFormatDescriptionChromaLocation_Center;
+                break;
+            case AVCHROMA_LOC_TOPLEFT:
+                value = kCMFormatDescriptionChromaLocation_TopLeft;
+                break;
+            case AVCHROMA_LOC_TOP:
+                value = kCMFormatDescriptionChromaLocation_Top;
+                break;
+            case AVCHROMA_LOC_BOTTOMLEFT:
+                value = kCMFormatDescriptionChromaLocation_BottomLeft;
+                break;
+            case AVCHROMA_LOC_BOTTOM:
+                value = kCMFormatDescriptionChromaLocation_Bottom;
+                break;
+            default:
+                break;
+        }
+        if (value) {
+            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_ChromaLocationTopField, value);
+            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_ChromaLocationBottomField, value);
+        }
+    }
+    
+    // Create new description with color extensions
+    CMVideoFormatDescriptionRef outDesc = NULL;
+    CMVideoCodecType codec = CMFormatDescriptionGetMediaSubType(inDesc);
+    CMVideoDimensions dim = CMVideoFormatDescriptionGetDimensions(inDesc);
+    
+    OSStatus err = CMVideoFormatDescriptionCreate(kCFAllocatorDefault, codec, dim.width, dim.height, outExt, &outDesc);
+    CFRelease(outExt);
+    
+    if (err == noErr && outDesc) {
+        return outDesc;
+    }
+    
+    return NULL;
+}
+
 /* =================================================================================== */
 // MARK: - nal support utility from ffmpeg project
 /* =================================================================================== */

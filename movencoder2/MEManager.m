@@ -1054,6 +1054,15 @@ end:
             SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CMVideoFormatDescription with clean apreture.");
             goto end;
         }
+        
+        // Add color information from filtered AVFrame
+        if (filtered) {
+            CMFormatDescriptionRef descWithColor = createDescriptionWithColorInfo(desc, filtered);
+            if (descWithColor) {
+                CFRelease(desc);
+                desc = descWithColor;
+            }
+        }
     }
     
     // From AVPacket to CMSampleBuffer(CMBLockBuffer); Compressed
