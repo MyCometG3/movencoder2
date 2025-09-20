@@ -654,14 +654,23 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         return;
     }
     
+    // Sort all files by modification date first (most recent first)
+    NSArray<NSURL*>* sortedFiles = [dirContents sortedArrayUsingComparator:^NSComparisonResult(NSURL* _Nonnull url1, NSURL* _Nonnull url2) {
+        NSDate* date1 = nil;
+        NSDate* date2 = nil;
+        [url1 getResourceValue:&date1 forKey:NSURLContentModificationDateKey error:nil];
+        [url2 getResourceValue:&date2 forKey:NSURLContentModificationDateKey error:nil];
+        return [date2 compare:date1]; // Most recent first
+    }];
+    
     // Get the current time for timestamp comparison (allow files created within the last 1 minute)
     NSDate* now = [NSDate date];
     NSTimeInterval maxAge = 60; // 1 minute
     
-    // Filter and sort files by modification date (most recent first)
+    // Filter sorted files for cleanup candidates
     NSMutableArray<NSURL*>* candidateFiles = [NSMutableArray array];
     
-    for (NSURL* fileURL in dirContents) {
+    for (NSURL* fileURL in sortedFiles) {
         NSString* filename = nil;
         NSDate* modDate = nil;
         
@@ -677,16 +686,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         }
     }
     
-    // Sort by modification date (most recent first)
-    [candidateFiles sortUsingComparator:^NSComparisonResult(NSURL* _Nonnull url1, NSURL* _Nonnull url2) {
-        NSDate* date1 = nil;
-        NSDate* date2 = nil;
-        [url1 getResourceValue:&date1 forKey:NSURLContentModificationDateKey error:nil];
-        [url2 getResourceValue:&date2 forKey:NSURLContentModificationDateKey error:nil];
-        return [date2 compare:date1]; // Most recent first
-    }];
-    
-    // Remove the temporary files
+    // Remove the temporary files (already sorted by timestamp)
     for (NSURL* fileURL in candidateFiles) {
         NSString* filename = [fileURL lastPathComponent];
         BOOL removed = [fm removeItemAtURL:fileURL error:&error];
