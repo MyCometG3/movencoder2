@@ -90,6 +90,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL) hasVideoMEManagers;
 - (BOOL) hasAudioMEConverters;
 
+- (void) cleanupTemporaryFilesForOutput:(NSURL*)outputURL;
+
 @end
 
 NS_ASSUME_NONNULL_END

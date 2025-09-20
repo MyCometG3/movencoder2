@@ -505,6 +505,8 @@ NS_ASSUME_NONNULL_BEGIN
 end:
     if (self.finalSuccess) {
         SecureLog(@"[METranscoder] Export session completed.");
+        // Clean up any temporary files created by AVAssetWriter
+        [self cleanupTemporaryFilesForOutput:self.outputURL];
     } else if (self.cancelled) {
         SecureLog(@"[METranscoder] Export session cancelled.");
     } else {
@@ -631,6 +633,49 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         }
     }
     return NO;
+}
+
+- (void) cleanupTemporaryFilesForOutput:(NSURL*)outputURL
+{
+    if (!outputURL) return;
+    
+    NSFileManager* fm = [NSFileManager defaultManager];
+    NSString* outputPath = [outputURL path];
+    NSString* outputDir = [outputPath stringByDeletingLastPathComponent];
+    NSString* outputFilename = [outputPath lastPathComponent];
+    
+    NSError* error = nil;
+    NSArray<NSString*>* dirContents = [fm contentsOfDirectoryAtPath:outputDir error:&error];
+    if (!dirContents) {
+        SecureErrorLogf(@"[METranscoder] Failed to list directory contents for temp file cleanup: %@", error.localizedDescription);
+        return;
+    }
+    
+    // Get the current time for timestamp comparison (allow files created within the last 10 minutes)
+    NSDate* now = [NSDate date];
+    NSTimeInterval maxAge = 10 * 60; // 10 minutes
+    
+    for (NSString* filename in dirContents) {
+        // Check if this looks like an AVAssetWriter temporary file for our output
+        if ([filename hasPrefix:outputFilename] && [filename containsString:@".sb-"]) {
+            NSString* fullPath = [outputDir stringByAppendingPathComponent:filename];
+            
+            // Check the file's creation/modification time
+            NSDictionary* attrs = [fm attributesOfItemAtPath:fullPath error:nil];
+            if (attrs) {
+                NSDate* modDate = attrs[NSFileModificationDate];
+                if (modDate && [now timeIntervalSinceDate:modDate] <= maxAge) {
+                    // This is a recent temporary file, delete it
+                    BOOL removed = [fm removeItemAtPath:fullPath error:&error];
+                    if (removed) {
+                        SecureLogf(@"[METranscoder] Cleaned up temporary file: %@", filename);
+                    } else {
+                        SecureErrorLogf(@"[METranscoder] Failed to remove temporary file %@: %@", filename, error.localizedDescription);
+                    }
+                }
+            }
+        }
+    }
 }
 
 @end
