@@ -29,9 +29,13 @@ The solution implements automatic detection and removal of AVAssetWriter tempora
    - Start with the output filename as a prefix
    - Contain `.sb-` in the filename (AVAssetWriter pattern)
 
-2. **Time-based Safety**: Only removes files modified within the last 10 minutes to avoid:
+2. **Time-based Safety**: Only removes files modified within the last 1 minute to avoid:
    - Removing unrelated files with similar names
    - Interfering with concurrent operations
+
+3. **Timestamp Ordering**: Files are sorted by modification date (most recent first) for efficient processing
+
+4. **Modern API Usage**: Uses `contentsOfDirectoryAtURL:includingPropertiesForKeys:options:error:` for efficient file attribute retrieval
 
 3. **Example Matches**:
    ```
@@ -43,8 +47,10 @@ The solution implements automatic detection and removal of AVAssetWriter tempora
 
 #### Safety Features
 - **Non-destructive**: Only affects files matching the exact pattern
-- **Time-bounded**: Only removes recently modified files
-- **Error handling**: Gracefully handles directory access failures
+- **Time-bounded**: Only removes recently modified files (within 1 minute)
+- **Ordered processing**: Files sorted by modification date for consistent behavior
+- **Efficient**: Uses modern URL-based APIs for better performance
+- **Error handling**: Graceful failure handling with comprehensive logging
 - **Logging**: Reports cleanup actions and failures via SecureLog
 
 #### Integration

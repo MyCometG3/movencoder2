@@ -640,40 +640,60 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
     if (!outputURL) return;
     
     NSFileManager* fm = [NSFileManager defaultManager];
-    NSString* outputPath = [outputURL path];
-    NSString* outputDir = [outputPath stringByDeletingLastPathComponent];
-    NSString* outputFilename = [outputPath lastPathComponent];
+    NSURL* outputDirURL = [outputURL URLByDeletingLastPathComponent];
+    NSString* outputFilename = [outputURL lastPathComponent];
     
     NSError* error = nil;
-    NSArray<NSString*>* dirContents = [fm contentsOfDirectoryAtPath:outputDir error:&error];
+    NSArray<NSURLResourceKey>* keys = @[NSURLContentModificationDateKey, NSURLNameKey];
+    NSArray<NSURL*>* dirContents = [fm contentsOfDirectoryAtURL:outputDirURL
+                                     includingPropertiesForKeys:keys
+                                                        options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                          error:&error];
     if (!dirContents) {
         SecureErrorLogf(@"[METranscoder] Failed to list directory contents for temp file cleanup: %@", error.localizedDescription);
         return;
     }
     
-    // Get the current time for timestamp comparison (allow files created within the last 10 minutes)
+    // Get the current time for timestamp comparison (allow files created within the last 1 minute)
     NSDate* now = [NSDate date];
-    NSTimeInterval maxAge = 10 * 60; // 10 minutes
+    NSTimeInterval maxAge = 60; // 1 minute
     
-    for (NSString* filename in dirContents) {
-        // Check if this looks like an AVAssetWriter temporary file for our output
-        if ([filename hasPrefix:outputFilename] && [filename containsString:@".sb-"]) {
-            NSString* fullPath = [outputDir stringByAppendingPathComponent:filename];
+    // Filter and sort files by modification date (most recent first)
+    NSMutableArray<NSURL*>* candidateFiles = [NSMutableArray array];
+    
+    for (NSURL* fileURL in dirContents) {
+        NSString* filename = nil;
+        NSDate* modDate = nil;
+        
+        if ([fileURL getResourceValue:&filename forKey:NSURLNameKey error:nil] &&
+            [fileURL getResourceValue:&modDate forKey:NSURLContentModificationDateKey error:nil]) {
             
-            // Check the file's creation/modification time
-            NSDictionary* attrs = [fm attributesOfItemAtPath:fullPath error:nil];
-            if (attrs) {
-                NSDate* modDate = attrs[NSFileModificationDate];
+            // Check if this looks like an AVAssetWriter temporary file for our output
+            if ([filename hasPrefix:outputFilename] && [filename containsString:@".sb-"]) {
                 if (modDate && [now timeIntervalSinceDate:modDate] <= maxAge) {
-                    // This is a recent temporary file, delete it
-                    BOOL removed = [fm removeItemAtPath:fullPath error:&error];
-                    if (removed) {
-                        SecureLogf(@"[METranscoder] Cleaned up temporary file: %@", filename);
-                    } else {
-                        SecureErrorLogf(@"[METranscoder] Failed to remove temporary file %@: %@", filename, error.localizedDescription);
-                    }
+                    [candidateFiles addObject:fileURL];
                 }
             }
+        }
+    }
+    
+    // Sort by modification date (most recent first)
+    [candidateFiles sortUsingComparator:^NSComparisonResult(NSURL* _Nonnull url1, NSURL* _Nonnull url2) {
+        NSDate* date1 = nil;
+        NSDate* date2 = nil;
+        [url1 getResourceValue:&date1 forKey:NSURLContentModificationDateKey error:nil];
+        [url2 getResourceValue:&date2 forKey:NSURLContentModificationDateKey error:nil];
+        return [date2 compare:date1]; // Most recent first
+    }];
+    
+    // Remove the temporary files
+    for (NSURL* fileURL in candidateFiles) {
+        NSString* filename = [fileURL lastPathComponent];
+        BOOL removed = [fm removeItemAtURL:fileURL error:&error];
+        if (removed) {
+            SecureLogf(@"[METranscoder] Cleaned up temporary file: %@", filename);
+        } else {
+            SecureErrorLogf(@"[METranscoder] Failed to remove temporary file %@: %@", filename, error.localizedDescription);
         }
     }
 }
