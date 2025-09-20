@@ -39,43 +39,55 @@ NSNumber* parseInteger(NSString* val) {
     @autoreleasepool {
         // Trim whitespace and newlines from input
         val = [val stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-        
+
+        if (val.length == 0) goto error;
+
         NSScanner *ns = [NSScanner scannerWithString:val];
         long long theValue = 0;
-        if ([ns scanLongLong:&theValue]) {
-            // parse metric prefix - accept only a single-letter suffix (K/M/G/T)
-            if (!ns.atEnd) {
-                NSString* suffix = nil;
-                NSCharacterSet* cSet = [NSCharacterSet letterCharacterSet];
-                if ([ns scanCharactersFromSet:cSet intoString:&suffix] && ns.atEnd) {
-                    if (suffix.length != 1) goto error; // reject multi-letter suffix like "MB"
+        if (![ns scanLongLong:&theValue]) {
+            goto error;
+        }
+
+        // If there are remaining characters, attempt to parse a single-letter metric suffix
+        if (!ns.atEnd) {
+            NSString *suffix = nil;
+            NSCharacterSet *letters = [NSCharacterSet letterCharacterSet];
+            if ([ns scanCharactersFromSet:letters intoString:&suffix] && ns.atEnd) {
+                if (suffix.length != 1) goto error; // reject multi-letter suffix like "MB"
                 unichar ch = [suffix characterAtIndex:0];
-                long long multiplier = 1;
+                unsigned long long multiplier = 1ULL;
                 switch (toupper((int)ch)) {
-                    case 'T': multiplier = 1000LL * 1000LL * 1000LL * 1000LL; break;
-                    case 'G': multiplier = 1000LL * 1000LL * 1000LL; break;
-                    case 'M': multiplier = 1000LL * 1000LL; break;
-                    case 'K': multiplier = 1000LL; break;
+                    case 'T': multiplier = 1000ULL * 1000ULL * 1000ULL * 1000ULL; break;
+                    case 'G': multiplier = 1000ULL * 1000ULL * 1000ULL; break;
+                    case 'M': multiplier = 1000ULL * 1000ULL; break;
+                    case 'K': multiplier = 1000ULL; break;
                     default: goto error;
                 }
-                // overflow check before multiplication
-                if (theValue > 0 && (unsigned long long)theValue > ULLONG_MAX / (unsigned long long)multiplier) goto error;
-                if (theValue < 0) {
-                    // Handle INT64_MIN edge case: -INT64_MIN causes undefined behavior due to overflow
-                    if (theValue == INT64_MIN) goto error;
-                    if ((unsigned long long)(-theValue) > ULLONG_MAX / (unsigned long long)multiplier) goto error;
+
+                // Overflow checks
+                if (theValue > 0) {
+                    if ((unsigned long long)theValue > ULLONG_MAX / multiplier) goto error;
+                } else if (theValue < 0) {
+                    // handle negative values safely
+                    if (theValue == LLONG_MIN) goto error;
+                    if ((unsigned long long)(-theValue) > ULLONG_MAX / multiplier) goto error;
                 }
-                long long result = theValue * multiplier;
+
+                long long result = (long long)((unsigned long long)llabs(theValue) * multiplier);
+                if (theValue < 0) result = -result;
                 return [NSNumber numberWithLongLong:result];
+            } else {
+                // Unexpected trailing characters
+                goto error;
             }
         }
+
         return [NSNumber numberWithLongLong:theValue];
     }
 
 error:
-    NSLog(@"ERROR: '%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
+    SecureErrorLogf(@"'%@' is not a valid integer value (optionally with K/M/G/T suffix, 1000-base)", val);
     return nil;
-    }
 }
 
 NSNumber* parseDouble(NSString* val) {
@@ -110,7 +122,7 @@ NSNumber* parseDouble(NSString* val) {
         }
 
 error:
-        NSLog(@"ERROR: '%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", sanitizeLogString(val));
+        SecureErrorLogf(@"'%@' is not a valid double value (optionally with K/M/G/T suffix, 1000-base)", val);
         return nil;
     }
 }
@@ -137,7 +149,7 @@ NSValue* parseSize(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Size", sanitizeLogString(val));
+    SecureErrorLogf(@"%@ : not Size", val);
     return nil;
 }
 
@@ -166,30 +178,41 @@ NSValue* parseRect(NSString* val) {
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Rect", sanitizeLogString(val));
+    SecureErrorLogf(@"%@ : not Rect", val);
     return nil;
 }
 
 NSValue* parseTime(NSString* val) {
-    // Try to interpret as a rational number first
-    //   "30000:1001" -> CMTimeMake(30000, 1001) (frames per second)
     NSValue* _Nullable (^toTime)(NSString*, NSString*) = ^NSValue* (NSString* val, NSString* delimiter) {
-         NSValue* outVal = nil;
-         NSArray* array = [val componentsSeparatedByString:delimiter];
-         if (array.count == 2) {
-             NSNumber* numerator = parseInteger(array[0]);
-             NSNumber* denominator = parseInteger(array[1]);
-             if (numerator && denominator) {
-                 long long numeratorLL = [numerator longLongValue];
-                 long long denominatorLL = [denominator longLongValue];
-                 if (denominatorLL <= 0 || numeratorLL <= 0) return nil;
-                 if (denominatorLL > INT32_MAX) return nil;
-                 CMTime time = CMTimeMake((int64_t)numeratorLL, (int32_t)denominatorLL);
-                 outVal = [NSValue valueWithCMTime:time];
-             }
-         }
-         return outVal;
-     };
+        NSValue* outVal = nil;
+        NSArray* array = [val componentsSeparatedByString:delimiter];
+        if (array.count == 2) {
+            NSNumber* numerator = parseInteger(array[0]);
+            NSNumber* denominator = parseInteger(array[1]);
+            if (numerator && denominator) {
+                long long numeratorLL = [numerator longLongValue];
+                long long denominatorLL = [denominator longLongValue];
+                
+                // Strengthen denominator validation
+                if (denominatorLL <= 0) {
+                    SecureErrorLogf(@"Invalid denominator (must be positive): %lld", denominatorLL);
+                    return nil;
+                }
+                if (denominatorLL > INT32_MAX) {
+                    SecureErrorLogf(@"Denominator too large (max %d): %lld", INT32_MAX, denominatorLL);
+                    return nil;
+                }
+                if (numeratorLL <= 0) {
+                    SecureErrorLogf(@"Invalid numerator (must be positive): %lld", numeratorLL);
+                    return nil;
+                }
+                
+                CMTime time = CMTimeMake((int64_t)numeratorLL, (int32_t)denominatorLL);
+                outVal = [NSValue valueWithCMTime:time];
+            }
+        }
+        return outVal;
+    };
     
     NSValue* outValue = nil;
     for (NSString* delimiter in @[@":",@"/",@"x",@","]) {
@@ -197,24 +220,49 @@ NSValue* parseTime(NSString* val) {
         if (outValue) return outValue;
     }
     
-    // Interpret as a plain floating point value (assumed as frame rate)
-    //   "29.97" -> CMTimeMake(90000, 3003) (frames per second)
-    // NOTE: Timebase 90000 is used as project-wide timescale
+    // Improved conversion from floating-point FPS to CMTime
     NSNumber* numValue = parseDouble(val);
     if (numValue != nil) {
         double fps = [numValue doubleValue];
         if (!(fps > 0.0 && isfinite(fps))) {
+            SecureErrorLogf(@"Invalid FPS value: %f", fps);
             goto error;
         }
-        int64_t numerator = 90000;  // Use timebase 90000 as project-wide timescale
-        int32_t denominator = (int32_t)floor((double)numerator / fps);
+        
+        // Validate FPS range
+        if (fps > 1000.0) {
+            SecureErrorLogf(@"FPS too high (max 1000): %f", fps);
+            goto error;
+        }
+        if (fps < 0.001) {
+            SecureErrorLogf(@"FPS too low (min 0.001): %f", fps);
+            goto error;
+        }
+        
+        int64_t numerator = 90000;  // Use timebase 90000
+        double rawDenominator = (double)numerator / fps;
+        
+        // Check denominator does not exceed INT32_MAX
+        if (rawDenominator > INT32_MAX) {
+            SecureErrorLogf(@"Calculated denominator too large for FPS %f: %f", fps, rawDenominator);
+            goto error;
+        }
+        
+        int32_t denominator = (int32_t)floor(rawDenominator);
+        
+        // Check denominator is not zero
+        if (denominator <= 0) {
+            SecureErrorLogf(@"Calculated denominator invalid for FPS %f: %d", fps, denominator);
+            goto error;
+        }
+        
         CMTime timeValue = CMTimeMake(numerator, denominator);
         outValue = [NSValue valueWithCMTime:timeValue];
         if (outValue) return outValue;
     }
     
 error:
-    NSLog(@"ERROR: %@ : not Time", sanitizeLogString(val));
+    SecureErrorLogf(@"Failed to parse time value: %@", val);
     return nil;
 }
 
@@ -234,7 +282,7 @@ NSNumber* parseBool(NSString* val) {
     if (isNo) return @NO;
     
 error:
-    NSLog(@"ERROR: '%@' is not a valid boolean value (expected: YES/NO, TRUE/FALSE, ON/OFF, 1/0)", sanitizeLogString(val));
+    SecureErrorLogf(@"'%@' is not a valid boolean value (expected: YES/NO, TRUE/FALSE, ON/OFF, 1/0)", val);
     return nil;
 }
 
@@ -265,14 +313,14 @@ NSDictionary* parseCodecOptions(NSString* val) {
     }
     
     if (skipped.count) {
-        NSLog(@"ERROR: Invalid codec options format in '%@', skipped options: %@", sanitizeLogString(val), sanitizeLogString([skipped description]));
+        SecureErrorLogf(@"Invalid codec options format in '%@', skipped options: %@", val, [skipped description]);
     }
     
     if (options.allKeys.count) {
         return [options copy];
     }
     
-    NSLog(@"ERROR: '%@' contains no valid codec options (expected format: key1=value1:key2=value2)", sanitizeLogString(val));
+    SecureErrorLogf(@"'%@' contains no valid codec options (expected format: key1=value1:key2=value2)", val);
     return nil;
 }
 
@@ -304,7 +352,7 @@ NSNumber* parseLayoutTag(NSString* val) {
     NSNumber* num = parseInteger(val);
     if (num != nil) return num;
     
-    NSLog(@"ERROR: %@ : not valid AAC layout name or integer", sanitizeLogString(val));
+    SecureErrorLogf(@"%@ : not valid AAC layout name or integer", val);
     return nil;
 }
 

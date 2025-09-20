@@ -131,9 +131,9 @@ NS_ASSUME_NONNULL_BEGIN
             
             // Try to create a temporary file to test write access
             NSError* error = nil;
-            BOOL success = [@"test" writeToFile:tempPath 
-                                     atomically:NO 
-                                       encoding:NSUTF8StringEncoding 
+            BOOL success = [@"test" writeToFile:tempPath
+                                     atomically:NO
+                                       encoding:NSUTF8StringEncoding
                                       error:&error];
         
             if (success) {
@@ -174,27 +174,32 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)prepareRW
 {
-    NSError *error = nil;
-    AVAssetReader* assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
-                                                                error:&error];
+    __block NSError *error = nil;
+    __block AVAssetReader* assetReader = nil;
+    __block AVAssetWriter* assetWriter = nil;
+    dispatch_sync(self.processQueue, ^{
+        assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
+                                                     error:&error];
+        if (error) return;
+        assetWriter = [[AVAssetWriter alloc] initWithURL:self.outputURL
+                                                fileType:AVFileTypeQuickTimeMovie
+                                                   error:&error];
+    });
+    
     if (!assetReader) {
-        NSLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
         if (error)
             self.finalError = error;
         return FALSE;
     }
-    self.assetReader = assetReader;
-    //
-    error = nil;
-    AVAssetWriter* assetWriter = [[AVAssetWriter alloc] initWithURL:self.outputURL
-                                                           fileType:AVFileTypeQuickTimeMovie
-                                                              error:&error];
     if (!assetWriter) {
-        NSLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
         if (error)
             self.finalError = error;
         return FALSE;
     }
+    
+    self.assetReader = assetReader;
     self.assetWriter = assetWriter;
     return TRUE;
 }
@@ -377,16 +382,18 @@ NS_ASSUME_NONNULL_BEGIN
         goto end;
     }
     
-    NSLog(@"[METranscoder] Export session started.");
+    SecureLog(@"[METranscoder] Export session started.");
     
     aw = self.assetWriter;
     ar = self.assetReader;
     
     {
         // setup AVAssetWriter parameters
-        aw.movieTimeScale = mov.timescale;
-        aw.movieFragmentInterval = kCMTimeInvalid;
-        aw.shouldOptimizeForNetworkUse = TRUE;
+        dispatch_sync(self.processQueue, ^{
+            aw.movieTimeScale = mov.timescale;
+            aw.movieFragmentInterval = kCMTimeInvalid;
+            aw.shouldOptimizeForNetworkUse = TRUE;
+        });
         
         // setup sampleBufferChannels for each track
         if (useAC) {
@@ -402,12 +409,19 @@ NS_ASSUME_NONNULL_BEGIN
         }
         
         // start assetReader/assetWriter
-        BOOL arStarted = [ar startReading];
-        BOOL awStarted = [aw startWriting];
+        __block BOOL arStarted = FALSE;
+        __block BOOL awStarted = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            arStarted = [ar startReading];
+            awStarted = [aw startWriting];
+        });
         if (!(arStarted && awStarted)) {
-            NSError* err = (!arStarted ? ar.error : aw.error);
-            [ar cancelReading];
-            [aw cancelWriting];
+            __block NSError* err = nil;
+            dispatch_sync(self.processQueue, ^{
+                err = (!arStarted ? ar.error : aw.error);
+                [ar cancelReading];
+                [aw cancelWriting];
+            });
             self.finalSuccess = FALSE;
             self.finalError = err;
             [self rwDidFinished];
@@ -415,7 +429,9 @@ NS_ASSUME_NONNULL_BEGIN
         }
         
         // start writing session
-        [aw startSessionAtSourceTime:startTime];
+        dispatch_sync(self.processQueue, ^{
+            [aw startSessionAtSourceTime:startTime];
+        });
     }
     
     // started callback
@@ -440,6 +456,7 @@ NS_ASSUME_NONNULL_BEGIN
         __block BOOL finish = FALSE;
         dispatch_semaphore_t waitSem = dispatch_semaphore_create(0);
         dispatch_group_notify(dg, self.processQueue, ^{
+            // SecureDebugLogf(@"waw.status=%ld, war.status=%ld", (long)waw.status, (long)war.status);
             BOOL finalize = TRUE;
             BOOL cancelled = wself.cancelled; // cancel request
             if (cancelled == FALSE) {
@@ -454,38 +471,42 @@ NS_ASSUME_NONNULL_BEGIN
             if (finalize) {
                 // finish writing session
                 [waw endSessionAtSourceTime:wself.endTime];
-                
-                dispatch_semaphore_t finishSem = dispatch_semaphore_create(0);
                 [waw finishWritingWithCompletionHandler:^{
-                    BOOL awFailed = (waw.status == AVAssetWriterStatusFailed);
-                    if (awFailed) {
-                        wself.finalSuccess = FALSE;
-                        wself.finalError = war.error;
-                    } else {
-                        finish = !cancelled;
-                    }
-                    dispatch_semaphore_signal(finishSem);
+                    // completionHandler runs on an arbitrary queue so we need to dispatch back to processQueue
+                    dispatch_async(wself.processQueue, ^{
+                        BOOL awFailed = (waw.status == AVAssetWriterStatusFailed);
+                        if (awFailed) {
+                            wself.finalSuccess = FALSE;
+                            wself.finalError = waw.error ?: war.error;
+                        } else {
+                            finish = !cancelled;
+                        }
+                        dispatch_semaphore_signal(waitSem);
+                    });
                 }];
-                dispatch_semaphore_wait(finishSem, DISPATCH_TIME_FOREVER);
+                // finishWritingWithCompletionHandler: itself returns immediately; notify block doesn't block processQueue
+            } else {
+                // unblock waitSem/controlQueue
+                dispatch_semaphore_signal(waitSem);
             }
-            
-            [wself rwDidFinished];
-            dispatch_semaphore_signal(waitSem);
         });
-        dispatch_semaphore_wait(waitSem, DISPATCH_TIME_FOREVER);
-        
+        dispatch_semaphore_wait(waitSem, DISPATCH_TIME_FOREVER); // waitSem blocks controlQueue
+        // SecureDebugLogf(@"waw.status=%ld, war.status=%ld", (long)waw.status, (long)war.status);
+
         if (finish) {
-            wself.finalSuccess = TRUE;
-            wself.finalError = nil;
+            self.finalSuccess = TRUE;
+            self.finalError = nil;
         }
     }
     
+    // cleanup callback
+    [self rwDidFinished];
+    
 end:
-    self.writerIsBusy = FALSE;
     if (self.finalSuccess) {
-        NSLog(@"[METranscoder] Export session completed.");
+        SecureLog(@"[METranscoder] Export session completed.");
     } else if (self.cancelled) {
-        NSLog(@"[METranscoder] Export session cancelled.");
+        SecureLog(@"[METranscoder] Export session cancelled.");
     } else {
         if (!self.finalError) {
             NSError* err = nil;
@@ -498,13 +519,14 @@ end:
         if (error) {
             *error = self.finalError;
         }
-        NSLog(@"[METranscoder] ERROR: Export session failed. Error details: %@", sanitizeLogString([self.finalError description]));
+        SecureErrorLogf(@"[METranscoder] ERROR: Export session failed. Error details: %@", [self.finalError description]);
     }
     
     //
     self.timeStamp1 = CFAbsoluteTimeGetCurrent();
-    NSLog(@"[METranscoder] elapsed: %.2f sec", self.timeElapsed);
+    SecureLogf(@"[METranscoder] elapsed: %.2f sec", self.timeElapsed);
 
+    self.writerIsBusy = FALSE;
     return self.finalSuccess;
 }
 

@@ -29,6 +29,7 @@
 #import "MEInput.h"
 #import "MEOutput.h"
 #import "MEManager.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -62,6 +63,8 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize info;
 @synthesize showProgress;
 
+static void* sbChannelQueueKey = &sbChannelQueueKey;
+
 char* createLabel(CMPersistentTrackID track) {
     @autoreleasepool {
         NSString* label = [NSString stringWithFormat:@"com.movencoder2.SBChannel.track%d", track];
@@ -83,6 +86,9 @@ char* createLabel(CMPersistentTrackID track) {
         _track = track;
         _queueLabel = createLabel(track);
         _queue = dispatch_queue_create(_queueLabel, DISPATCH_QUEUE_SERIAL);
+        // assign queue-specific to detect same-queue calls
+        void* unused = (__bridge void*)self;
+        dispatch_queue_set_specific(_queue, sbChannelQueueKey, unused, NULL);
         _count = 0;
     }
     return self;
@@ -118,7 +124,7 @@ void dumpTiming(CMSampleBufferRef sb, NSString* typeString, NSString* tag, int c
     int32_t ptsScale = pts.timescale;
     float dtime = CMTimeGetSeconds(dur);
     float ptime = CMTimeGetSeconds(pts);
-    NSLog(@"%@ [%@] : %lld/%d(%.2f), %lld/%d(%.2f) %d",
+    SecureLogf(@"%@ [%@] : %lld/%d(%.2f), %lld/%d(%.2f) %d",
           typeString, tag, dtsValue, dtsScale, dtime, ptsValue, ptsScale, ptime, count);
 }
 
@@ -193,24 +199,33 @@ int countUp(SBChannel* self) {
 
 - (void)cancel
 {
-    if (self.queue) {
+    if (dispatch_get_specific(sbChannelQueueKey) != NULL) {
+        // already on the same queue; avoid dispatch_sync deadlock
         [self callCompletionHandlerIfNecessary];
+    } else {
+        dispatch_sync(self.queue, ^{
+            [self callCompletionHandlerIfNecessary];
+        });
     }
 }
 
 - (void)callCompletionHandlerIfNecessary
 {
+    CompletionHandler block = nil;
     @synchronized (self) {
         if (self.finished) return;
         
         self.finished = TRUE;
-        
         [self.meInput markAsFinished];
         
         if (self.completionHandler) {
-            dispatch_async(self.queue, self.completionHandler);
+            block = self.completionHandler;
             self.completionHandler = nil;
         }
+    }
+    if (block) {
+        // run on the caller's queue (normally self.queue)
+        block();
     }
 }
 

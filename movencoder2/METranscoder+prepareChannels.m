@@ -25,6 +25,7 @@
  */
 
 #import "METranscoder+Internal.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -62,7 +63,7 @@ uint32_t formatIDFor(NSString* fourCC)
         
         // Safe access using validated bounds
         uint32_t c0 = (unsigned char)str[0];
-        uint32_t c1 = (unsigned char)str[1]; 
+        uint32_t c1 = (unsigned char)str[1];
         uint32_t c2 = (unsigned char)str[2];
         uint32_t c3 = (unsigned char)str[3];
         result = (c0<<24) + (c1<<16) + (c2<<8) + (c3);
@@ -94,16 +95,20 @@ uint32_t formatIDFor(NSString* fourCC)
             awInput.mediaTimeScale = track.naturalTimeScale;
         }
         
-        BOOL arOK = [ar canAddOutput:arOutput];
-        BOOL awOK = [aw canAddInput:awInput];
-        
+        __block BOOL arOK = FALSE;
+        __block BOOL awOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            arOK = [ar canAddOutput:arOutput];
+            awOK = [aw canAddInput:awInput];
+        });
         if (!(arOK && awOK)) {
-            NSLog(@"[METranscoder] Skipping track(%d) - unsupported", track.trackID);
+            SecureLogf(@"Skipping track(%d) - unsupported", track.trackID);
             continue;
         }
-        
-        [ar addOutput:arOutput];
-        [aw addInput:awInput];
+        dispatch_sync(self.processQueue, ^{
+            [ar addOutput:arOutput];
+            [aw addInput:awInput];
+        });
         
         // channel
         SBChannel* sbcCopy = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
@@ -141,7 +146,17 @@ uint32_t formatIDFor(NSString* fourCC)
         arOutputSetting[AVFormatIDKey] = @(kAudioFormatLinearPCM);
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
-        [ar addOutput:arOutput];
+        __block BOOL arOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            arOK = [ar canAddOutput:arOutput];
+        });
+        if (!arOK) {
+            SecureLogf(@"Skipping audio track(%d) - unsupported", track.trackID);
+            continue;
+        }
+        dispatch_sync(self.processQueue, ^{
+            [ar addOutput:arOutput];
+        });
         
         // preserve original sampleRate, numChannel, and audioChannelLayout(best effort)
         int sampleRate = 0;
@@ -154,7 +169,11 @@ uint32_t formatIDFor(NSString* fourCC)
         CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
         
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
-        assert(asbd != NULL);
+        if (!asbd) {
+            SecureErrorLogf(@"Skipping audio track(%d) - no audio format description", track.trackID);
+            continue;
+        }
+        
         sampleRate = (int)asbd->mSampleRate;
         numChannel = (int)asbd->mChannelsPerFrame;
         
@@ -452,14 +471,24 @@ uint32_t formatIDFor(NSString* fourCC)
                     }
                 }
                 awInputSetting[AVEncoderBitRateKey] = prev;
-                NSLog(@"[METranscoder] Bitrate adjustment to %@ from %@", prev, @(self.audioBitRate));
+                SecureLogf(@"Bitrate adjustment to %@ from %@", prev, @(self.audioBitRate));
             }
         }
         
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                                          outputSettings:awInputSetting];
         // awInput.mediaTimeScale = track.naturalTimeScale; // Audio track is unable to change
-        [aw addInput:awInput];
+        __block BOOL awOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            awOK = [aw canAddInput:awInput];
+        });
+        if (!awOK) {
+            SecureLogf(@"Skipping audio track(%d) - unsupported", track.trackID);
+            continue;
+        }
+        dispatch_sync(self.processQueue, ^{
+            [aw addInput:awInput];
+        });
         
         // channel
         SBChannel* sbcAudio = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
@@ -491,7 +520,7 @@ uint32_t formatIDFor(NSString* fourCC)
         CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
         if (!asbd) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - no audio format description", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - no audio format description", track.trackID);
             continue;
         }
         
@@ -548,7 +577,7 @@ uint32_t formatIDFor(NSString* fourCC)
                 avacSrcLayout = [AVAudioChannelLayout layoutWithLayoutTag:srcTag];
                 avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
             } else {
-                NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported channel count %d", track.trackID, numChannel);
+                SecureErrorLogf(@"Skipping audio track(%d) - unsupported channel count %d", track.trackID, numChannel);
                 continue;
             }
         }
@@ -567,7 +596,7 @@ uint32_t formatIDFor(NSString* fourCC)
         }
         
         if (!avacSrcLayout || !avacDstLayout) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - channel layout creation failed", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - channel layout creation failed", track.trackID);
             continue;
         }
         
@@ -628,7 +657,7 @@ uint32_t formatIDFor(NSString* fourCC)
         AVAudioFormat* dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
         
         if (!srcFormat || !intermediateFormat || !dstFormat) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - unsupported audio format detected", track.trackID);
+            SecureErrorLogf(@"Skipping audio track(%d) - unsupported audio format detected", track.trackID);
             continue;
         }
         
@@ -653,12 +682,12 @@ uint32_t formatIDFor(NSString* fourCC)
                     }
                     
                     awInputSetting[AVEncoderBitRateKey] = closestBitrate;
-                    NSLog(@"[METranscoder] Bitrate adjustment to %@ from %@", closestBitrate, @(self.audioBitRate));
+                    SecureLogf(@"Bitrate adjustment to %@ from %@", closestBitrate, @(self.audioBitRate));
                     
                     // Recreate destination format with adjusted bitrate
                     dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
                     if (!dstFormat) {
-                        NSLog(@"[METranscoder] Skipping audio track(%d) - destination format recreation failed", track.trackID);
+                        SecureErrorLogf(@"Skipping audio track(%d) - destination format recreation failed", track.trackID);
                         continue;
                     }
                 }
@@ -681,11 +710,17 @@ uint32_t formatIDFor(NSString* fourCC)
         // Create AVAssetReaderTrackOutput
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
-        if (![ar canAddOutput:arOutput]) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - reader output not supported", track.trackID);
+        __block BOOL arOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            arOK = [ar canAddOutput:arOutput];
+        });
+        if (!arOK) {
+            SecureErrorLogf(@"Skipping audio track(%d) - reader output not supported", track.trackID);
             continue;
         }
-        [ar addOutput:arOutput];
+        dispatch_sync(self.processQueue, ^{
+            [ar addOutput:arOutput];
+        });
         
         // Source channel: AVAssetReaderOutput -> MEAudioConverter (acting as MEInput)
         SBChannel* sbcMEInput = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
@@ -698,11 +733,17 @@ uint32_t formatIDFor(NSString* fourCC)
         // Create AVAssetWriterInput
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                                          outputSettings:awInputSetting];
-        if (![aw canAddInput:awInput]) {
-            NSLog(@"[METranscoder] Skipping audio track(%d) - writer input not supported", track.trackID);
+        __block BOOL awOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            awOK = [aw canAddInput:awInput];
+        });
+        if (!awOK) {
+            SecureErrorLogf(@"Skipping audio track(%d) - writer input not supported", track.trackID);
             continue;
         }
-        [aw addInput:awInput];
+        dispatch_sync(self.processQueue, ^{
+            [aw addInput:awInput];
+        });
         
         // Destination channel: MEAudioConverter (acting as MEOutput) -> AVAssetWriterInput
         SBChannel* sbcMEOutput = [SBChannel sbChannelWithProducerME:(MEOutput*)audioConverter
@@ -906,14 +947,34 @@ end:
         arOutputSetting[(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey] = @(kCVPixelFormatType_422YpCbCr8);
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
-        [ar addOutput:arOutput];
+        __block BOOL arOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            arOK = [ar canAddOutput:arOutput];
+        });
+        if (!arOK) {
+            SecureErrorLogf(@"Skipping video track(%d) - reader output not supported", track.trackID);
+            continue;
+        }
+        dispatch_sync(self.processQueue, ^{
+            [ar addOutput:arOutput];
+        });
         
         //
         NSMutableDictionary<NSString*,id> * awInputSetting = [self videoCompressionSettingFor:track];
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo
                                                                          outputSettings:awInputSetting];
         awInput.mediaTimeScale = track.naturalTimeScale;
-        [aw addInput:awInput];
+        __block BOOL awOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            awOK = [aw canAddInput:awInput];
+        });
+        if (!awOK) {
+            SecureErrorLogf(@"Skipping video track(%d) - writer input not supported", track.trackID);
+            continue;
+        }
+        dispatch_sync(self.processQueue, ^{
+            [aw addInput:awInput];
+        });
         
         // channel
         SBChannel* sbcVideo = [SBChannel sbChannelWithProducerME:(MEOutput*)arOutput
@@ -946,7 +1007,17 @@ end:
         arOutputSetting[(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey] = @(kCVPixelFormatType_422YpCbCr8);
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
-        [ar addOutput:arOutput];
+        __block BOOL arOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            arOK = [ar canAddOutput:arOutput];
+        });
+        if (!arOK) {
+            SecureErrorLogf(@"Skipping video track(%d) - reader output not supported", track.trackID);
+            continue;
+        }
+        dispatch_sync(self.processQueue, ^{
+            [ar addOutput:arOutput];
+        });
         
         // source to
         MEInput* meInput = [MEInput inputWithManager:mgr];
@@ -973,7 +1044,17 @@ end:
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo
                                                                          outputSettings:awInputSetting];
         awInput.mediaTimeScale = track.naturalTimeScale;
-        [aw addInput:awInput];
+        __block BOOL awOK = FALSE;
+        dispatch_sync(self.processQueue, ^{
+            awOK = [aw canAddInput:awInput];
+        });
+        if (!awOK) {
+            SecureErrorLogf(@"Skipping video track(%d) - writer input not supported", track.trackID);
+            continue;
+        }
+        dispatch_sync(self.processQueue, ^{
+            [aw addInput:awInput];
+        });
         
         // destination channel
         SBChannel* sbcMEOutput = [SBChannel sbChannelWithProducerME:(MEOutput*)meOutput

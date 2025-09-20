@@ -26,6 +26,7 @@
 
 #import "MECommon.h"
 #import "monitorUtil.h"
+#import "MESecureLogging.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -90,8 +91,15 @@ static void cancelAndExit(int code, cancel_block_t  _Nonnull can) {
     
     // Actual cleanup/exit operation should be performed in monitor_block_t
     
-    NSLog(@"Force quit"); // Hangup condition detected
+    SecureLog(@"Force quit"); // Hangup condition detected
     exitAsync(code, timerSource());
+}
+
+static void cancelAllHandlers(dispatch_source_t _Nullable srcToCancel) {
+    if (srcToCancel) {
+        dispatch_source_set_event_handler(srcToCancel, nil);
+        dispatch_source_set_cancel_handler(srcToCancel, nil);
+    }
 }
 
 static dispatch_source_t timerSrcInstaller(dispatch_block_t handler, dispatch_block_t completion) {
@@ -112,6 +120,13 @@ static dispatch_source_t signalSrcInstaller(int code, dispatch_block_t handler) 
     return src;
 }
 
+static void logInfoOrError(NSString * _Nullable msg, NSString * _Nullable errMsg) {
+    if (msg)
+        SecureLogf(@"%@", msg);
+    if (errMsg)
+        SecureErrorLogf(@"%@", errMsg);
+}
+
 /* =================================================================================== */
 // MARK: -
 /* =================================================================================== */
@@ -128,12 +143,12 @@ void startMonitor(monitor_block_t mon, cancel_block_t can) {
     // install GCD based signal handler
     signalSrcInstaller(SIGINT, ^{
         printf("\n");
-        NSLog(@"SIGINT detected");
+        SecureLog(@"SIGINT detected");
         cancelAndExit(SIGINT, can); // never returns
     });
     signalSrcInstaller(SIGTERM, ^{
         printf("\n");
-        NSLog(@"SIGTERM detected");
+        SecureLog(@"SIGTERM detected");
         cancelAndExit(SIGTERM, can); // never returns
     });
 
@@ -141,7 +156,9 @@ void startMonitor(monitor_block_t mon, cancel_block_t can) {
     dispatch_main();
 }
 
-void finishMonitor(int code) {
+void finishMonitor(int code, NSString* _Nullable msg, NSString* _Nullable errMsg) {
+    cancelAllHandlers(timerSource());
+    logInfoOrError(msg, errMsg);
     exitAsync(code, timerSource());
 }
 
