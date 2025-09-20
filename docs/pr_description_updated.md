@@ -32,7 +32,7 @@ old.mov.sb-999999-OldFile      ❌ Preserved (older than 1 minute)
 ```
 
 **Integration:**
-The cleanup is triggered only in the success path of `METranscoder`'s export completion, ensuring no interference with failed exports or existing error handling.
+The cleanup is triggered after all export attempts (success, failure, or cancellation) in `METranscoder`'s export completion, ensuring temporary files are cleaned up regardless of export outcome.
 
 ### Safety Features
 

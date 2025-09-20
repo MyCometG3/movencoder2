@@ -22,7 +22,7 @@ The solution implements automatic detection and removal of AVAssetWriter tempora
 #### Location
 - **File**: `movencoder2/METranscoder.m`
 - **Method**: `cleanupTemporaryFilesForOutput:(NSURL*)outputURL`
-- **Trigger**: Called after successful export completion in `exportCustomOnError:`
+- **Trigger**: Called after all export attempts (success, failure, or cancellation) in `exportCustomOnError:`
 
 #### Detection Logic
 1. **Sorting**: All files in the output directory are sorted by modification date (most recent first) before validation
@@ -60,13 +60,10 @@ The method processes files in this optimized order:
 - **Logging**: Reports all cleanup actions and failures via SecureLog
 
 #### Integration
-The cleanup is triggered only in the success path:
+The cleanup is triggered after all export attempts, ensuring temporary files are cleaned up regardless of export outcome:
 ```objective-c
-if (self.finalSuccess) {
-    SecureLog(@"[METranscoder] Export session completed.");
-    // Clean up any temporary files created by AVAssetWriter
-    [self cleanupTemporaryFilesForOutput:self.outputURL];
-}
+// Clean up any temporary files created by AVAssetWriter (on all paths)
+[self cleanupTemporaryFilesForOutput:self.outputURL];
 ```
 
 ## Testing

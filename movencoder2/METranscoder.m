@@ -505,8 +505,6 @@ NS_ASSUME_NONNULL_BEGIN
 end:
     if (self.finalSuccess) {
         SecureLog(@"[METranscoder] Export session completed.");
-        // Clean up any temporary files created by AVAssetWriter
-        [self cleanupTemporaryFilesForOutput:self.outputURL];
     } else if (self.cancelled) {
         SecureLog(@"[METranscoder] Export session cancelled.");
     } else {
@@ -527,6 +525,9 @@ end:
     //
     self.timeStamp1 = CFAbsoluteTimeGetCurrent();
     SecureLogf(@"[METranscoder] elapsed: %.2f sec", self.timeElapsed);
+
+    // Clean up any temporary files created by AVAssetWriter (on all paths)
+    [self cleanupTemporaryFilesForOutput:self.outputURL];
 
     self.writerIsBusy = FALSE;
     return self.finalSuccess;
