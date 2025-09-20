@@ -35,7 +35,3 @@ xcuserdata/
 
 # End of https://www.gitignore.io/api/xcode
 *.xcbkptlist
-
-# Test files
-test_temp_cleanup.m
-test_temp_cleanup
