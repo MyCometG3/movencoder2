@@ -55,6 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation METranscoder
 
+// MARK: - 
+
 @synthesize inputURL;
 @synthesize outputURL;
 @synthesize param = param;
@@ -90,6 +92,10 @@ NS_ASSUME_NONNULL_BEGIN
 {
     return [[self alloc] initWithInput:input output:output];
 }
+
+/* =================================================================================== */
+// MARK: - validation methods
+/* =================================================================================== */
 
 - (BOOL)isReadable
 {
@@ -134,7 +140,7 @@ NS_ASSUME_NONNULL_BEGIN
             BOOL success = [@"test" writeToFile:tempPath
                                      atomically:NO
                                        encoding:NSUTF8StringEncoding
-                                      error:&error];
+                                          error:&error];
         
             if (success) {
                 // Clean up the temporary file
@@ -172,61 +178,11 @@ NS_ASSUME_NONNULL_BEGIN
     return YES;
 }
 
-- (BOOL)prepareRW
-{
-    __block NSError *error = nil;
-    __block AVAssetReader* assetReader = nil;
-    __block AVAssetWriter* assetWriter = nil;
-    dispatch_sync(self.processQueue, ^{
-        assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
-                                                     error:&error];
-        if (error) return;
-        assetWriter = [[AVAssetWriter alloc] initWithURL:self.outputURL
-                                                fileType:AVFileTypeQuickTimeMovie
-                                                   error:&error];
-    });
-    
-    if (!assetReader) {
-        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
-        if (error)
-            self.finalError = error;
-        return FALSE;
-    }
-    if (!assetWriter) {
-        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
-        if (error)
-            self.finalError = error;
-        return FALSE;
-    }
-    
-    self.assetReader = assetReader;
-    self.assetWriter = assetWriter;
-    return TRUE;
-}
+/* =================================================================================== */
+// MARK: - public methods
+/* =================================================================================== */
 
-- (dispatch_queue_t) controlQueue
-{
-    if (!_controlQueue) {
-        controlQueueKey = &controlQueueKey;
-        void *unused = (__bridge void*)self;
-        _controlQueue = dispatch_queue_create(kControlQueueLabel, DISPATCH_QUEUE_SERIAL);
-        dispatch_queue_set_specific(_controlQueue, controlQueueKey, unused, NULL);
-    }
-    return _controlQueue;
-}
-
-- (dispatch_queue_t) processQueue
-{
-    if (!_processQueue) {
-        processQueueKey = &processQueueKey;
-        void *unused = (__bridge void*)self;
-        _processQueue = dispatch_queue_create(kProcessQueueLabel, DISPATCH_QUEUE_SERIAL);
-        dispatch_queue_set_specific(_processQueue, processQueueKey, unused, NULL);
-    }
-    return _processQueue;
-}
-
-- (void) registerMEManager:(MEManager *)meManager for:(CMPersistentTrackID)trackID
+- (void) registerMEManager:(MEManager *)meManager forTrackID:(CMPersistentTrackID)trackID
 {
     NSMutableDictionary* mgrs = self.managers;
     if (mgrs == nil) {
@@ -239,7 +195,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 }
 
-- (void) registerMEAudioConverter:(MEAudioConverter *)meAudioConverter for:(CMPersistentTrackID)trackID
+- (void) registerMEAudioConverter:(MEAudioConverter *)meAudioConverter forTrackID:(CMPersistentTrackID)trackID
 {
     NSMutableDictionary* mgrs = self.managers;
     if (mgrs == nil) {
@@ -270,15 +226,6 @@ NS_ASSUME_NONNULL_BEGIN
     }
 }
 
-- (CFAbsoluteTime) timeElapsed
-{
-    CFAbsoluteTime ts0 = self.timeStamp0;
-    CFAbsoluteTime ts1 = self.timeStamp1;
-    if (ts0 && ts1) return (ts1 - ts0);
-    if (ts0 > 0 && ts1 == 0) return (CFAbsoluteTimeGetCurrent() - ts0);
-    return 0;
-}
-
 @end
 
 NS_ASSUME_NONNULL_END
@@ -291,24 +238,40 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation METranscoder (export)
 
-- (BOOL) post:(NSString*)description
-       reason:(NSString*)failureReason
-         code:(NSInteger)result
-           to:(NSError**)error
+// MARK: - private properties
+
+- (dispatch_queue_t _Nullable) controlQueue
 {
-    if (error) {
-        if (!description) description = @"unknown description";
-        if (!failureReason) failureReason = @"unknown failureReason";
-        
-        NSString *domain = @"com.MyCometG3.movencoder2.ErrorDomain";
-        NSInteger code = (NSInteger)result;
-        NSDictionary *userInfo = @{NSLocalizedDescriptionKey : description,
-                                   NSLocalizedFailureReasonErrorKey : failureReason,};
-        *error = [NSError errorWithDomain:domain code:code userInfo:userInfo];
-        return YES;
+    if (!_controlQueue) {
+        controlQueueKey = &controlQueueKey;
+        void *unused = (__bridge void*)self;
+        _controlQueue = dispatch_queue_create(kControlQueueLabel, DISPATCH_QUEUE_SERIAL);
+        dispatch_queue_set_specific(_controlQueue, controlQueueKey, unused, NULL);
     }
-    return NO;
+    return _controlQueue;
 }
+
+- (dispatch_queue_t _Nullable) processQueue
+{
+    if (!_processQueue) {
+        processQueueKey = &processQueueKey;
+        void *unused = (__bridge void*)self;
+        _processQueue = dispatch_queue_create(kProcessQueueLabel, DISPATCH_QUEUE_SERIAL);
+        dispatch_queue_set_specific(_processQueue, processQueueKey, unused, NULL);
+    }
+    return _processQueue;
+}
+
+- (CFAbsoluteTime) timeElapsed
+{
+    CFAbsoluteTime ts0 = self.timeStamp0;
+    CFAbsoluteTime ts1 = self.timeStamp1;
+    if (ts0 && ts1) return (ts1 - ts0);
+    if (ts0 > 0 && ts1 == 0) return (CFAbsoluteTimeGetCurrent() - ts0);
+    return 0;
+}
+
+// MARK: - export methods
 
 - (BOOL) exportCustomOnError:(NSError **)error
 {
@@ -526,6 +489,9 @@ end:
     self.timeStamp1 = CFAbsoluteTimeGetCurrent();
     SecureLogf(@"[METranscoder] elapsed: %.2f sec", self.timeElapsed);
 
+    // Clean up any temporary files created by AVAssetWriter (on all paths)
+    [self cleanupTemporaryFilesForOutput:self.outputURL];
+
     self.writerIsBusy = FALSE;
     return self.finalSuccess;
 }
@@ -542,7 +508,7 @@ end:
     });
 }
 
-// MARK: # callback handler
+// MARK: - callback support
 
 /**
  Enqueue startCallback
@@ -607,6 +573,59 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
     }
 }
 
+// MARK: - utility methods
+
+- (BOOL) post:(NSString*)description
+       reason:(NSString*)failureReason
+         code:(NSInteger)result
+           to:(NSError * _Nullable * _Nullable)error
+{
+    if (error) {
+        if (!description) description = @"unknown description";
+        if (!failureReason) failureReason = @"unknown failureReason";
+        
+        NSString *domain = @"com.MyCometG3.movencoder2.ErrorDomain";
+        NSInteger code = (NSInteger)result;
+        NSDictionary *userInfo = @{NSLocalizedDescriptionKey : description,
+                                   NSLocalizedFailureReasonErrorKey : failureReason,};
+        *error = [NSError errorWithDomain:domain code:code userInfo:userInfo];
+        return YES;
+    }
+    return NO;
+}
+
+- (BOOL) prepareRW
+{
+    __block NSError *error = nil;
+    __block AVAssetReader* assetReader = nil;
+    __block AVAssetWriter* assetWriter = nil;
+    dispatch_sync(self.processQueue, ^{
+        assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
+                                                     error:&error];
+        if (error) return;
+        assetWriter = [[AVAssetWriter alloc] initWithURL:self.outputURL
+                                                fileType:AVFileTypeQuickTimeMovie
+                                                   error:&error];
+    });
+    
+    if (!assetReader) {
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
+        if (error)
+            self.finalError = error;
+        return FALSE;
+    }
+    if (!assetWriter) {
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
+        if (error)
+            self.finalError = error;
+        return FALSE;
+    }
+    
+    self.assetReader = assetReader;
+    self.assetWriter = assetWriter;
+    return TRUE;
+}
+
 - (BOOL) hasVideoMEManagers
 {
     if (!self.managers) return NO;
@@ -631,6 +650,70 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         }
     }
     return NO;
+}
+
+- (void) cleanupTemporaryFilesForOutput:(NSURL*)outputURL
+{
+    if (!outputURL) return;
+    
+    NSFileManager* fm = [NSFileManager defaultManager];
+    NSURL* outputDirURL = [outputURL URLByDeletingLastPathComponent];
+    NSString* outputFilename = [outputURL lastPathComponent];
+    
+    NSError* error = nil;
+    NSArray<NSURLResourceKey>* keys = @[NSURLContentModificationDateKey, NSURLNameKey];
+    NSArray<NSURL*>* dirContents = [fm contentsOfDirectoryAtURL:outputDirURL
+                                     includingPropertiesForKeys:keys
+                                                        options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                          error:&error];
+    if (!dirContents) {
+        SecureErrorLogf(@"[METranscoder] Failed to list directory contents for temp file cleanup: %@", error.localizedDescription);
+        return;
+    }
+    
+    // Sort all files by modification date first (most recent first)
+    NSArray<NSURL*>* sortedFiles = [dirContents sortedArrayUsingComparator:^NSComparisonResult(NSURL* _Nonnull url1, NSURL* _Nonnull url2) {
+        NSDate* date1 = nil;
+        NSDate* date2 = nil;
+        [url1 getResourceValue:&date1 forKey:NSURLContentModificationDateKey error:nil];
+        [url2 getResourceValue:&date2 forKey:NSURLContentModificationDateKey error:nil];
+        return [date2 compare:date1]; // Most recent first
+    }];
+    
+    // Get the current time for timestamp comparison (allow files created within the last 1 minute)
+    NSDate* now = [NSDate date];
+    NSTimeInterval maxAge = 60; // 1 minute
+    
+    // Filter sorted files for cleanup candidates
+    NSMutableArray<NSURL*>* candidateFiles = [NSMutableArray array];
+    
+    for (NSURL* fileURL in sortedFiles) {
+        NSString* filename = nil;
+        NSDate* modDate = nil;
+        
+        if ([fileURL getResourceValue:&filename forKey:NSURLNameKey error:nil] &&
+            [fileURL getResourceValue:&modDate forKey:NSURLContentModificationDateKey error:nil]) {
+            
+            // Timestamp validation first, then filename validation
+            if (modDate && [now timeIntervalSinceDate:modDate] <= maxAge) {
+                // Check if this looks like an AVAssetWriter temporary file for our output (concatenated check)
+                if ([filename hasPrefix:outputFilename] && [filename containsString:@".sb-"]) {
+                    [candidateFiles addObject:fileURL];
+                }
+            }
+        }
+    }
+    
+    // Remove the temporary files (already sorted by timestamp)
+    for (NSURL* fileURL in candidateFiles) {
+        NSString* filename = [fileURL lastPathComponent];
+        BOOL removed = [fm removeItemAtURL:fileURL error:&error];
+        if (removed) {
+            SecureLogf(@"[METranscoder] Cleaned up temporary file: %@", filename);
+        } else {
+            SecureErrorLogf(@"[METranscoder] Failed to remove temporary file %@: %@", filename, error.localizedDescription);
+        }
+    }
 }
 
 @end
