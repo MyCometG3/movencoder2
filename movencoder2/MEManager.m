@@ -1055,13 +1055,11 @@ end:
             goto end;
         }
         
-        // Add color information from filtered AVFrame
-        if (filtered) {
-            CMFormatDescriptionRef descWithColor = createDescriptionWithColorInfo(desc, filtered);
-            if (descWithColor) {
-                CFRelease(desc);
-                desc = descWithColor;
-            }
+        // Add color information from filtered AVFrame or codec context
+        CMFormatDescriptionRef descWithColor = createDescriptionWithColorInfo(desc, filtered, avctx);
+        if (descWithColor) {
+            CFRelease(desc);
+            desc = descWithColor;
         }
     }
     

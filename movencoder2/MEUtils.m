@@ -1035,8 +1035,13 @@ error:
     return NULL;
 }
 
-CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inDesc, AVFrame* filtered) {
-    if (!inDesc || !filtered) {
+CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inDesc, AVFrame* filtered, AVCodecContext* avctx) {
+    if (!inDesc) {
+        return NULL;
+    }
+    
+    // We need either filtered frame or codec context for color information
+    if (!filtered && !avctx) {
         return NULL;
     }
     
@@ -1053,8 +1058,27 @@ CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inD
         return NULL;
     }
     
+    // Extract color information - prefer filtered frame if available, fall back to codec context
+    int spc = AVCOL_SPC_UNSPECIFIED;
+    int color_primaries = AVCOL_PRI_UNSPECIFIED;
+    int color_trc = AVCOL_TRC_UNSPECIFIED;
+    int chroma_location = AVCHROMA_LOC_UNSPECIFIED;
+    
+    if (filtered) {
+        // Use color information from filtered frame (filter scenario)
+        spc = filtered->colorspace;
+        color_primaries = filtered->color_primaries;
+        color_trc = filtered->color_trc;
+        chroma_location = filtered->chroma_location;
+    } else if (avctx) {
+        // Use color information from codec context (only scenario)
+        spc = avctx->colorspace;
+        color_primaries = avctx->color_primaries;
+        color_trc = avctx->color_trc;
+        chroma_location = avctx->chroma_sample_location;
+    }
+    
     // Add YCbCr matrix extension
-    int spc = filtered->colorspace;
     if (spc != AVCOL_SPC_UNSPECIFIED) {
         CFStringRef value = CVYCbCrMatrixGetStringForIntegerCodePoint(spc);
         if (value) {
@@ -1063,7 +1087,6 @@ CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inD
     }
     
     // Add color primaries extension
-    int color_primaries = filtered->color_primaries;
     if (color_primaries != AVCOL_PRI_UNSPECIFIED) {
         CFStringRef value = CVColorPrimariesGetStringForIntegerCodePoint(color_primaries);
         if (value) {
@@ -1072,7 +1095,6 @@ CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inD
     }
     
     // Add transfer function extension
-    int color_trc = filtered->color_trc;
     if (color_trc != AVCOL_TRC_UNSPECIFIED) {
         CFStringRef value = CVTransferFunctionGetStringForIntegerCodePoint(color_trc);
         if (value) {
@@ -1094,7 +1116,6 @@ CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inD
     }
     
     // Add chroma location extension for top and bottom fields
-    int chroma_location = filtered->chroma_location;
     if (chroma_location != AVCHROMA_LOC_UNSPECIFIED) {
         CFStringRef value = NULL;
         switch (chroma_location) {

@@ -126,7 +126,7 @@ _Nullable CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered);
 _Nullable CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx);
 _Nullable CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
 _Nullable CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDesc, NSValue* cleanApertureValue);
-_Nullable CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inDesc, AVFrame* filtered);
+_Nullable CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inDesc, AVFrame* _Nullable filtered, AVCodecContext* _Nullable avctx);
 
 void avc_parse_nal_units(uint8_t *_Nonnull* _Nonnull buf, int *size);
 
