@@ -677,9 +677,10 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
         if ([fileURL getResourceValue:&filename forKey:NSURLNameKey error:nil] &&
             [fileURL getResourceValue:&modDate forKey:NSURLContentModificationDateKey error:nil]) {
             
-            // Check if this looks like an AVAssetWriter temporary file for our output
-            if ([filename hasPrefix:outputFilename] && [filename containsString:@".sb-"]) {
-                if (modDate && [now timeIntervalSinceDate:modDate] <= maxAge) {
+            // Timestamp validation first, then filename validation
+            if (modDate && [now timeIntervalSinceDate:modDate] <= maxAge) {
+                // Check if this looks like an AVAssetWriter temporary file for our output (concatenated check)
+                if ([filename hasPrefix:outputFilename] && [filename containsString:@".sb-"]) {
                     [candidateFiles addObject:fileURL];
                 }
             }
