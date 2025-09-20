@@ -74,13 +74,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithInput:(NSURL*) input output:(NSURL*) output;
 + (instancetype)transcoderWithInput:(NSURL*) input output:(NSURL*) output;
 
+/* =================================================================================== */
+// MARK: - public properties
+/* =================================================================================== */
+
 @property (strong, readonly) NSURL* inputURL;
 @property (strong, readonly) NSURL* outputURL;
-@property (strong, nonatomic) AVMutableMovie* inMovie;
-@property (strong, nonatomic) AVMutableMovie* outMovie;
-
-@property (strong, nonatomic) AVAssetReader* assetReader;
-@property (strong, nonatomic) AVAssetWriter* assetWriter;
+@property (strong, nonatomic, nullable) AVMutableMovie* inMovie;
+@property (strong, nonatomic, nullable) AVMutableMovie* outMovie; // unused
 
 @property (strong, nonatomic) NSMutableDictionary* param;
 @property (assign, nonatomic) CMTime startTime;
@@ -90,19 +91,19 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) int lastProgress; // for progressCallback support
 
 // custom callback support
-@property (strong, nonatomic) dispatch_queue_t callbackQueue;
-@property (strong, nonatomic) dispatch_block_t startCallback;
-@property (strong, nonatomic) progress_block_t progressCallback;
-@property (strong, nonatomic) dispatch_block_t completionCallback;
+@property (strong, nonatomic, nullable) dispatch_queue_t callbackQueue;
+@property (strong, nonatomic, nullable) dispatch_block_t startCallback;
+@property (strong, nonatomic, nullable) progress_block_t progressCallback;
+@property (strong, nonatomic, nullable) dispatch_block_t completionCallback;
 
 // status as atomic readonly
 @property (assign, readonly) BOOL writerIsBusy; // atomic
 @property (assign, readonly) BOOL finalSuccess; // atomic
-@property (strong, nonatomic, readonly, nullable) NSError* finalError;
+@property (strong, readonly, nullable) NSError* finalError; // atomic
 @property (assign, readonly) BOOL cancelled;    // atomic
 
 /* =================================================================================== */
-// MARK: -
+// MARK: - public methods
 /* =================================================================================== */
 
 /**
@@ -111,7 +112,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param meManager MEManager
  @param trackID trackID
  */
-- (void) registerMEManager:(MEManager*)meManager for:(CMPersistentTrackID)trackID;
+- (void) registerMEManager:(MEManager*)meManager forTrackID:(CMPersistentTrackID)trackID;
 
 /**
  Register MEAudioConverter for specified trackID
@@ -119,7 +120,7 @@ NS_ASSUME_NONNULL_BEGIN
  @param meAudioConverter MEAudioConverter
  @param trackID trackID
  */
-- (void) registerMEAudioConverter:(MEAudioConverter*)meAudioConverter for:(CMPersistentTrackID)trackID;
+- (void) registerMEAudioConverter:(MEAudioConverter*)meAudioConverter forTrackID:(CMPersistentTrackID)trackID;
 
 /**
  Start export asynchronously

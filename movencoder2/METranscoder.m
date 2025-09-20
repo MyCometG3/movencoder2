@@ -55,6 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation METranscoder
 
+// MARK: - 
+
 @synthesize inputURL;
 @synthesize outputURL;
 @synthesize param = param;
@@ -90,6 +92,10 @@ NS_ASSUME_NONNULL_BEGIN
 {
     return [[self alloc] initWithInput:input output:output];
 }
+
+/* =================================================================================== */
+// MARK: - validation methods
+/* =================================================================================== */
 
 - (BOOL)isReadable
 {
@@ -134,7 +140,7 @@ NS_ASSUME_NONNULL_BEGIN
             BOOL success = [@"test" writeToFile:tempPath
                                      atomically:NO
                                        encoding:NSUTF8StringEncoding
-                                      error:&error];
+                                          error:&error];
         
             if (success) {
                 // Clean up the temporary file
@@ -172,61 +178,11 @@ NS_ASSUME_NONNULL_BEGIN
     return YES;
 }
 
-- (BOOL)prepareRW
-{
-    __block NSError *error = nil;
-    __block AVAssetReader* assetReader = nil;
-    __block AVAssetWriter* assetWriter = nil;
-    dispatch_sync(self.processQueue, ^{
-        assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
-                                                     error:&error];
-        if (error) return;
-        assetWriter = [[AVAssetWriter alloc] initWithURL:self.outputURL
-                                                fileType:AVFileTypeQuickTimeMovie
-                                                   error:&error];
-    });
-    
-    if (!assetReader) {
-        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
-        if (error)
-            self.finalError = error;
-        return FALSE;
-    }
-    if (!assetWriter) {
-        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
-        if (error)
-            self.finalError = error;
-        return FALSE;
-    }
-    
-    self.assetReader = assetReader;
-    self.assetWriter = assetWriter;
-    return TRUE;
-}
+/* =================================================================================== */
+// MARK: - public methods
+/* =================================================================================== */
 
-- (dispatch_queue_t) controlQueue
-{
-    if (!_controlQueue) {
-        controlQueueKey = &controlQueueKey;
-        void *unused = (__bridge void*)self;
-        _controlQueue = dispatch_queue_create(kControlQueueLabel, DISPATCH_QUEUE_SERIAL);
-        dispatch_queue_set_specific(_controlQueue, controlQueueKey, unused, NULL);
-    }
-    return _controlQueue;
-}
-
-- (dispatch_queue_t) processQueue
-{
-    if (!_processQueue) {
-        processQueueKey = &processQueueKey;
-        void *unused = (__bridge void*)self;
-        _processQueue = dispatch_queue_create(kProcessQueueLabel, DISPATCH_QUEUE_SERIAL);
-        dispatch_queue_set_specific(_processQueue, processQueueKey, unused, NULL);
-    }
-    return _processQueue;
-}
-
-- (void) registerMEManager:(MEManager *)meManager for:(CMPersistentTrackID)trackID
+- (void) registerMEManager:(MEManager *)meManager forTrackID:(CMPersistentTrackID)trackID
 {
     NSMutableDictionary* mgrs = self.managers;
     if (mgrs == nil) {
@@ -239,7 +195,7 @@ NS_ASSUME_NONNULL_BEGIN
     }
 }
 
-- (void) registerMEAudioConverter:(MEAudioConverter *)meAudioConverter for:(CMPersistentTrackID)trackID
+- (void) registerMEAudioConverter:(MEAudioConverter *)meAudioConverter forTrackID:(CMPersistentTrackID)trackID
 {
     NSMutableDictionary* mgrs = self.managers;
     if (mgrs == nil) {
@@ -270,15 +226,6 @@ NS_ASSUME_NONNULL_BEGIN
     }
 }
 
-- (CFAbsoluteTime) timeElapsed
-{
-    CFAbsoluteTime ts0 = self.timeStamp0;
-    CFAbsoluteTime ts1 = self.timeStamp1;
-    if (ts0 && ts1) return (ts1 - ts0);
-    if (ts0 > 0 && ts1 == 0) return (CFAbsoluteTimeGetCurrent() - ts0);
-    return 0;
-}
-
 @end
 
 NS_ASSUME_NONNULL_END
@@ -291,24 +238,40 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation METranscoder (export)
 
-- (BOOL) post:(NSString*)description
-       reason:(NSString*)failureReason
-         code:(NSInteger)result
-           to:(NSError**)error
+// MARK: - private properties
+
+- (dispatch_queue_t _Nullable) controlQueue
 {
-    if (error) {
-        if (!description) description = @"unknown description";
-        if (!failureReason) failureReason = @"unknown failureReason";
-        
-        NSString *domain = @"com.MyCometG3.movencoder2.ErrorDomain";
-        NSInteger code = (NSInteger)result;
-        NSDictionary *userInfo = @{NSLocalizedDescriptionKey : description,
-                                   NSLocalizedFailureReasonErrorKey : failureReason,};
-        *error = [NSError errorWithDomain:domain code:code userInfo:userInfo];
-        return YES;
+    if (!_controlQueue) {
+        controlQueueKey = &controlQueueKey;
+        void *unused = (__bridge void*)self;
+        _controlQueue = dispatch_queue_create(kControlQueueLabel, DISPATCH_QUEUE_SERIAL);
+        dispatch_queue_set_specific(_controlQueue, controlQueueKey, unused, NULL);
     }
-    return NO;
+    return _controlQueue;
 }
+
+- (dispatch_queue_t _Nullable) processQueue
+{
+    if (!_processQueue) {
+        processQueueKey = &processQueueKey;
+        void *unused = (__bridge void*)self;
+        _processQueue = dispatch_queue_create(kProcessQueueLabel, DISPATCH_QUEUE_SERIAL);
+        dispatch_queue_set_specific(_processQueue, processQueueKey, unused, NULL);
+    }
+    return _processQueue;
+}
+
+- (CFAbsoluteTime) timeElapsed
+{
+    CFAbsoluteTime ts0 = self.timeStamp0;
+    CFAbsoluteTime ts1 = self.timeStamp1;
+    if (ts0 && ts1) return (ts1 - ts0);
+    if (ts0 > 0 && ts1 == 0) return (CFAbsoluteTimeGetCurrent() - ts0);
+    return 0;
+}
+
+// MARK: - export methods
 
 - (BOOL) exportCustomOnError:(NSError **)error
 {
@@ -545,7 +508,7 @@ end:
     });
 }
 
-// MARK: # callback handler
+// MARK: - callback support
 
 /**
  Enqueue startCallback
@@ -608,6 +571,59 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
             block(info);
         });
     }
+}
+
+// MARK: - utility methods
+
+- (BOOL) post:(NSString*)description
+       reason:(NSString*)failureReason
+         code:(NSInteger)result
+           to:(NSError * _Nullable * _Nullable)error
+{
+    if (error) {
+        if (!description) description = @"unknown description";
+        if (!failureReason) failureReason = @"unknown failureReason";
+        
+        NSString *domain = @"com.MyCometG3.movencoder2.ErrorDomain";
+        NSInteger code = (NSInteger)result;
+        NSDictionary *userInfo = @{NSLocalizedDescriptionKey : description,
+                                   NSLocalizedFailureReasonErrorKey : failureReason,};
+        *error = [NSError errorWithDomain:domain code:code userInfo:userInfo];
+        return YES;
+    }
+    return NO;
+}
+
+- (BOOL) prepareRW
+{
+    __block NSError *error = nil;
+    __block AVAssetReader* assetReader = nil;
+    __block AVAssetWriter* assetWriter = nil;
+    dispatch_sync(self.processQueue, ^{
+        assetReader = [[AVAssetReader alloc] initWithAsset:self.inMovie
+                                                     error:&error];
+        if (error) return;
+        assetWriter = [[AVAssetWriter alloc] initWithURL:self.outputURL
+                                                fileType:AVFileTypeQuickTimeMovie
+                                                   error:&error];
+    });
+    
+    if (!assetReader) {
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetReader");
+        if (error)
+            self.finalError = error;
+        return FALSE;
+    }
+    if (!assetWriter) {
+        SecureErrorLog(@"[METranscoder] ERROR: Failed to init AVAssetWriter");
+        if (error)
+            self.finalError = error;
+        return FALSE;
+    }
+    
+    self.assetReader = assetReader;
+    self.assetWriter = assetWriter;
+    return TRUE;
 }
 
 - (BOOL) hasVideoMEManagers

@@ -47,10 +47,15 @@ NS_ASSUME_NONNULL_BEGIN
     void* processQueueKey;
 }
 
-@property (strong, nonatomic) dispatch_queue_t controlQueue;
-@property (strong, nonatomic) dispatch_queue_t processQueue;
+// MARK: - private properties
 
-@property (strong, nonatomic) NSMutableArray<SBChannel*>*sbChannels;
+@property (strong, nonatomic, nullable) AVAssetReader* assetReader;
+@property (strong, nonatomic, nullable) AVAssetWriter* assetWriter;
+
+@property (strong, nonatomic, nullable) dispatch_queue_t controlQueue;
+@property (strong, nonatomic, nullable) dispatch_queue_t processQueue;
+
+@property (strong, nonatomic) NSMutableArray<SBChannel*>* sbChannels;
 @property (strong, nonatomic, nullable) NSMutableDictionary* managers;
 
 @property (nonatomic, assign) CFAbsoluteTime timeStamp0;
@@ -60,7 +65,7 @@ NS_ASSUME_NONNULL_BEGIN
 // status as atomic readwrite (override)
 @property (assign) BOOL writerIsBusy; // atomic
 @property (assign) BOOL finalSuccess; // atomic
-@property (strong, nonatomic, nullable) NSError* finalError;
+@property (strong, nullable) NSError* finalError;
 @property (assign) BOOL cancelled;    // atomic
 
 @end
@@ -75,21 +80,25 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface METranscoder (export) <SBChannelDelegate>
 
-- (BOOL) post:(NSString*)description
-       reason:(NSString*)failureReason
-         code:(NSInteger)result
-           to:(NSError**)error;
-
 - (BOOL) exportCustomOnError:(NSError * _Nullable * _Nullable)error;
 - (void) cancelExportCustom;
+
+// MARK: - callback support
 
 - (void) rwDidStarted;
 - (void) rwDidFinished;
 - (void) didReadBuffer:(CMSampleBufferRef)buffer from:(SBChannel*)channel;
 
+// MARK: - utility methods
+
+- (BOOL) post:(NSString*)description
+       reason:(NSString*)failureReason
+         code:(NSInteger)result
+           to:(NSError**)error;
+- (BOOL) prepareRW;
 - (BOOL) hasVideoMEManagers;
 - (BOOL) hasAudioMEConverters;
-
+- (CFAbsoluteTime) timeElapsed;
 - (void) cleanupTemporaryFilesForOutput:(NSURL*)outputURL;
 
 @end
@@ -166,4 +175,4 @@ static inline NSString* keyForTrackID(CMPersistentTrackID trackID) {
 
 NS_ASSUME_NONNULL_END
 
-#endif /* METranscoder_h */
+#endif // !METranscoder_Internal_h

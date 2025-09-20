@@ -650,7 +650,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
             }
             manager.initialDelayInSec = initialDelayInSec;
             manager.verbose = verbose;
-            [transcoder registerMEManager:manager for:trackID];
+            [transcoder registerMEManager:manager forTrackID:trackID];
             if (debug) {
                 manager.log_level = 48; //AV_LOG_DEBUG
             }
@@ -691,7 +691,7 @@ static METranscoder* _Nullable validateOpt(int argc, char * const * argv) {
                     }
                 }
                 
-                [transcoder registerMEAudioConverter:audioConverter for:trackID];
+                [transcoder registerMEAudioConverter:audioConverter forTrackID:trackID];
             }
         }
     }
