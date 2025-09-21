@@ -35,11 +35,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 // Helper function to safely read 24-bit pattern from big-endian buffer
 static inline uint32_t read_be24_pattern(const uint8_t *p, const uint8_t *pEnd) {
-    if (p + 4 <= pEnd) {
-        uint32_t be32 = 0;
-        memcpy(&be32, p, sizeof(be32)); // avoid unaligned access
-        uint32_t host32 = CFSwapInt32BigToHost(be32);
-        return host32 >> 8; // extract upper 24 bits as pattern
+    // need at least 3 bytes to form a 24-bit pattern
+    if (p + 3 <= pEnd) {
+        return ((uint32_t)p[0] << 16) | ((uint32_t)p[1] << 8) | (uint32_t)p[2];
     } else {
         return 0xFFFFFF; // return invalid pattern when insufficient data
     }
