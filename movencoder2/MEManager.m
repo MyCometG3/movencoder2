@@ -69,6 +69,9 @@ NS_ASSUME_NONNULL_BEGIN
     AVFrame* filtered;
     AVPacket* encoded;
     
+    struct AVFrameColorMetadata cachedColorMetadata;  // Cache for input color metadata
+    BOOL colorMetadataCached;  // Flag to indicate if metadata is cached
+    
     void* inputQueueKey;
     void* outputQueueKey;
 }
@@ -902,6 +905,11 @@ end:
                 input->color_trc = color_trc;
             }
             
+            int colorspace = 0;
+            if (CMSBGetColorSPC_FDE(sourceExtensions, &colorspace)) {
+                input->colorspace = colorspace;
+            }
+            
             int fieldCount = 1;
             int top_field_first = 0;
             if (CMSBGetFieldInfo_FDE(sourceExtensions, &fieldCount, &top_field_first)) {
@@ -914,6 +922,16 @@ end:
                     }
                 }
             }
+        }
+        
+        // Cache color metadata from input frame (first sample only)
+        if (!colorMetadataCached) {
+            cachedColorMetadata.color_range = input->color_range;
+            cachedColorMetadata.color_primaries = input->color_primaries;
+            cachedColorMetadata.color_trc = input->color_trc;
+            cachedColorMetadata.colorspace = input->colorspace;
+            cachedColorMetadata.chroma_location = input->chroma_location;
+            colorMetadataCached = TRUE;
         }
         
         // copy image data into input AVFrame buffer
@@ -1712,6 +1730,11 @@ error:
                                 SecureErrorLogf(@"[MEManager] ERROR: Filter graph detected: %d", ret);
                                 goto error;
                             }
+                        }
+                        
+                        // Fill missing metadata from cached input metadata as fallback
+                        if (self.filteredValid && self->filtered && self->colorMetadataCached) {
+                            AVFrameFillMetadataFromCache(self->filtered, &self->cachedColorMetadata);
                         }
                     }
                     {

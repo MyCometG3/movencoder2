@@ -286,6 +286,19 @@ BOOL CMSBGetColorTRC(CMSampleBufferRef sb, int *trc) {
     return FALSE;
 }
 
+BOOL CMSBGetColorSPC_FDE(CFDictionaryRef sourceExtensions, int *spc) {
+    if (sourceExtensions) {
+        CFStringRef matrix = CFDictionaryGetValue(sourceExtensions, kCMFormatDescriptionExtension_YCbCrMatrix);
+        int colorspace = AVCOL_SPC_UNSPECIFIED;
+        if (matrix) {
+            colorspace = CVYCbCrMatrixGetIntegerCodePointForString(matrix);
+        }
+        *spc = colorspace; // AVCOL_SPC_*
+        return TRUE;
+    }
+    return FALSE;
+}
+
 BOOL CMSBGetColorSPC(CMSampleBufferRef sb, int* spc) {
     CMFormatDescriptionRef desc = CMSampleBufferGetFormatDescription(sb);
     if (desc) {
@@ -435,6 +448,14 @@ BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeSca
         int spc;
         if (CMSBGetColorSPC(sb, &spc)) {
             input->colorspace = spc;
+        } else {
+            goto end;
+        }
+        
+        // Color range
+        int range;
+        if (CMSBGetColorRange(sb, &range)) {
+            input->color_range = range;
         } else {
             goto end;
         }
@@ -766,6 +787,37 @@ CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered) {
         return dictOut;
     } else {
         return NULL;
+    }
+}
+
+void AVFrameFillMetadataFromCache(AVFrame *filtered, const struct AVFrameColorMetadata *cachedMetadata) {
+    if (!filtered || !cachedMetadata) {
+        return;
+    }
+    
+    // Copy missing color_range metadata from cache
+    if (filtered->color_range == AVCOL_RANGE_UNSPECIFIED && cachedMetadata->color_range != AVCOL_RANGE_UNSPECIFIED) {
+        filtered->color_range = cachedMetadata->color_range;
+    }
+    
+    // Copy missing color_primaries metadata from cache
+    if (filtered->color_primaries == AVCOL_PRI_UNSPECIFIED && cachedMetadata->color_primaries != AVCOL_PRI_UNSPECIFIED) {
+        filtered->color_primaries = cachedMetadata->color_primaries;
+    }
+    
+    // Copy missing color_trc metadata from cache
+    if (filtered->color_trc == AVCOL_TRC_UNSPECIFIED && cachedMetadata->color_trc != AVCOL_TRC_UNSPECIFIED) {
+        filtered->color_trc = cachedMetadata->color_trc;
+    }
+    
+    // Copy missing colorspace metadata from cache
+    if (filtered->colorspace == AVCOL_SPC_UNSPECIFIED && cachedMetadata->colorspace != AVCOL_SPC_UNSPECIFIED) {
+        filtered->colorspace = cachedMetadata->colorspace;
+    }
+    
+    // Copy missing chroma_location metadata from cache
+    if (filtered->chroma_location == AVCHROMA_LOC_UNSPECIFIED && cachedMetadata->chroma_location != AVCHROMA_LOC_UNSPECIFIED) {
+        filtered->chroma_location = cachedMetadata->chroma_location;
     }
 }
 
