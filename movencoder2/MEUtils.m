@@ -790,6 +790,37 @@ CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered) {
     }
 }
 
+void AVFrameFillMetadata(AVFrame *filtered, AVFrame *input) {
+    if (!filtered || !input) {
+        return;
+    }
+    
+    // Copy missing color_range metadata
+    if (filtered->color_range == AVCOL_RANGE_UNSPECIFIED && input->color_range != AVCOL_RANGE_UNSPECIFIED) {
+        filtered->color_range = input->color_range;
+    }
+    
+    // Copy missing color_primaries metadata  
+    if (filtered->color_primaries == AVCOL_PRI_UNSPECIFIED && input->color_primaries != AVCOL_PRI_UNSPECIFIED) {
+        filtered->color_primaries = input->color_primaries;
+    }
+    
+    // Copy missing color_trc metadata
+    if (filtered->color_trc == AVCOL_TRC_UNSPECIFIED && input->color_trc != AVCOL_TRC_UNSPECIFIED) {
+        filtered->color_trc = input->color_trc;
+    }
+    
+    // Copy missing colorspace metadata
+    if (filtered->colorspace == AVCOL_SPC_UNSPECIFIED && input->colorspace != AVCOL_SPC_UNSPECIFIED) {
+        filtered->colorspace = input->colorspace;
+    }
+    
+    // Copy missing chroma_location metadata
+    if (filtered->chroma_location == AVCHROMA_LOC_UNSPECIFIED && input->chroma_location != AVCHROMA_LOC_UNSPECIFIED) {
+        filtered->chroma_location = input->chroma_location;
+    }
+}
+
 /* =================================================================================== */
 // MARK: - H264/H265 support functions
 /* =================================================================================== */

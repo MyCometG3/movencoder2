@@ -1718,6 +1718,11 @@ error:
                                 goto error;
                             }
                         }
+                        
+                        // Fill missing metadata from input to filtered frame as fallback
+                        if (self.filteredValid && self->input && self->filtered) {
+                            AVFrameFillMetadata(self->filtered, self->input);
+                        }
                     }
                     {
                         [self output_sync:^{

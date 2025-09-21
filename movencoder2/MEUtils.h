@@ -120,6 +120,7 @@ BOOL CMSBGetColorRange(CMSampleBufferRef sb, int*range);
 BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeScale mediaTimeScale);
 BOOL CMSBCopyImageBufferToAVFrame(CMSampleBufferRef sb, AVFrame *input);
 void AVFrameReset(AVFrame *input);
+void AVFrameFillMetadata(AVFrame *filtered, AVFrame *input);
 
 _Nullable CVPixelBufferPoolRef AVFrameCreateCVPixelBufferPool(AVFrame* filtered);
 _Nullable CVPixelBufferRef AVFrameCreateCVPixelBuffer(AVFrame* filtered, CVPixelBufferPoolRef cvpbpool);
