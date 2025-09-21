@@ -444,62 +444,34 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             avctx->chroma_sample_location = chroma_location;
         } else {
             // Use filtered frame and buffersink context
-            if (self.filteredValid && filtered) {
-                // Use actual filtered frame if available
-                struct AVFPixelFormatSpec encodeFormat = {};
-                if (AVFrameGetPixelFormatSpec(filtered, &encodeFormat)) {
-                    pxl_fmt_encode = encodeFormat;
-                }
-                
-                avctx->pix_fmt = pxl_fmt_encode.ff_id;
-                avctx->width = filtered->width;
-                avctx->height = filtered->height;
-                avctx->time_base = av_make_q(1, time_base);
-                avctx->sample_aspect_ratio = filtered->sample_aspect_ratio;
-                avctx->field_order = AV_FIELD_PROGRESSIVE;
-                if (filtered->flags & AV_FRAME_FLAG_INTERLACED) {
-                    if (filtered->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST) {
-                        avctx->field_order = AV_FIELD_TT;
-                    } else {
-                        avctx->field_order = AV_FIELD_BB;
-                    }
-                }
-                avctx->colorspace = filtered->colorspace;
-                avctx->color_range = filtered->color_range;
-                avctx->color_trc = filtered->color_trc;
-                avctx->color_primaries = filtered->color_primaries;
-                avctx->chroma_sample_location = filtered->chroma_location;
-            } else {
-                // Use metadata from AVFilterLink when filtered frame not yet available
-                if (!buffersink_ctx || !buffersink_ctx->inputs[0]) {
-                    SecureErrorLogf(@"[MEManager] ERROR: Filter graph output link not available.");
-                    goto end;
-                }
-                
-                AVFilterLink *output_link = buffersink_ctx->inputs[0];
-                
-                // Get basic parameters from filter output link
-                avctx->width = output_link->w;
-                avctx->height = output_link->h;
-                avctx->pix_fmt = output_link->format;
-                avctx->time_base = av_make_q(1, time_base);
-                avctx->sample_aspect_ratio = output_link->sample_aspect_ratio;
-                avctx->field_order = AV_FIELD_PROGRESSIVE;
-                
-                // Set default color parameters - will be updated when first filtered frame arrives
-                avctx->colorspace = AVCOL_SPC_UNSPECIFIED;
-                avctx->color_range = AVCOL_RANGE_UNSPECIFIED;
-                avctx->color_trc = AVCOL_TRC_UNSPECIFIED;
-                avctx->color_primaries = AVCOL_PRI_UNSPECIFIED;
-                avctx->chroma_sample_location = AVCHROMA_LOC_UNSPECIFIED;
-                
-                pxl_fmt_encode.ff_id = output_link->format;
-                
-                if (self.verbose) {
-                    SecureDebugLogf(@"[MEManager] Encoder initialized with filter link metadata: %dx%d, pix_fmt=%d", 
-                                   avctx->width, avctx->height, avctx->pix_fmt);
+            if (!self.filteredValid) {
+                SecureErrorLogf(@"[MEManager] ERROR: Cannot get source filtered video frame.");
+                 goto end;
+             }
+            
+            struct AVFPixelFormatSpec encodeFormat = {};
+            if (AVFrameGetPixelFormatSpec(filtered, &encodeFormat)) {
+                pxl_fmt_encode = encodeFormat;
+            }
+            
+            avctx->pix_fmt = pxl_fmt_encode.ff_id;
+            avctx->width = filtered->width;
+            avctx->height = filtered->height;
+            avctx->time_base = av_make_q(1, time_base);
+            avctx->sample_aspect_ratio = filtered->sample_aspect_ratio;
+            avctx->field_order = AV_FIELD_PROGRESSIVE;
+            if (filtered->flags & AV_FRAME_FLAG_INTERLACED) {
+                if (filtered->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST) {
+                    avctx->field_order = AV_FIELD_TT;
+                } else {
+                    avctx->field_order = AV_FIELD_BB;
                 }
             }
+            avctx->colorspace = filtered->colorspace;
+            avctx->color_range = filtered->color_range;
+            avctx->color_trc = filtered->color_trc;
+            avctx->color_primaries = filtered->color_primaries;
+            avctx->chroma_sample_location = filtered->chroma_location;
         }
         
         avctx->flags |= (AV_CODEC_FLAG_GLOBAL_HEADER | AV_CODEC_FLAG_CLOSED_GOP); // Use Closed GOP by default
@@ -1544,20 +1516,6 @@ static void pullFilteredFrame(MEManager *self, int *ret) {
     if (*ret == 0) {
         self.filteredValid = TRUE;                          // filtered is now ready
         
-        // Update encoder color metadata if encoder is ready but was initialized without filtered frame
-        if (self.videoEncoderIsReady && self->avctx && 
-            self->avctx->colorspace == AVCOL_SPC_UNSPECIFIED) {
-            self->avctx->colorspace = self->filtered->colorspace;
-            self->avctx->color_range = self->filtered->color_range;
-            self->avctx->color_trc = self->filtered->color_trc;
-            self->avctx->color_primaries = self->filtered->color_primaries;
-            self->avctx->chroma_sample_location = self->filtered->chroma_location;
-            
-            if (self.verbose) {
-                SecureDebugLogf(@"[MEManager] Updated encoder color metadata from first filtered frame");
-            }
-        }
-        
         AVFilterLink *input = (self->buffersink_ctx->inputs)[0];
         AVRational filtered_time_base = input->time_base;
         AVRational bq = filtered_time_base;
@@ -1587,6 +1545,10 @@ static void pushFilteredFrame(MEManager *self, int *ret) {
     if (self.videoEncoderEOF) return;
     
     if (!self.videoEncoderIsReady) {                        // Prepare encoder after filtergraph
+        if (!self.filteredValid) {
+            *ret = AVERROR(EAGAIN);
+            return;
+        }
         BOOL result = [self prepareVideoEncoderWith:NULL];  // Pass NULL to use filtered frame
         if (!result || !self.videoEncoderIsReady) {
             SecureErrorLogf(@"[MEManager] ERROR: Failed to initialize the encoder");
