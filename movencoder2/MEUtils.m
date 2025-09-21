@@ -33,6 +33,18 @@ NS_ASSUME_NONNULL_BEGIN
 // MARK: -
 /* =================================================================================== */
 
+// Helper function to safely read 24-bit pattern from big-endian buffer
+static inline uint32_t read_be24_pattern(const uint8_t *p, const uint8_t *pEnd) {
+    if (p + 4 <= pEnd) {
+        uint32_t be32 = 0;
+        memcpy(&be32, p, sizeof(be32)); // avoid unaligned access
+        uint32_t host32 = CFSwapInt32BigToHost(be32);
+        return host32 >> 8; // extract upper 24 bits as pattern
+    } else {
+        return 0xFFFFFF; // return invalid pattern when insufficient data
+    }
+}
+
 static inline BOOL strEqual(CFStringRef a, CFStringRef b) {
     if (a && b) {
         CFComparisonResult result = CFStringCompare(a, b, 0);
@@ -853,9 +865,9 @@ CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx) {
         uint8_t *p = avctx->extradata;
         uint8_t *pEnd = p + avctx->extradata_size;
         uint8_t *nalPtr = NULL;
-        uint8_t nalSize = 0;
+        size_t nalSize = 0;
         while (p < pEnd) {
-            uint32_t pattern = (p+4 < pEnd) ? EndianU32_BtoN(*(uint32_t*)p) >> 8 : 0xFFFFFF;
+            uint32_t pattern = read_be24_pattern(p, pEnd);
             if ((nalPtr && nalSize == 0)) {
                 if ((pattern == 0x000001) || (pattern == 0x000000)) {
                     nalSize = (p - nalPtr);
@@ -964,9 +976,9 @@ CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx) {
         uint8_t *p = avctx->extradata;
         uint8_t *pEnd = p + avctx->extradata_size;
         uint8_t *nalPtr = NULL;
-        uint8_t nalSize = 0;
+        size_t nalSize = 0;
         while (p < pEnd) {
-            uint32_t pattern = (p+4 < pEnd) ? EndianU32_BtoN(*(uint32_t*)p) >> 8 : 0xFFFFFF;
+            uint32_t pattern = read_be24_pattern(p, pEnd);
             if ((nalPtr && nalSize == 0)) {
                 if ((pattern == 0x000001) || (pattern == 0x000000)) {
                     nalSize = (p - nalPtr);
