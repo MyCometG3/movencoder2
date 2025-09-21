@@ -902,6 +902,11 @@ end:
                 input->color_trc = color_trc;
             }
             
+            int colorspace = 0;
+            if (CMSBGetColorSPC_FDE(sourceExtensions, &colorspace)) {
+                input->colorspace = colorspace;
+            }
+            
             int fieldCount = 1;
             int top_field_first = 0;
             if (CMSBGetFieldInfo_FDE(sourceExtensions, &fieldCount, &top_field_first)) {
@@ -1053,13 +1058,6 @@ end:
         if (!desc) {
             SecureErrorLogf(@"[MEManager] ERROR: Cannot setup CMVideoFormatDescription with clean apreture.");
             goto end;
-        }
-        
-        // Add color information from filtered AVFrame or codec context
-        CMFormatDescriptionRef descWithColor = createDescriptionWithColorInfo(desc, filtered, avctx);
-        if (descWithColor) {
-            CFRelease(desc);
-            desc = descWithColor;
         }
     }
     

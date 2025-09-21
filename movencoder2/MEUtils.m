@@ -300,6 +300,19 @@ BOOL CMSBGetColorSPC(CMSampleBufferRef sb, int* spc) {
     return FALSE;
 }
 
+BOOL CMSBGetColorSPC_FDE(CFDictionaryRef sourceExtensions, int *spc) {
+    if (sourceExtensions) {
+        CFStringRef matrix = CFDictionaryGetValue(sourceExtensions, kCMFormatDescriptionExtension_YCbCrMatrix);
+        int colorspace = AVCOL_SPC_UNSPECIFIED;
+        if (matrix) {
+            colorspace = CVYCbCrMatrixGetIntegerCodePointForString(matrix);
+        }
+        *spc = colorspace; // AVCOL_SPC_*
+        return TRUE;
+    }
+    return FALSE;
+}
+
 BOOL CMSBGetChromaLoc(CMSampleBufferRef sb, int* loc) {
     CMFormatDescriptionRef desc = CMSampleBufferGetFormatDescription(sb);
     if (desc) {
@@ -435,6 +448,14 @@ BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeSca
         int spc;
         if (CMSBGetColorSPC(sb, &spc)) {
             input->colorspace = spc;
+        } else {
+            goto end;
+        }
+        
+        // Color range
+        int range;
+        if (CMSBGetColorRange(sb, &range)) {
+            input->color_range = range;
         } else {
             goto end;
         }
@@ -1032,132 +1053,6 @@ CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDe
     }
     
 error:
-    return NULL;
-}
-
-CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inDesc, AVFrame* filtered, AVCodecContext* avctx) {
-    if (!inDesc) {
-        return NULL;
-    }
-    
-    // We need either filtered frame or codec context for color information
-    if (!filtered && !avctx) {
-        return NULL;
-    }
-    
-    // Prepare extensions dictionary
-    CFDictionaryRef inExt = CMFormatDescriptionGetExtensions(inDesc);
-    CFMutableDictionaryRef outExt = NULL;
-    if (inExt) {
-        outExt = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, 0, inExt);
-    } else {
-        outExt = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
-                                           &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-    }
-    if (!outExt) {
-        return NULL;
-    }
-    
-    // Extract color information - prefer filtered frame if available, fall back to codec context
-    int spc = AVCOL_SPC_UNSPECIFIED;
-    int color_primaries = AVCOL_PRI_UNSPECIFIED;
-    int color_trc = AVCOL_TRC_UNSPECIFIED;
-    int chroma_location = AVCHROMA_LOC_UNSPECIFIED;
-    
-    if (filtered) {
-        // Use color information from filtered frame (filter scenario)
-        spc = filtered->colorspace;
-        color_primaries = filtered->color_primaries;
-        color_trc = filtered->color_trc;
-        chroma_location = filtered->chroma_location;
-    } else if (avctx) {
-        // Use color information from codec context (only scenario)
-        spc = avctx->colorspace;
-        color_primaries = avctx->color_primaries;
-        color_trc = avctx->color_trc;
-        chroma_location = avctx->chroma_sample_location;
-    }
-    
-    // Add YCbCr matrix extension
-    if (spc != AVCOL_SPC_UNSPECIFIED) {
-        CFStringRef value = CVYCbCrMatrixGetStringForIntegerCodePoint(spc);
-        if (value) {
-            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_YCbCrMatrix, value);
-        }
-    }
-    
-    // Add color primaries extension
-    if (color_primaries != AVCOL_PRI_UNSPECIFIED) {
-        CFStringRef value = CVColorPrimariesGetStringForIntegerCodePoint(color_primaries);
-        if (value) {
-            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_ColorPrimaries, value);
-        }
-    }
-    
-    // Add transfer function extension
-    if (color_trc != AVCOL_TRC_UNSPECIFIED) {
-        CFStringRef value = CVTransferFunctionGetStringForIntegerCodePoint(color_trc);
-        if (value) {
-            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_TransferFunction, value);
-        }
-        
-        // Add gamma level if needed
-        if (value == kCMFormatDescriptionTransferFunction_UseGamma) {
-            CFNumberRef gamma = NULL;
-            if (color_trc == AVCOL_TRC_GAMMA22) {
-                gamma = (__bridge CFNumberRef)@(2.2F);
-            } else if (color_trc == AVCOL_TRC_GAMMA28) {
-                gamma = (__bridge CFNumberRef)@(2.8F);
-            }
-            if (gamma) {
-                CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_GammaLevel, gamma);
-            }
-        }
-    }
-    
-    // Add chroma location extension for top and bottom fields
-    if (chroma_location != AVCHROMA_LOC_UNSPECIFIED) {
-        CFStringRef value = NULL;
-        switch (chroma_location) {
-            case AVCHROMA_LOC_LEFT:
-                value = kCMFormatDescriptionChromaLocation_Left;
-                break;
-            case AVCHROMA_LOC_CENTER:
-                value = kCMFormatDescriptionChromaLocation_Center;
-                break;
-            case AVCHROMA_LOC_TOPLEFT:
-                value = kCMFormatDescriptionChromaLocation_TopLeft;
-                break;
-            case AVCHROMA_LOC_TOP:
-                value = kCMFormatDescriptionChromaLocation_Top;
-                break;
-            case AVCHROMA_LOC_BOTTOMLEFT:
-                value = kCMFormatDescriptionChromaLocation_BottomLeft;
-                break;
-            case AVCHROMA_LOC_BOTTOM:
-                value = kCMFormatDescriptionChromaLocation_Bottom;
-                break;
-            default:
-                break;
-        }
-        if (value) {
-            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_ChromaLocationTopField, value);
-            CFDictionarySetValue(outExt, kCMFormatDescriptionExtension_ChromaLocationBottomField, value);
-        }
-    }
-    
-    // Create new description with color extensions
-    CMVideoFormatDescriptionRef outDesc = NULL;
-    CMVideoCodecType codec = CMFormatDescriptionGetMediaSubType(inDesc);
-    CMVideoDimensions dim = CMVideoFormatDescriptionGetDimensions(inDesc);
-    
-    OSStatus err = CMVideoFormatDescriptionCreate(kCFAllocatorDefault, codec, dim.width, dim.height, outExt, &outDesc);
-    CFRelease(outExt);
-    
-    if (err == noErr && outDesc) {
-        return outDesc;
-    }
-    
     return NULL;
 }
 

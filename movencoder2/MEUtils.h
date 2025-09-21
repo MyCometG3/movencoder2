@@ -114,6 +114,7 @@ BOOL CMSBGetColorPRI(CMSampleBufferRef sb, int *pri);
 BOOL CMSBGetColorTRC_FDE(CFDictionaryRef sourceExtensions, int *trc);
 BOOL CMSBGetColorTRC(CMSampleBufferRef sb, int *trc);
 BOOL CMSBGetColorSPC(CMSampleBufferRef sb, int* spc);
+BOOL CMSBGetColorSPC_FDE(CFDictionaryRef sourceExtensions, int *spc);
 BOOL CMSBGetChromaLoc(CMSampleBufferRef sb, int* loc);
 BOOL CMSBGetColorRange(CMSampleBufferRef sb, int*range);
 BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeScale mediaTimeScale);
@@ -126,7 +127,6 @@ _Nullable CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered);
 _Nullable CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx);
 _Nullable CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
 _Nullable CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDesc, NSValue* cleanApertureValue);
-_Nullable CMFormatDescriptionRef createDescriptionWithColorInfo(CMFormatDescriptionRef inDesc, AVFrame* _Nullable filtered, AVCodecContext* _Nullable avctx);
 
 void avc_parse_nal_units(uint8_t *_Nonnull* _Nonnull buf, int *size);
 
