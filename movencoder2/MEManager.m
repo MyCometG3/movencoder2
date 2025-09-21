@@ -1545,6 +1545,9 @@ static void pushFilteredFrame(MEManager *self, int *ret) {
     if (self.videoEncoderEOF) return;
     
     if (!self.videoEncoderIsReady) {                        // Prepare encoder after filtergraph
+        // The filter graph operates asynchronously — initialize the encoder only after a filtered frame
+        // has been dequeued and validated. Return EAGAIN to indicate that no frame is ready yet.
+        // The caller should retry when filteredValid is TRUE.
         if (!self.filteredValid) {
             *ret = AVERROR(EAGAIN);
             return;
