@@ -122,14 +122,13 @@ BOOL CMSBGetColorPRI_FDE(CFDictionaryRef sourceExtensions, int *pri);
 BOOL CMSBGetColorPRI(CMSampleBufferRef sb, int *pri);
 BOOL CMSBGetColorTRC_FDE(CFDictionaryRef sourceExtensions, int *trc);
 BOOL CMSBGetColorTRC(CMSampleBufferRef sb, int *trc);
-BOOL CMSBGetColorSPC(CMSampleBufferRef sb, int* spc);
 BOOL CMSBGetColorSPC_FDE(CFDictionaryRef sourceExtensions, int *spc);
+BOOL CMSBGetColorSPC(CMSampleBufferRef sb, int* spc);
 BOOL CMSBGetChromaLoc(CMSampleBufferRef sb, int* loc);
 BOOL CMSBGetColorRange(CMSampleBufferRef sb, int*range);
 BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeScale mediaTimeScale);
 BOOL CMSBCopyImageBufferToAVFrame(CMSampleBufferRef sb, AVFrame *input);
 void AVFrameReset(AVFrame *input);
-void AVFrameFillMetadata(AVFrame *filtered, AVFrame *input);
 void AVFrameFillMetadataFromCache(AVFrame *filtered, const struct AVFrameColorMetadata *cachedMetadata);
 
 _Nullable CVPixelBufferPoolRef AVFrameCreateCVPixelBufferPool(AVFrame* filtered);
