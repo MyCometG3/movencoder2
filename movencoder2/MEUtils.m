@@ -821,6 +821,37 @@ void AVFrameFillMetadata(AVFrame *filtered, AVFrame *input) {
     }
 }
 
+void AVFrameFillMetadataFromCache(AVFrame *filtered, const struct AVFrameColorMetadata *cachedMetadata) {
+    if (!filtered || !cachedMetadata) {
+        return;
+    }
+    
+    // Copy missing color_range metadata from cache
+    if (filtered->color_range == AVCOL_RANGE_UNSPECIFIED && cachedMetadata->color_range != AVCOL_RANGE_UNSPECIFIED) {
+        filtered->color_range = cachedMetadata->color_range;
+    }
+    
+    // Copy missing color_primaries metadata from cache
+    if (filtered->color_primaries == AVCOL_PRI_UNSPECIFIED && cachedMetadata->color_primaries != AVCOL_PRI_UNSPECIFIED) {
+        filtered->color_primaries = cachedMetadata->color_primaries;
+    }
+    
+    // Copy missing color_trc metadata from cache
+    if (filtered->color_trc == AVCOL_TRC_UNSPECIFIED && cachedMetadata->color_trc != AVCOL_TRC_UNSPECIFIED) {
+        filtered->color_trc = cachedMetadata->color_trc;
+    }
+    
+    // Copy missing colorspace metadata from cache
+    if (filtered->colorspace == AVCOL_SPC_UNSPECIFIED && cachedMetadata->colorspace != AVCOL_SPC_UNSPECIFIED) {
+        filtered->colorspace = cachedMetadata->colorspace;
+    }
+    
+    // Copy missing chroma_location metadata from cache
+    if (filtered->chroma_location == AVCHROMA_LOC_UNSPECIFIED && cachedMetadata->chroma_location != AVCHROMA_LOC_UNSPECIFIED) {
+        filtered->chroma_location = cachedMetadata->chroma_location;
+    }
+}
+
 /* =================================================================================== */
 // MARK: - H264/H265 support functions
 /* =================================================================================== */

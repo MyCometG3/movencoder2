@@ -51,6 +51,15 @@ struct AVFPixelFormatSpec {
     OSType avf_id;
 };
 
+// Metadata cache structure for preserving color information
+struct AVFrameColorMetadata {
+    int color_range;
+    int color_primaries;
+    int color_trc;
+    int colorspace;
+    int chroma_location;
+};
+
 // From ffmpeg/libavdevice/avfoundation.m
 static const struct AVFPixelFormatSpec avf_pixel_formats[] = {
     { AV_PIX_FMT_MONOBLACK,    kCVPixelFormatType_1Monochrome },
@@ -121,6 +130,7 @@ BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeSca
 BOOL CMSBCopyImageBufferToAVFrame(CMSampleBufferRef sb, AVFrame *input);
 void AVFrameReset(AVFrame *input);
 void AVFrameFillMetadata(AVFrame *filtered, AVFrame *input);
+void AVFrameFillMetadataFromCache(AVFrame *filtered, const struct AVFrameColorMetadata *cachedMetadata);
 
 _Nullable CVPixelBufferPoolRef AVFrameCreateCVPixelBufferPool(AVFrame* filtered);
 _Nullable CVPixelBufferRef AVFrameCreateCVPixelBuffer(AVFrame* filtered, CVPixelBufferPoolRef cvpbpool);
