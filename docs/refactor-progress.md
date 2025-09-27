@@ -53,7 +53,7 @@ This document summarizes the refactor/incremental improvements merged recently i
 - Split `MEManager` into dedicated pipeline components (FilterPipeline, EncoderPipeline, SampleBufferFactory).
 - Consolidate encoder/filter state into a single state struct/state machine and add docs/architecture diagram (`docs/dev/architecture.md`).
 - Add CLI option(s) like `--dump-config` for normalized config output.
-- Performance metrics and back-off tuning for EAGAIN / retries.
+- Performance metrics and back-off tuning for EAGAIN / retries (potential exponential back-off + instrumentation counters).
 
 ## How to Resume Work (suggested next steps)
 - Add more unit tests for config semantic validation (PAR, mutually exclusive params).
@@ -67,26 +67,31 @@ This document summarizes the refactor/incremental improvements merged recently i
 - fix(thread-safety): synchronized getter/setter for `videoEncoderConfig`
 - test(config): `MEVideoEncoderConfig` unit tests (parsing, trimming, overflow, dedup)
 - chore: include guards and project file updates
+- fix(config/import/nullability): assorted fixes (parVal if-block, include path, nullability warning)
 
 ## Recent commits (detailed short list)
-(Selected commits from 2025-09-27 relevant to this refactor)
+(Selected high-impact refactor/config/error-handling + associated fix commits; not exhaustive.)
 - be217a3  test: add MEVideoEncoderConfig edge-case tests; warn on x264/x265 param mismatch
-- f67e795 docs(refactor): update refactor-progress.md with items implemented in feature/type-safe-config
-- 5828bb9 Add include guards to four header files
-- ed0471b docs: update refactor progress with METranscoder priority A steps
-- 4ca9007 Fix header import issue.
-- 1a3dd32 refactor: constantize temp file cleanup parameters (Step 5)
-- c35846b refactor: extract progress calculation to MEProgressUtil (Step 4)
-- 67eeabd refactor: introduce MECreateError helper and simplify post: (Step 3)
-- 77a4e4c refactor: extract shared audio bitrate/layout helper (Step 2)
-- 20f5582 test(config): add MEVideoEncoderConfig unit tests & finalize parse issues
-- 8a8bd1e fix(thread-safety): provide explicit synchronized getter/setter for atomic videoEncoderConfig
-- 5965ca5 feat(error): use MEErrorFormatter for filter graph errors and make config summary one-time
-- c1429bb feat(error): integrate MEErrorFormatter for encoder open failure and add one-time config issues summary
-- c24d959 feat(config+error): validate x264/x265 params (trim colons/whitespace) and introduce MEErrorFormatter utility
-- 4769720 refactor(config): clean validation logic, de-duplicate issues, add bitrate=0 warning
-- 4fac85e feat(config): add bitrate string parsing (k/M suffix) and verbose logging of config issues
-- f4e2ee1 feat(config): introduce MEVideoEncoderConfig and codec kind enum
+- f67e795  docs(refactor): update refactor-progress.md with items implemented in feature/type-safe-config
+- 5828bb9  Add include guards to four header files
+- ed0471b  docs: update refactor progress with METranscoder priority A steps
+- 4ca9007  Fix header import issue.
+- 1a3dd32  refactor: constantize temp file cleanup parameters (Step 5)
+- c35846b  refactor: extract progress calculation to MEProgressUtil (Step 4)
+- 67eeabd  refactor: introduce MECreateError helper and simplify post: (Step 3)
+- e366356  refactor: split exportCustomOnError into smaller helper steps (Step 1)
+- 77a4e4c  refactor: extract shared audio bitrate/layout helper (Step 2)
+- 20f5582  test(config): add MEVideoEncoderConfig unit tests (bitrate parsing, param trimming, overflow, empty params, dedup); refactor(config): finalize issues after full parse; chore(project): add test target & plist auto-generation
+- 8a8bd1e  fix(thread-safety): provide explicit synchronized getter/setter for atomic videoEncoderConfig
+- 5965ca5  feat(error): use MEErrorFormatter for filter graph errors and make config summary one-time
+- c1429bb  feat(error): integrate MEErrorFormatter for encoder open failure and add one-time config issues summary
+- c24d959  feat(config+error): validate x264/x265 params (trim colons/whitespace) and introduce MEErrorFormatter utility
+- fcdf549  fix(config): close missing if block in MEVideoEncoderConfig (parVal handling)
+- 4769720  refactor(config): clean validation logic, de-duplicate issues, add bitrate=0 warning
+- 5c06809  fix(import): use relative Config path for MEVideoEncoderConfig include
+- 4f7e000  Fix nullability warning.
+- 4fac85e  feat(config): add bitrate string parsing (k/M suffix) and verbose logging of config issues
+- f4e2ee1  feat(config): introduce MEVideoEncoderConfig and codec kind enum
 
 ---
 End of progress log.
