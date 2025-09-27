@@ -97,6 +97,7 @@
             } else {
                 [issues addObject:@"codecPAR has non-positive values."];
             }
+        }
         if (cfg.bitRate == 0 && dict[kMEVECodecBitRateKey]) {
             [issues addObject:@"codecBitRate resolved to 0 (check input)."];
         }
