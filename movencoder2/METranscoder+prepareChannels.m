@@ -38,30 +38,15 @@ NS_ASSUME_NONNULL_BEGIN
 uint32_t formatIDFor(NSString* fourCC)
 {
     uint32_t result = 0;
-    
-    // Validate input string
-    if (!fourCC || [fourCC length] < 4) {
-        return 0;
-    }
-    
-    // Use safer UTF-8 encoding and validate length
+    if (!fourCC || [fourCC length] < 4) return 0;
     const char* str = [fourCC UTF8String];
-    if (!str) {
-        return 0;
-    }
-    
-    // Use NSString length instead of strlen for safety
+    if (!str) return 0;
     NSUInteger length = [fourCC length];
     if (length >= 4) {
-        // Validate that characters are printable ASCII (safer than just checking encoding)
         for (NSUInteger i = 0; i < 4; i++) {
             unichar ch = [fourCC characterAtIndex:i];
-            if (ch < 32 || ch > 126) {  // Not printable ASCII
-                return 0;
-            }
+            if (ch < 32 || ch > 126) return 0;
         }
-        
-        // Safe access using validated bounds
         uint32_t c0 = (unsigned char)str[0];
         uint32_t c1 = (unsigned char)str[1];
         uint32_t c2 = (unsigned char)str[2];
@@ -69,6 +54,39 @@ uint32_t formatIDFor(NSString* fourCC)
         result = (c0<<24) + (c1<<16) + (c2<<8) + (c3);
     }
     return result;
+}
+
+// MARK: - Shared Audio Helper (minimal extraction)
+static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awInputSetting,
+                                         AVAudioChannelLayout* avacSrcLayout,
+                                         int sampleRate,
+                                         int requestedBitrate)
+{
+    NSNumber* bitrateNum = awInputSetting[AVEncoderBitRateKey];
+    if (!bitrateNum) return; // No bitrate key -> nothing to adjust (e.g. LPCM)
+
+    AVAudioFormat* inFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
+                                                                         channelLayout:avacSrcLayout];
+    AVAudioFormat* outFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
+    if (!inFormat || !outFormat) return;
+
+    AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:inFormat toFormat:outFormat];
+    if (!converter) return;
+    NSArray<NSNumber*>* bitrateArray = converter.applicableEncodeBitRates;
+    if (!bitrateArray || [bitrateArray containsObject:@(requestedBitrate)]) {
+        return; // Requested bitrate supported
+    }
+    // Keep the maximum supported bitrate (mirrors existing logic)
+    NSNumber* prev = bitrateArray.firstObject;
+    for (NSNumber* item in bitrateArray) {
+        if ([item compare:prev] == NSOrderedDescending) {
+            prev = item;
+        }
+    }
+    if (prev) {
+        awInputSetting[AVEncoderBitRateKey] = prev;
+        SecureLogf(@"Bitrate adjustment to %@ from %@", prev, @(requestedBitrate));
+    }
 }
 
 - (uint32_t) audioFormatID
@@ -418,6 +436,8 @@ uint32_t formatIDFor(NSString* fourCC)
             avacDstLayout = [AVAudioChannelLayout layoutWithLayoutTag:dstTag];
         } else {
             // If acl is not available, use dummy layout (best effort)
+        // BEGIN shared audio preparation (extracted)
+
             assert(0 < numChannel && numChannel <=8);
             
             // For Source (suppose MPEG layout)
@@ -435,46 +455,23 @@ uint32_t formatIDFor(NSString* fourCC)
         size_t acLayoutSize = sizeof(AudioChannelLayout) + MIN(acDescCount - 1, 0) * acDescSize;
         aclData = [NSData dataWithBytes:avacDstLayout.layout length:acLayoutSize];
         
-        // destination
+        // destination settings
         NSMutableDictionary<NSString*,id>* awInputSetting = [NSMutableDictionary dictionary];
         awInputSetting[AVFormatIDKey] = @(self.audioFormatID);
         awInputSetting[AVSampleRateKey] = @(sampleRate);
         awInputSetting[AVNumberOfChannelsKey] = @(numChannel);
         awInputSetting[AVChannelLayoutKey] = aclData;
         awInputSetting[AVSampleRateConverterAlgorithmKey] = AVSampleRateConverterAlgorithm_Normal;
-        //awInputSetting[AVSampleRateConverterAudioQualityKey] = AVAudioQualityMedium;
-        
         if ([self.audioFourcc isEqualToString:@"lpcm"]) {
-            awInputSetting[AVLinearPCMIsBigEndianKey] = false;
-            awInputSetting[AVLinearPCMIsFloatKey] = false;
+            awInputSetting[AVLinearPCMIsBigEndianKey] = @NO;
+            awInputSetting[AVLinearPCMIsFloatKey] = @NO;
             awInputSetting[AVLinearPCMBitDepthKey] = @(self.lpcmDepth);
-            awInputSetting[AVLinearPCMIsNonInterleavedKey] = false;
+            awInputSetting[AVLinearPCMIsNonInterleavedKey] = @NO;
         } else {
             awInputSetting[AVEncoderBitRateKey] = @(self.audioBitRate);
             awInputSetting[AVEncoderBitRateStrategyKey] = AVAudioBitRateStrategy_LongTermAverage;
-            //awInputSetting[AVEncoderAudioQualityKey] = AVAudioQualityMedium;
         }
-        
-        // validate bitrate
-        if (awInputSetting[AVEncoderBitRateKey]) {
-            AVAudioFormat* inFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
-                                                                                channelLayout:avacSrcLayout];
-            AVAudioFormat* outFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
-            AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:inFormat toFormat:outFormat];
-            NSArray<NSNumber*>* bitrateArray = converter.applicableEncodeBitRates;
-            if ([bitrateArray containsObject:@(self.audioBitRate)] == false) {
-                // bitrate adjustment
-                NSNumber* prev = bitrateArray.firstObject;
-                for (NSNumber* item in bitrateArray) {
-                    if ([item compare:prev] == NSOrderedDescending) {
-                        prev = item;
-                    }
-                }
-                awInputSetting[AVEncoderBitRateKey] = prev;
-                SecureLogf(@"Bitrate adjustment to %@ from %@", prev, @(self.audioBitRate));
-            }
-        }
-        
+        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacSrcLayout, sampleRate, self.audioBitRate);
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                                          outputSettings:awInputSetting];
         // awInput.mediaTimeScale = track.naturalTimeScale; // Audio track is unable to change
@@ -607,17 +604,15 @@ uint32_t formatIDFor(NSString* fourCC)
         size_t acDescSize = sizeof(AudioChannelDescription);
         size_t acLayoutSize = sizeof(AudioChannelLayout) + (acDescCount > 1 ? (acDescCount - 1) * acDescSize : 0);
         NSData* aclData = [NSData dataWithBytes:avacDstLayout.layout length:acLayoutSize];
-        
-        // Destination format settings
+
+        // Destination writer settings
         NSMutableDictionary<NSString*,id>* awInputSetting = [NSMutableDictionary dictionary];
         awInputSetting[AVFormatIDKey] = @(self.audioFormatID);
         awInputSetting[AVSampleRateKey] = @(sampleRate);
         awInputSetting[AVNumberOfChannelsKey] = @(avacDstLayout.channelCount);
         awInputSetting[AVChannelLayoutKey] = aclData;
         awInputSetting[AVSampleRateConverterAlgorithmKey] = AVSampleRateConverterAlgorithm_Normal;
-        
         if ([self.audioFourcc isEqualToString:@"lpcm"]) {
-            //
             awInputSetting[AVLinearPCMIsBigEndianKey] = @NO;
             awInputSetting[AVLinearPCMIsFloatKey] = @NO;
             awInputSetting[AVLinearPCMBitDepthKey] = @(self.lpcmDepth);
@@ -626,75 +621,35 @@ uint32_t formatIDFor(NSString* fourCC)
             awInputSetting[AVEncoderBitRateKey] = @(self.audioBitRate);
             awInputSetting[AVEncoderBitRateStrategyKey] = AVAudioBitRateStrategy_LongTermAverage;
         }
-        
-        // Source configuration - force Float32 deinterleaved PCM
+
+        // Source reader settings (Float32 deinterleaved PCM as unified intermediate)
         NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
         arOutputSetting[AVFormatIDKey] = @(kAudioFormatLinearPCM);
         arOutputSetting[AVLinearPCMIsFloatKey] = @YES;
         arOutputSetting[AVLinearPCMBitDepthKey] = @32;
         arOutputSetting[AVLinearPCMIsNonInterleavedKey] = @YES; // deinterleaved
         arOutputSetting[AVLinearPCMIsBigEndianKey] = @NO;
-        
-        /* ========================================================================================== */
-        
-        // NOTE: Audio format transition (2 layouts, 3 formats)
-        //   arOutput
-        //     (srcACL, Float32 deinterleaved); srcFormat
-        //   MEAudioConverter
-        //     (dstACL, Float32 deinterleaved); intermediateFormat
-        //   awInput
-        //     (dstACL, encoded); dstFormat
-        
-        // Source audio format with source layout - Force Float32 deinterleaved PCM
+
+        // Unified bitrate adjustment (only when encoding)
+        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacDstLayout, sampleRate, self.audioBitRate); // unified bitrate adjustment
+
+        // NOTE: Three formats involved:
+        //   Reader Output: (src layout) Float32 deinterleaved
+        //   Converter    : (dst layout) Float32 deinterleaved
+        //   Writer Input : (dst layout) encoded / PCM
+
         AVAudioFormat* srcFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
                                                                              channelLayout:avacSrcLayout];
-        
-        // Intermediate audio format with destination layout - Force Float32 deinterleaved PCM
         AVAudioFormat* intermediateFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
                                                                                       channelLayout:avacDstLayout];
-        
-        // Destination audio format with destination layout - using transcode settings
         AVAudioFormat* dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
-        
         if (!srcFormat || !intermediateFormat || !dstFormat) {
             SecureErrorLogf(@"Skipping audio track(%d) - unsupported audio format detected", track.trackID);
             continue;
         }
-        
-        // Validate and adjust bitrate using AVAudioConverter
-        if (awInputSetting[AVEncoderBitRateKey]) {
-            AVAudioConverter* converter = [[AVAudioConverter alloc] initFromFormat:intermediateFormat
-                                                                          toFormat:dstFormat];
-            if (converter) {
-                NSArray<NSNumber*>* bitrateArray = converter.applicableEncodeBitRates;
-                if (bitrateArray && ![bitrateArray containsObject:@(self.audioBitRate)]) {
-                    // Find the closest supported bitrate
-                    NSNumber* closestBitrate = bitrateArray.firstObject;
-                    NSInteger targetBitrate = self.audioBitRate;
-                    NSInteger minDiff = ABS(closestBitrate.integerValue - targetBitrate);
-                    
-                    for (NSNumber* bitrate in bitrateArray) {
-                        NSInteger diff = ABS(bitrate.integerValue - targetBitrate);
-                        if (diff < minDiff) {
-                            minDiff = diff;
-                            closestBitrate = bitrate;
-                        }
-                    }
-                    
-                    awInputSetting[AVEncoderBitRateKey] = closestBitrate;
-                    SecureLogf(@"Bitrate adjustment to %@ from %@", closestBitrate, @(self.audioBitRate));
-                    
-                    // Recreate destination format with adjusted bitrate
-                    dstFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
-                    if (!dstFormat) {
-                        SecureErrorLogf(@"Skipping audio track(%d) - destination format recreation failed", track.trackID);
-                        continue;
-                    }
-                }
-            }
-        }
-        
-        /* ========================================================================================== */
+
+        // Assign to converter
+
         
         // Configure the MEAudioConverter
         audioConverter.sourceFormat = srcFormat;

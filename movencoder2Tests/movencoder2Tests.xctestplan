@@ -1,0 +1,25 @@
+{
+  "configurations" : [
+    {
+      "id" : "0B179C35-FBA6-4135-AEBD-962840550150",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:movencoder2.xcodeproj",
+        "identifier" : "16C1DAED2E87F02000DD415F",
+        "name" : "movencoder2Tests"
+      }
+    }
+  ],
+  "version" : 1
+}

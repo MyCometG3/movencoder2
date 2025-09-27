@@ -28,6 +28,8 @@
 #import "MEManager.h"
 #import "MEUtils.h"
 #import "MESecureLogging.h"
+#import "Config/MEVideoEncoderConfig.h"
+#import "MEErrorFormatter.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -115,6 +117,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) AVAssetWriterStatus writerStatus; // MEInput
 @property (readwrite) AVAssetReaderStatus readerStatus; // MEOutput
 
+@property (atomic, strong, readwrite, nullable) MEVideoEncoderConfig *videoEncoderConfig; // lazy from videoEncoderSetting
+@property (atomic, assign) BOOL configIssuesLogged;
+
 @end
 
 NS_ASSUME_NONNULL_END
@@ -152,6 +157,7 @@ NS_ASSUME_NONNULL_BEGIN
 // public
 @synthesize videoFilterString;
 @synthesize videoEncoderSetting;
+@synthesize videoEncoderConfig;
 @synthesize sourceExtensions;
 @synthesize initialDelayInSec;
 @synthesize verbose;
@@ -177,6 +183,41 @@ NS_ASSUME_NONNULL_BEGIN
         eagainDelaySemaphore = dispatch_semaphore_create(0);
     }
     return self;
+}
+
+- (void)setVideoEncoderSetting:(NSMutableDictionary * _Nullable)setting
+{
+    // One-time verbose summary of configuration issues (if any)
+    if (self.verbose && !self.configIssuesLogged) {
+        MEVideoEncoderConfig *cfgOnce = self.videoEncoderConfig;
+        if (cfgOnce.issues.count) {
+            SecureLogf(@"[MEManager][ConfigSummary] %lu issue(s)", (unsigned long)cfgOnce.issues.count);
+            for (NSString *msg in cfgOnce.issues) {
+                SecureDebugLogf(@"[MEManager][ConfigIssue] %@", msg);
+            }
+            self.configIssuesLogged = YES;
+        }
+    }
+
+    videoEncoderSetting = setting;
+    videoEncoderConfig = nil; // reset cache
+}
+
+- (MEVideoEncoderConfig * _Nullable)videoEncoderConfig
+{
+    @synchronized (self) {
+        if (!videoEncoderConfig && videoEncoderSetting) {
+            videoEncoderConfig = [MEVideoEncoderConfig configFromLegacyDictionary:videoEncoderSetting error:NULL];
+        }
+        return videoEncoderConfig;
+    }
+}
+
+- (void)setVideoEncoderConfig:(MEVideoEncoderConfig * _Nullable)config
+{
+    @synchronized (self) {
+        videoEncoderConfig = config; // explicit setter to satisfy atomic contract
+    }
 }
 
 + (instancetype) new
@@ -216,16 +257,14 @@ static inline BOOL useVideoEncoder(MEManager *obj) {
 
 static inline BOOL uselibx264(MEManager *obj) {
     if (!useVideoEncoder(obj)) return FALSE;
-    NSDictionary *videoEncoderSetting = obj->videoEncoderSetting;
-    NSString *codecName = videoEncoderSetting[kMEVECodecNameKey];
-    return ([codecName isEqualToString:@"libx264"]);
+    MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
+    return (cfg && cfg.codecKind == MEVideoCodecKindX264);
 }
 
 static inline BOOL uselibx265(MEManager *obj) {
     if (!useVideoEncoder(obj)) return FALSE;
-    NSDictionary *videoEncoderSetting = obj->videoEncoderSetting;
-    NSString *codecName = videoEncoderSetting[kMEVECodecNameKey];
-    return ([codecName isEqualToString:@"libx265"]);
+    MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
+    return (cfg && cfg.codecKind == MEVideoCodecKindX265);
 }
 
 static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t timeoutMilliseconds) {
@@ -314,6 +353,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     int ret = 0;
     const AVCodec* codec = NULL;
     AVDictionary* opts = NULL;
+    MEVideoEncoderConfig *cfgLog = nil;
     
     if (self.videoEncoderIsReady)
         return TRUE;
@@ -327,8 +367,9 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     
     // Allocate encoder context
     {
-        NSString* codecName = videoEncoderSetting[kMEVECodecNameKey]; // i.e. @"libx264"
-        if (!codecName) {
+        MEVideoEncoderConfig *cfg = self.videoEncoderConfig;
+        NSString* codecName = cfg.rawCodecName; // i.e. @"libx264"
+        if (!codecName.length) {
             SecureErrorLogf(@"[MEManager] ERROR: Cannot find video encoder name.");
             goto end;
         }
@@ -476,9 +517,9 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         
         avctx->flags |= (AV_CODEC_FLAG_GLOBAL_HEADER | AV_CODEC_FLAG_CLOSED_GOP); // Use Closed GOP by default
         
-        NSValue *fpsValue = videoEncoderSetting[kMEVECodecFrameRateKey];
-        if (fpsValue) {
-            CMTime fraction = [fpsValue CMTimeValue];
+        MEVideoEncoderConfig *cfg = self.videoEncoderConfig;
+        if (cfg.hasFrameRate) {
+            CMTime fraction = cfg.frameRate;
             if (!CMTIME_IS_VALID(fraction)) {
                 SecureErrorLogf(@"[MEManager] ERROR: Cannot validate fpsValue");
                  goto end;
@@ -493,10 +534,9 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         }
         
         // av_dict_set(&opts, "b", "2.5M", 0);
-        NSNumber *bitRateNumber = videoEncoderSetting[kMEVECodecBitRateKey];
-        if (bitRateNumber != nil) {
-            NSInteger bitRate = [bitRateNumber integerValue];
-            avctx->bit_rate = bitRate;
+        MEVideoEncoderConfig *cfgBR = self.videoEncoderConfig;
+        if (cfgBR.bitRate > 0) {
+            avctx->bit_rate = cfgBR.bitRate;
         }
     }
     
@@ -531,7 +571,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
 #if 0
         // TODO: this will work as "crop", not "overscan"
         // clean aperture information as vui parameters
-        NSValue *cleanApertureValue = videoEncoderSetting[kMEVECodecCleanAperture];
+        NSValue *cleanApertureValue = self.videoEncoderConfig.cleanAperture ?: videoEncoderSetting[kMEVECodecCleanAperture];
         if (cleanApertureValue) {
             NSRect rect = [cleanApertureValue rectValue];
             int left = (avctx->width - rect.origin.x + rect.size.width) / 2;
@@ -572,7 +612,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
          CRF:"preset=medium:profile=high:level=4.1:maxrate=15M:bufsize=15M:crf=23:g=60:keyint_min=15:bf=3"
          ABR:"preset=medium:profile=high:level=4.1:maxrate=15M:bufsize=15M:b=2.5M:g=60:keyint_min=15:bf=3"
          */
-        NSDictionary* codecOptions = videoEncoderSetting[kMEVECodecOptionsKey];
+        NSDictionary* codecOptions = self.videoEncoderConfig.codecOptions;
         if (codecOptions) {
             @autoreleasepool {
                 for (NSString* key in codecOptions.allKeys) {
@@ -596,7 +636,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
          AVR:"preset=medium:profile=high:level=4.1:vbv-maxrate=15000:vbv-bufsize=15000:bitrate=2500:keyint=60:min-keyint=6:bframes=3"
          */
         if (uselibx264(self)) {
-            NSString* params = videoEncoderSetting[kMEVEx264_paramsKey];
+            NSString* params = self.videoEncoderConfig.x264Params;
             if (params) {
                 ret = av_dict_set(&opts, "x264-params", [params UTF8String], 0);
                 if (ret < 0) {
@@ -606,7 +646,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             }
         }
         if (uselibx265(self)) {
-            NSString* params = videoEncoderSetting[kMEVEx265_paramsKey];
+            NSString* params = self.videoEncoderConfig.x265Params;
             if (params) {
                 ret = av_dict_set(&opts, "x265-params", [params UTF8String], 0);
                 if (ret < 0) {
@@ -632,9 +672,17 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     
     // Initialize encoder
     SecureLogf(@"");
+    // Log any soft validation issues (verbose only)
+    cfgLog = self.videoEncoderConfig;
+    if (self.verbose && cfgLog.issues.count) {
+        for (NSString *msg in cfgLog.issues) {
+            SecureDebugLogf(@"[MEManager][ConfigIssue] %@", msg);
+        }
+    }
     ret = avcodec_open2(avctx, codec, &opts);
     if (ret < 0) {
-        SecureErrorLogf(@"[MEManager] ERROR: Cannot open video encoder.");
+        NSString *fferr = [MEErrorFormatter stringFromFFmpegCode:ret];
+        SecureErrorLogf(@"[MEManager] ERROR: Cannot open video encoder. %@", fferr);
         goto end;
     }
     SecureLogf(@"");
@@ -728,7 +776,7 @@ end:
         ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
                                            args, NULL, filter_graph);
         if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer source");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer source (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
@@ -736,7 +784,7 @@ end:
         const AVFilter *buffersink = avfilter_get_by_name("buffersink");
         buffersink_ctx = avfilter_graph_alloc_filter(filter_graph, buffersink, "out");
         if (!buffersink_ctx) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer sink");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer sink (%@)", [MEErrorFormatter stringFromFFmpegCode:AVERROR_UNKNOWN]);
             goto end;
         }
         
@@ -753,13 +801,13 @@ end:
                              (int)size_bytes,
                              AV_OPT_SEARCH_CHILDREN);
         if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot set output pixel format");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot set output pixel format (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
         ret = avfilter_init_str(buffersink_ctx, NULL);
         if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot initialize buffer sink");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot initialize buffer sink (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
@@ -795,12 +843,12 @@ end:
         filters_descr = av_strdup([videoFilterString UTF8String]);
         if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
                                             &inputs, &outputs, NULL)) < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot parse filter descriptions. (%d)", ret);
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot parse filter descriptions. %@", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
         if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot configure filter graph. (%d)", ret);
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot configure filter graph. %@", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
     }
@@ -1064,7 +1112,7 @@ end:
         }
         
         // Append container level clean aperture
-        NSValue *cleanApertureValue = videoEncoderSetting[kMEVECleanApertureKey];
+        NSValue *cleanApertureValue = self.videoEncoderConfig.cleanAperture ?: videoEncoderSetting[kMEVECleanApertureKey];
         if (cleanApertureValue) {
             desc = createDescriptionWithAperture(desc, cleanApertureValue);
         }
@@ -1461,19 +1509,26 @@ error:
 
 - (CGSize)naturalSize
 {
-    // Use videoEncoderSetting
+    // Prefer type-safe config
+    MEVideoEncoderConfig *cfg = self.videoEncoderConfig;
+    if (cfg.hasDeclaredSize && cfg.hasPixelAspect) {
+        NSSize rawSize = cfg.declaredSize;
+        NSSize pixAspect = cfg.pixelAspect;
+        CGFloat naturalWidth = rawSize.width * pixAspect.width / pixAspect.height;
+        CGFloat naturalHeight = rawSize.height;
+        return NSMakeSize(naturalWidth, naturalHeight);
+    }
+    // Fallback to legacy dictionary (compatibility)
     NSDictionary *setting = [videoEncoderSetting copy];
     if (setting) {
-        NSValue *rawSizeValue = setting[kMEVECodecWxHKey]; // no aspect, no clean aperture
+        NSValue *rawSizeValue = setting[kMEVECodecWxHKey];
         NSValue *pixAspectValue = setting[kMEVECodecPARKey];
         if (rawSizeValue && pixAspectValue) {
             NSSize rawSize = [rawSizeValue sizeValue];
             NSSize pixAspect = [pixAspectValue sizeValue];
             CGFloat naturalWidth = rawSize.width * pixAspect.width / pixAspect.height;
             CGFloat naturalHeight = rawSize.height;
-            NSSize naturalSize = NSMakeSize(naturalWidth, naturalHeight);
-            
-            return naturalSize;
+            return NSMakeSize(naturalWidth, naturalHeight);
         }
     }
     
