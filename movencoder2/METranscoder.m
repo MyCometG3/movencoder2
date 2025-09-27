@@ -277,195 +277,32 @@ NS_ASSUME_NONNULL_BEGIN
 {
     self.timeStamp0 = CFAbsoluteTimeGetCurrent();
     self.timeStamp1 = 0;
-    
-    //
+
+    BOOL useME = NO;
+    BOOL useAC = NO;
     AVMutableMovie* mov = self.inMovie;
     AVAssetWriter* aw = nil;
     AVAssetReader* ar = nil;
-    BOOL useME = [self hasVideoMEManagers];  // for video processing
-    BOOL useAC = [self hasAudioMEConverters]; // for audio converter processing
-    
-    dispatch_group_t dg;
-    
-    //
-    if (self.writerIsBusy) {
-        NSError* err = nil;
-        [self post:[NSString stringWithFormat:@"%s (%d)", __PRETTY_FUNCTION__, __LINE__]
-            reason:@"Multiple call is not allowed."
-              code:paramErr
-                to:&err];
-        self.finalError = err;
-        goto end;
+    BOOL finish = NO;
+
+    if (![self me_prepareExportSession:error useME:&useME useAC:&useAC]) {
+        goto finalize;
     }
-    
-    //
-    {
-        NSFileManager *fm = [NSFileManager new];
-        if ([fm fileExistsAtPath:[outputURL path]]) {
-            if (![fm removeItemAtURL:outputURL error:nil]) {
-                NSError* err = nil;
-                [self post:[NSString stringWithFormat:@"%s (%d)", __PRETTY_FUNCTION__, __LINE__]
-                    reason:@"Output file path is not writable."
-                      code:paramErr
-                        to:&err];
-                self.finalError = err;
-                goto end;
-            }
-        }
+
+    if (![self me_configureWriterAndPrepareChannelsWithMovie:mov useME:useME useAC:useAC error:error]) {
+        goto finalize;
     }
-    
-    //
-    if (!( CMTIME_IS_VALID(self.startTime) && CMTIME_IS_VALID(self.endTime) )) {
-        // Invalid startTime/endTime case: use full range of source movie
-        self.startTime = kCMTimeZero;
-        self.endTime = mov.duration;
-    } else {
-        // check specified startTime/endTime
-        int compResult = CMTIME_COMPARE_INLINE(self.startTime, <, self.endTime);
-        int compResult2 = CMTIME_COMPARE_INLINE(kCMTimeZero, <=, self.startTime);
-        if (!(compResult && compResult2)) {
-            // Invalid time range detected: reset to full range of source movie
-            self.startTime = kCMTimeZero;
-            self.endTime = mov.duration;
-        }
-    }
-    CMTimeRange maxRange = CMTimeRangeMake(self.startTime, self.endTime);
-    self.startTime = CMTimeClampToRange(self.startTime, maxRange);
-    self.endTime = CMTimeClampToRange(self.endTime, maxRange);
-    self.writerIsBusy = TRUE;
-    
-    //
-    if ( ![self prepareRW] ) {
-        NSError* err = nil;
-        [self post:[NSString stringWithFormat:@"%s (%d)", __PRETTY_FUNCTION__, __LINE__]
-            reason:@"Either AVAssetReader or AVAssetWriter is not available."
-              code:paramErr
-                to:&err];
-        self.finalError = err;
-        goto end;
-    }
-    
-    SecureLog(@"[METranscoder] Export session started.");
-    
+
     aw = self.assetWriter;
     ar = self.assetReader;
-    
-    {
-        // setup AVAssetWriter parameters
-        dispatch_sync(self.processQueue, ^{
-            aw.movieTimeScale = mov.timescale;
-            aw.movieFragmentInterval = kCMTimeInvalid;
-            aw.shouldOptimizeForNetworkUse = TRUE;
-        });
-        
-        // setup sampleBufferChannels for each track
-        if (useAC) {
-            [self prepareAudioMEChannelsWith:mov from:ar to:aw];
-        } else {
-            [self prepareAudioMediaChannelWith:mov from:ar to:aw];
-        }
-        [self prepareOtherMediaChannelsWith:mov from:ar to:aw];
-        if (useME) {
-            [self prepareVideoMEChannelsWith:mov from:ar to:aw];
-        } else {
-            [self prepareVideoChannelsWith:mov from:ar to:aw];
-        }
-        
-        // start assetReader/assetWriter
-        __block BOOL arStarted = FALSE;
-        __block BOOL awStarted = FALSE;
-        dispatch_sync(self.processQueue, ^{
-            arStarted = [ar startReading];
-            awStarted = [aw startWriting];
-        });
-        if (!(arStarted && awStarted)) {
-            __block NSError* err = nil;
-            dispatch_sync(self.processQueue, ^{
-                err = (!arStarted ? ar.error : aw.error);
-                [ar cancelReading];
-                [aw cancelWriting];
-            });
-            self.finalSuccess = FALSE;
-            self.finalError = err;
-            [self rwDidFinished];
-            goto end;
-        }
-        
-        // start writing session
-        dispatch_sync(self.processQueue, ^{
-            [aw startSessionAtSourceTime:startTime];
-        });
-    }
-    
-    // started callback
-    [self rwDidStarted];
-    
-    // Register and run each sample buffer channels as dispatchgroup
-    {
-        dg = dispatch_group_create();
-        NSArray<SBChannel*>* channelArray = self.sbChannels;
-        for (SBChannel* sbc in channelArray) {
-            dispatch_group_enter(dg);
-            dispatch_block_t handler = ^{ dispatch_group_leave(dg); };
-            [sbc startWithDelegate:self completionHandler:handler];
-        }
-    }
-    
-    // wait till finish
-    {
-        __weak typeof(self) wself = self;
-        __weak typeof(AVAssetReader*) war = ar;
-        __weak typeof(AVAssetWriter*) waw = aw;
-        __block BOOL finish = FALSE;
-        dispatch_semaphore_t waitSem = dispatch_semaphore_create(0);
-        dispatch_group_notify(dg, self.processQueue, ^{
-            // SecureDebugLogf(@"waw.status=%ld, war.status=%ld", (long)waw.status, (long)war.status);
-            BOOL finalize = TRUE;
-            BOOL cancelled = wself.cancelled; // cancel request
-            if (cancelled == FALSE) {
-                // check reader status
-                BOOL arFailed = (war.status == AVAssetReaderStatusFailed);
-                if (arFailed) {
-                    wself.finalSuccess = FALSE;
-                    wself.finalError = war.error;
-                    finalize = FALSE;
-                }
-            }
-            if (finalize) {
-                // finish writing session
-                [waw endSessionAtSourceTime:wself.endTime];
-                [waw finishWritingWithCompletionHandler:^{
-                    // completionHandler runs on an arbitrary queue so we need to dispatch back to processQueue
-                    dispatch_async(wself.processQueue, ^{
-                        BOOL awFailed = (waw.status == AVAssetWriterStatusFailed);
-                        if (awFailed) {
-                            wself.finalSuccess = FALSE;
-                            wself.finalError = waw.error ?: war.error;
-                        } else {
-                            finish = !cancelled;
-                        }
-                        dispatch_semaphore_signal(waitSem);
-                    });
-                }];
-                // finishWritingWithCompletionHandler: itself returns immediately; notify block doesn't block processQueue
-            } else {
-                // unblock waitSem/controlQueue
-                dispatch_semaphore_signal(waitSem);
-            }
-        });
-        dispatch_semaphore_wait(waitSem, DISPATCH_TIME_FOREVER); // waitSem blocks controlQueue
-        // SecureDebugLogf(@"waw.status=%ld, war.status=%ld", (long)waw.status, (long)war.status);
 
-        if (finish) {
-            self.finalSuccess = TRUE;
-            self.finalError = nil;
-        }
+    if (![self me_startIOAndWaitWithReader:ar writer:aw finish:&finish error:error]) {
+        goto finalize;
     }
-    
-    // cleanup callback
-    [self rwDidFinished];
-    
-end:
+
+    [self me_finalizeSessionWithFinish:finish error:error];
+
+finalize:
     if (self.finalSuccess) {
         SecureLog(@"[METranscoder] Export session completed.");
     } else if (self.cancelled) {
@@ -484,17 +321,189 @@ end:
         }
         SecureErrorLogf(@"[METranscoder] ERROR: Export session failed. Error details: %@", [self.finalError description]);
     }
-    
-    //
+
     self.timeStamp1 = CFAbsoluteTimeGetCurrent();
     SecureLogf(@"[METranscoder] elapsed: %.2f sec", self.timeElapsed);
-
-    // Clean up any temporary files created by AVAssetWriter (on all paths)
     [self cleanupTemporaryFilesForOutput:self.outputURL];
-
     self.writerIsBusy = FALSE;
     return self.finalSuccess;
 }
+
+#pragma mark - Export helper steps
+
+- (BOOL)me_prepareExportSession:(NSError * _Nullable * _Nullable)error useME:(BOOL*)useME useAC:(BOOL*)useAC
+{
+    if (self.writerIsBusy) {
+        NSError* err = nil;
+        [self post:[NSString stringWithFormat:@"%s (%d)", __PRETTY_FUNCTION__, __LINE__]
+            reason:@"Multiple call is not allowed."
+              code:paramErr
+                to:&err];
+        self.finalError = err;
+        if (error) *error = err;
+        return NO;
+    }
+
+    NSFileManager *fm = [NSFileManager new];
+    if ([fm fileExistsAtPath:[outputURL path]]) {
+        if (![fm removeItemAtURL:outputURL error:nil]) {
+            NSError* err = nil;
+            [self post:[NSString stringWithFormat:@"%s (%d)", __PRETTY_FUNCTION__, __LINE__]
+                reason:@"Output file path is not writable."
+                  code:paramErr
+                    to:&err];
+            self.finalError = err;
+            if (error) *error = err;
+            return NO;
+        }
+    }
+
+    AVMutableMovie* mov = self.inMovie;
+    if (!( CMTIME_IS_VALID(self.startTime) && CMTIME_IS_VALID(self.endTime) )) {
+        self.startTime = kCMTimeZero;
+        self.endTime = mov.duration;
+    } else {
+        int compResult = CMTIME_COMPARE_INLINE(self.startTime, <, self.endTime);
+        int compResult2 = CMTIME_COMPARE_INLINE(kCMTimeZero, <=, self.startTime);
+        if (!(compResult && compResult2)) {
+            self.startTime = kCMTimeZero;
+            self.endTime = mov.duration;
+        }
+    }
+    CMTimeRange maxRange = CMTimeRangeMake(self.startTime, self.endTime);
+    self.startTime = CMTimeClampToRange(self.startTime, maxRange);
+    self.endTime = CMTimeClampToRange(self.endTime, maxRange);
+
+    self.writerIsBusy = TRUE;
+
+    *useME = [self hasVideoMEManagers];
+    *useAC = [self hasAudioMEConverters];
+
+    if (![self prepareRW]) {
+        NSError* err = nil;
+        [self post:[NSString stringWithFormat:@"%s (%d)", __PRETTY_FUNCTION__, __LINE__]
+            reason:@"Either AVAssetReader or AVAssetWriter is not available."
+              code:paramErr
+                to:&err];
+        self.finalError = err;
+        if (error) *error = err;
+        return NO;
+    }
+
+    SecureLog(@"[METranscoder] Export session started.");
+    return YES;
+}
+
+- (BOOL)me_configureWriterAndPrepareChannelsWithMovie:(AVMutableMovie*)mov useME:(BOOL)useME useAC:(BOOL)useAC error:(NSError * _Nullable * _Nullable)error
+{
+    AVAssetWriter* aw = self.assetWriter;
+    AVAssetReader* ar = self.assetReader;
+
+    dispatch_sync(self.processQueue, ^{
+        aw.movieTimeScale = mov.timescale;
+        aw.movieFragmentInterval = kCMTimeInvalid;
+        aw.shouldOptimizeForNetworkUse = TRUE;
+    });
+
+    if (useAC) {
+        [self prepareAudioMEChannelsWith:mov from:ar to:aw];
+    } else {
+        [self prepareAudioMediaChannelWith:mov from:ar to:aw];
+    }
+    [self prepareOtherMediaChannelsWith:mov from:ar to:aw];
+    if (useME) {
+        [self prepareVideoMEChannelsWith:mov from:ar to:aw];
+    } else {
+        [self prepareVideoChannelsWith:mov from:ar to:aw];
+    }
+    return YES;
+}
+
+- (BOOL)me_startIOAndWaitWithReader:(AVAssetReader*)ar writer:(AVAssetWriter*)aw finish:(BOOL*)finish error:(NSError * _Nullable * _Nullable)error
+{
+    __block BOOL arStarted = FALSE;
+    __block BOOL awStarted = FALSE;
+    dispatch_sync(self.processQueue, ^{
+        arStarted = [ar startReading];
+        awStarted = [aw startWriting];
+    });
+    if (!(arStarted && awStarted)) {
+        __block NSError* err = nil;
+        dispatch_sync(self.processQueue, ^{
+            err = (!arStarted ? ar.error : aw.error);
+            [ar cancelReading];
+            [aw cancelWriting];
+        });
+        self.finalSuccess = FALSE;
+        self.finalError = err;
+        [self rwDidFinished];
+        if (error) *error = err;
+        return NO;
+    }
+
+    dispatch_sync(self.processQueue, ^{
+        [aw startSessionAtSourceTime:startTime];
+    });
+
+    [self rwDidStarted];
+
+    dispatch_group_t dg = dispatch_group_create();
+    NSArray<SBChannel*>* channelArray = self.sbChannels;
+    for (SBChannel* sbc in channelArray) {
+        dispatch_group_enter(dg);
+        dispatch_block_t handler = ^{ dispatch_group_leave(dg); };
+        [sbc startWithDelegate:self completionHandler:handler];
+    }
+
+    __weak typeof(self) wself = self;
+    __weak typeof(AVAssetReader*) war = ar;
+    __weak typeof(AVAssetWriter*) waw = aw;
+    dispatch_semaphore_t waitSem = dispatch_semaphore_create(0);
+
+    dispatch_group_notify(dg, self.processQueue, ^{
+        BOOL finalize = TRUE;
+        BOOL cancelled = wself.cancelled;
+        if (!cancelled) {
+            BOOL arFailed = (war.status == AVAssetReaderStatusFailed);
+            if (arFailed) {
+                wself.finalSuccess = FALSE;
+                wself.finalError = war.error;
+                finalize = FALSE;
+            }
+        }
+        if (finalize) {
+            [waw endSessionAtSourceTime:wself.endTime];
+            [waw finishWritingWithCompletionHandler:^{
+                dispatch_async(wself.processQueue, ^{
+                    BOOL awFailed = (waw.status == AVAssetWriterStatusFailed);
+                    if (awFailed) {
+                        wself.finalSuccess = FALSE;
+                        wself.finalError = waw.error ?: war.error;
+                    } else {
+                        *finish = !cancelled;
+                    }
+                    dispatch_semaphore_signal(waitSem);
+                });
+            }];
+        } else {
+            dispatch_semaphore_signal(waitSem);
+        }
+    });
+
+    dispatch_semaphore_wait(waitSem, DISPATCH_TIME_FOREVER);
+
+    if (*finish) {
+        self.finalSuccess = TRUE;
+        self.finalError = nil;
+    }
+    return YES;
+}
+
+- (void)me_finalizeSessionWithFinish:(BOOL)finish error:(NSError * _Nullable * _Nullable)error
+{
+    [self rwDidFinished];
+}
+
 
 - (void) cancelExportCustom
 {
