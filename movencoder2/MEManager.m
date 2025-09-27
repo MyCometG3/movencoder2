@@ -349,8 +349,9 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     
     // Allocate encoder context
     {
-        NSString* codecName = videoEncoderSetting[kMEVECodecNameKey]; // i.e. @"libx264"
-        if (!codecName) {
+        MEVideoEncoderConfig *cfg = self.videoEncoderConfig;
+        NSString* codecName = cfg.rawCodecName; // i.e. @"libx264"
+        if (!codecName.length) {
             SecureErrorLogf(@"[MEManager] ERROR: Cannot find video encoder name.");
             goto end;
         }
@@ -498,9 +499,9 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         
         avctx->flags |= (AV_CODEC_FLAG_GLOBAL_HEADER | AV_CODEC_FLAG_CLOSED_GOP); // Use Closed GOP by default
         
-        NSValue *fpsValue = videoEncoderSetting[kMEVECodecFrameRateKey];
-        if (fpsValue) {
-            CMTime fraction = [fpsValue CMTimeValue];
+        MEVideoEncoderConfig *cfg = self.videoEncoderConfig;
+        if (cfg.hasFrameRate) {
+            CMTime fraction = cfg.frameRate;
             if (!CMTIME_IS_VALID(fraction)) {
                 SecureErrorLogf(@"[MEManager] ERROR: Cannot validate fpsValue");
                  goto end;
@@ -515,10 +516,9 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         }
         
         // av_dict_set(&opts, "b", "2.5M", 0);
-        NSNumber *bitRateNumber = videoEncoderSetting[kMEVECodecBitRateKey];
-        if (bitRateNumber != nil) {
-            NSInteger bitRate = [bitRateNumber integerValue];
-            avctx->bit_rate = bitRate;
+        MEVideoEncoderConfig *cfgBR = self.videoEncoderConfig;
+        if (cfgBR.bitRate > 0) {
+            avctx->bit_rate = cfgBR.bitRate;
         }
     }
     
@@ -553,7 +553,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
 #if 0
         // TODO: this will work as "crop", not "overscan"
         // clean aperture information as vui parameters
-        NSValue *cleanApertureValue = videoEncoderSetting[kMEVECodecCleanAperture];
+        NSValue *cleanApertureValue = self.videoEncoderConfig.cleanAperture ?: videoEncoderSetting[kMEVECodecCleanAperture];
         if (cleanApertureValue) {
             NSRect rect = [cleanApertureValue rectValue];
             int left = (avctx->width - rect.origin.x + rect.size.width) / 2;
@@ -594,7 +594,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
          CRF:"preset=medium:profile=high:level=4.1:maxrate=15M:bufsize=15M:crf=23:g=60:keyint_min=15:bf=3"
          ABR:"preset=medium:profile=high:level=4.1:maxrate=15M:bufsize=15M:b=2.5M:g=60:keyint_min=15:bf=3"
          */
-        NSDictionary* codecOptions = videoEncoderSetting[kMEVECodecOptionsKey];
+        NSDictionary* codecOptions = self.videoEncoderConfig.codecOptions;
         if (codecOptions) {
             @autoreleasepool {
                 for (NSString* key in codecOptions.allKeys) {
@@ -618,7 +618,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
          AVR:"preset=medium:profile=high:level=4.1:vbv-maxrate=15000:vbv-bufsize=15000:bitrate=2500:keyint=60:min-keyint=6:bframes=3"
          */
         if (uselibx264(self)) {
-            NSString* params = videoEncoderSetting[kMEVEx264_paramsKey];
+            NSString* params = self.videoEncoderConfig.x264Params;
             if (params) {
                 ret = av_dict_set(&opts, "x264-params", [params UTF8String], 0);
                 if (ret < 0) {
@@ -628,7 +628,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             }
         }
         if (uselibx265(self)) {
-            NSString* params = videoEncoderSetting[kMEVEx265_paramsKey];
+            NSString* params = self.videoEncoderConfig.x265Params;
             if (params) {
                 ret = av_dict_set(&opts, "x265-params", [params UTF8String], 0);
                 if (ret < 0) {
@@ -1086,7 +1086,7 @@ end:
         }
         
         // Append container level clean aperture
-        NSValue *cleanApertureValue = videoEncoderSetting[kMEVECleanApertureKey];
+        NSValue *cleanApertureValue = self.videoEncoderConfig.cleanAperture ?: videoEncoderSetting[kMEVECleanApertureKey];
         if (cleanApertureValue) {
             desc = createDescriptionWithAperture(desc, cleanApertureValue);
         }
@@ -1483,19 +1483,26 @@ error:
 
 - (CGSize)naturalSize
 {
-    // Use videoEncoderSetting
+    // Prefer type-safe config
+    MEVideoEncoderConfig *cfg = self.videoEncoderConfig;
+    if (cfg.hasDeclaredSize && cfg.hasPixelAspect) {
+        NSSize rawSize = cfg.declaredSize;
+        NSSize pixAspect = cfg.pixelAspect;
+        CGFloat naturalWidth = rawSize.width * pixAspect.width / pixAspect.height;
+        CGFloat naturalHeight = rawSize.height;
+        return NSMakeSize(naturalWidth, naturalHeight);
+    }
+    // Fallback to legacy dictionary (compatibility)
     NSDictionary *setting = [videoEncoderSetting copy];
     if (setting) {
-        NSValue *rawSizeValue = setting[kMEVECodecWxHKey]; // no aspect, no clean aperture
+        NSValue *rawSizeValue = setting[kMEVECodecWxHKey];
         NSValue *pixAspectValue = setting[kMEVECodecPARKey];
         if (rawSizeValue && pixAspectValue) {
             NSSize rawSize = [rawSizeValue sizeValue];
             NSSize pixAspect = [pixAspectValue sizeValue];
             CGFloat naturalWidth = rawSize.width * pixAspect.width / pixAspect.height;
             CGFloat naturalHeight = rawSize.height;
-            NSSize naturalSize = NSMakeSize(naturalWidth, naturalHeight);
-            
-            return naturalSize;
+            return NSMakeSize(naturalWidth, naturalHeight);
         }
     }
     
