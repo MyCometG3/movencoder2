@@ -648,6 +648,13 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     
     // Initialize encoder
     SecureLogf(@"");
+    // Log any soft validation issues (verbose only)
+    MEVideoEncoderConfig *cfgLog = self.videoEncoderConfig;
+    if (self.verbose && cfgLog.issues.count) {
+        for (NSString *msg in cfgLog.issues) {
+            SecureDebugLogf(@"[MEManager][ConfigIssue] %@", msg);
+        }
+    }
     ret = avcodec_open2(avctx, codec, &opts);
     if (ret < 0) {
         SecureErrorLogf(@"[MEManager] ERROR: Cannot open video encoder.");

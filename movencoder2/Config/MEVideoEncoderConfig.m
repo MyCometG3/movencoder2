@@ -70,9 +70,28 @@
 
             }
         }
-        NSNumber *bitRateNum = dict[kMEVECodecBitRateKey];
-        if ([bitRateNum isKindOfClass:[NSNumber class]]) {
-            cfg.bitRate = [bitRateNum integerValue];
+        id bitRateRaw = dict[kMEVECodecBitRateKey];
+        if ([bitRateRaw isKindOfClass:[NSNumber class]]) {
+            cfg.bitRate = [bitRateRaw integerValue];
+        } else if ([bitRateRaw isKindOfClass:[NSString class]]) {
+            NSString *s = (NSString*)bitRateRaw;
+            // Accept forms like 2500000, 2.5M, 5M, 800k, 192K (case-insensitive)
+            NSCharacterSet *ws = [NSCharacterSet whitespaceAndNewlineCharacterSet];
+            s = [[s stringByTrimmingCharactersInSet:ws] lowercaseString];
+            double multiplier = 1.0;
+            if ([s hasSuffix:@"m"]) { multiplier = 1000000.0; s = [s substringToIndex:s.length-1]; }
+            else if ([s hasSuffix:@"k"]) { multiplier = 1000.0; s = [s substringToIndex:s.length-1]; }
+            double val = [s doubleValue];
+            if (val > 0.0) {
+                double bits = val * multiplier;
+                if (bits > 0 && bits < (double)NSIntegerMax) {
+                    cfg.bitRate = (NSInteger)llround(bits);
+                } else {
+                    [issues addObject:@"codecBitRate numeric overflow or invalid magnitude."];
+                }
+            } else {
+                [issues addObject:@"codecBitRate string could not be parsed."];
+            }
         }
         NSValue *sizeVal = dict[kMEVECodecWxHKey];
         if ([sizeVal isKindOfClass:[NSValue class]]) {
