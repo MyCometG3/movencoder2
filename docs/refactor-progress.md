@@ -1,125 +1,92 @@
 # movencoder2 Refactoring Progress (Type-Safe Config & Error Handling)
 
-Last updated: (auto generated) 
+Last updated: 2025-09-27
 Branch: feature/type-safe-config (based off `work`)
 
+## Summary (quick)
+This document summarizes the refactor/incremental improvements merged recently into the feature/type-safe-config branch and related commits on 2025-09-27. It focuses on the type-safe video encoder configuration, validation / issue reporting, improved FFmpeg error formatting, thread-safety fixes, and related test & project hygiene updates.
+
+## Recent commits (high level)
+- Introduced `MEVideoEncoderConfig` and `METypes` (codec kind enum) — type-safe adapter over legacy dictionary-based `videoEncoderSetting`.
+- Added parsing and normalization of bitrate strings (supporting `k`, `M`, decimal values) and trimming/cleanup for x264/x265 param strings.
+- Implemented validation issue collection in `MEVideoEncoderConfig` with de-duplication and a one-time verbose summary log.
+- Added `MEErrorFormatter` to create human-friendly NSError messages for FFmpeg/av* return codes. Integrated for encoder open and filter graph errors (buffer source/sink, pixel format, parse/configure failures).
+- Thread-safety: provided explicit synchronized getter/setter for atomic `videoEncoderConfig` in `MEManager`.
+- Added unit tests for `MEVideoEncoderConfig` (bitrate parsing, param trimming, overflow handling, empty params, deduplication).
+- Project & header hygiene: include guards added to several headers; Xcode project updated to use `$(SRCROOT)` and include new files.
+- Other refactors: extracted `MEProgressUtil` for progress calculation, introduced `MECreateError` helper in `METranscoder`, and split some METranscoder flows into smaller helpers.
+
 ## Scope Completed So Far
+1. Type-safe configuration layer
+   - `METypes.h` with `MEVideoCodecKind` enum.
+   - `MEVideoEncoderConfig` as an adapter over legacy settings.
+   - Migrated MEManager uses for codec, bitrate, fps, size, PAR, encoder options, codec params.
 
-1. Introduced type-safe configuration layer
-   - Added `METypes.h` with `MEVideoCodecKind` enum.
-   - Added `MEVideoEncoderConfig` as a lazy adapter over legacy `videoEncoderSetting` (dictionary).
-   - Migrated MEManager accesses for: codec name, bitrate, frame rate, WxH, PAR, encoder options, x264 / x265 params, clean aperture.
-   - Added parsing & normalization: bitrate strings (e.g. `2.5M`, `800k`).
-   - Added trimming/cleanup for x264 / x265 params (strip whitespace & leading/trailing colons).
+2. Parsing & normalization
+   - Bitrate parsing (numeric, `k`, `M`, decimals).
+   - Trim whitespace and leading/trailing colons for x264/x265 params.
 
-2. Validation & issues reporting
-   - Collects soft validation issues inside `MEVideoEncoderConfig.issues`.
-   - One-time summary log (verbose only) + per-issue debug logs.
-   - De-duplication of issues; added warnings for invalid / zero bitrate.
+3. Validation & issue reporting
+   - `MEVideoEncoderConfig.issues` collects soft validation issues.
+   - One-time config summary log (verbose only) and per-issue debug logs.
+   - Deduplication of issues and warnings for zero/invalid bitrate.
 
-3. Error handling improvements
-   - Added `MEErrorFormatter` to unify FFmpeg error code -> readable string mapping and NSError formatting.
-   - Integrated formatter for:
-     - `avcodec_open2` failure
-     - Filter graph creation failures (buffer source/sink, pixel format set, init, parse, configure).
+4. Error handling
+   - `MEErrorFormatter` added and used for key FFmpeg failure sites (encoder open, filter graph creation/config).
 
-4. Thread-safety adjustments
-   - Provided synchronized getter/setter for atomic `videoEncoderConfig` (resolved warning about custom getter only).
+5. Thread-safety
+   - Synchronized getter/setter for atomic `videoEncoderConfig` to fix a custom-getter warning and avoid races.
 
-5. Logging policy refinements
-   - Config summary once per lifecycle (guarded by `configIssuesLogged`).
-   - Detailed issue lines use `SecureDebugLogf` (requires `--verbose`).
+6. Tests & project updates
+   - Unit tests for `MEVideoEncoderConfig` added under `movencoder2Tests`.
+   - Test scheme and xctest plan added.
+   - Include guards and minor nullability fixes across headers.
+
+7. Misc refactors
+   - `MEProgressUtil` introduced and wired into `METranscoder`.
+   - `MECreateError` introduced to centralize NSError creation for FFmpeg failures.
+   - Temporary file cleanup constants and small naming fixes.
 
 ## Not Yet Done / Pending (Future Phases)
+- Expand `MEErrorFormatter` coverage to more FFmpeg sites (av_frame alloc, avcodec_send_frame/receive_packet, buffer add, etc.).
+- Stronger semantic validation (mutually exclusive params, ranges, PAR edge cases).
+- Split `MEManager` into dedicated pipeline components (FilterPipeline, EncoderPipeline, SampleBufferFactory).
+- Consolidate encoder/filter state into a single state struct/state machine and add docs/architecture diagram (`docs/dev/architecture.md`).
+- Add CLI option(s) like `--dump-config` for normalized config output.
+- Performance metrics and back-off tuning for EAGAIN / retries.
 
-| Area | Pending Tasks |
-|------|---------------|
-| Validation | Stronger semantic checks (e.g. mutually exclusive params, numeric range checks). |
-| Error Handling | Apply `MEErrorFormatter` to more FFmpeg return sites (frame alloc, send/receive frame, buffer add). |
-| Pipeline Refactor | Split MEManager into distinct components (FilterPipeline / EncoderPipeline / SampleBufferFactory). |
-| State Management | Consolidate filter/encoder flags into a single state struct / state machine doc. |
-| Tests | Phase 1 complete: parsing & normalization tests (bitrate numeric/k/M/decimal, invalid & zero, overflow detection, frameRate, WxH, PAR, x264/x265 trimming, empty param issues, multi-issue coexistence). Next: invalid PAR edge cases & semantic validation. |
-| Docs | Architect diagram & pipeline state doc (planned: `docs/dev/architecture.md`). |
-| CLI | Potential `--dump-config` or `--stats` option (not started). |
-| Performance | Back-off tuning for EAGAIN, metrics collection. |
+## How to Resume Work (suggested next steps)
+- Add more unit tests for config semantic validation (PAR, mutually exclusive params).
+- Extract `MEFilterPipeline` from `MEManager` (move `prepareVideoFilterWith` + `pullFilteredFrame` logic).
+- Extend `MEErrorFormatter` integration into more av* call sites.
 
-## How to Resume Work
-
-When you are ready to continue, you can give one of the following directives:
-
-Examples:
-- "Refactor: split MEManager into FilterPipeline and EncoderPipeline (next phase)."  
-- "Add unit tests for MEVideoEncoderConfig (bitrate parsing, issue generation)."  
-- "Extend MEErrorFormatter usage to avcodec_send_frame / avcodec_receive_packet error logs."  
-- "Document architecture: create docs/dev/architecture.md with pipeline/state diagrams."  
-- "Implement --dump-config CLI option that prints normalized encoder config."  
-
-If you want a quick status recap first:
-- Command: "Show current refactor status" (I will summarize from this file).
-
-## Suggested Immediate Next Step (Minimal Risk)
-1. Add lightweight unit tests for `MEVideoEncoderConfig` (ensures no regressions before deeper structural refactors).
-2. Then proceed to extract a `MEFilterPipeline` class (move: prepareVideoFilterWith + pullFilteredFrame logic).
-
-## Branch & Merge Notes
-- Current branch: `feature/type-safe-config` (not yet merged into `work`).
-- Ensure no parallel changes to `videoEncoderSetting` assumptions before merging.
-- After adding tests, consider merging this phase to reduce divergence.
-
-## Changelog Summary (for future PR)
-- feat(config): type-safe video encoder config and codec kind enum
-- refactor(config): migrated MEManager to use typed config (fps/bitrate/size/PAR/options/params)
+## Changelog Summary (for PR)
+- feat(config): type-safe `MEVideoEncoderConfig` and `METypes` enum
 - feat(config): bitrate string parsing + validation issue logging
-- feat(error): MEErrorFormatter integration (encoder + filter graph)
-- fix(thread-safety): synchronized getter/setter for videoEncoderConfig
+- feat(error): `MEErrorFormatter` for encoder/filter graph errors
+- fix(thread-safety): synchronized getter/setter for `videoEncoderConfig`
+- test(config): `MEVideoEncoderConfig` unit tests (parsing, trimming, overflow, dedup)
+- chore: include guards and project file updates
 
-## Quick Reference Commands
-
-## Recent Priority A Internal Refactors (METranscoder)
-1. Split export flow into helper methods (me_prepareExportSession / me_configureWriterAndPrepareChannels / me_startIOAndWait / me_finalizeSession).
-2. Extract shared audio bitrate/layout adjustment helper (MEAdjustAudioBitrateIfNeeded) reducing duplication.
-3. Centralized NSError creation via MECreateError; simplified post: helper.
-4. Moved progress calculation to MEProgressUtil (progressPercentForSampleBuffer:start:end:).
-5. Constantized temporary file cleanup parameters (kMETempFileMaxAge, kMETempFileMarker) for clarity.
-
-Pending follow-ups (not yet started):
-- Unify naming (rwDidStarted → didStartRW; rwDidFinished → didFinishRW).
-- State flag thread-safety review (writerIsBusy/finalSuccess/finalError/cancelled) potential dedicated sync primitive.
-- Reader/Writer addInput/addOutput utility wrappers.
-- Further extraction of audio layout parsing into standalone utility module if more evolution required.
-
-To list commits in this branch:
-```
-git log work..feature/type-safe-config --oneline
-```
-To rebase onto latest work before continuing:
-```
-git checkout feature/type-safe-config
-git fetch origin
-git rebase origin/work
-```
-To start next refactor phase (example):
-```
-# Example: begin pipeline extraction
-# (You would then request: "Extract filter pipeline from MEManager")
-```
-
-<!-- Additional completed items discovered in feature/type-safe-config -->
-
-### Additional completed items (found in branch)
-
-- Project & test enhancements
-  - A test target and `xctest` plan were added (`movencoder2Tests`) along with plist auto-generation for the test target.
-  - Unit tests for `MEVideoEncoderConfig` were added (bitrate parsing, param trimming, overflow handling, empty params, deduplication).
-
-- Utility & build hygiene
-  - `MECreateError` helper was introduced in `METranscoder` to centralize NSError creation for FFmpeg-related failures.
-  - Include guards were added to several header files to address build/compile warnings.
-  - Xcode project updates: uses `$(SRCROOT)` and includes newly added files/folders.
-  - Minor fixes: header import and nullability warning fixes.
-
-- MEErrorFormatter status
-  - `MEErrorFormatter` has been integrated for encoder open failures and filter graph errors; additional FFmpeg return sites (frame allocation, avcodec_send_frame / avcodec_receive_packet, buffer add) remain to be expanded (see Pending).
+## Recent commits (detailed short list)
+(Selected commits from 2025-09-27 relevant to this refactor)
+- be217a3  test: add MEVideoEncoderConfig edge-case tests; warn on x264/x265 param mismatch
+- f67e795 docs(refactor): update refactor-progress.md with items implemented in feature/type-safe-config
+- 5828bb9 Add include guards to four header files
+- ed0471b docs: update refactor progress with METranscoder priority A steps
+- 4ca9007 Fix header import issue.
+- 1a3dd32 refactor: constantize temp file cleanup parameters (Step 5)
+- c35846b refactor: extract progress calculation to MEProgressUtil (Step 4)
+- 67eeabd refactor: introduce MECreateError helper and simplify post: (Step 3)
+- 77a4e4c refactor: extract shared audio bitrate/layout helper (Step 2)
+- 20f5582 test(config): add MEVideoEncoderConfig unit tests & finalize parse issues
+- 8a8bd1e fix(thread-safety): provide explicit synchronized getter/setter for atomic videoEncoderConfig
+- 5965ca5 feat(error): use MEErrorFormatter for filter graph errors and make config summary one-time
+- c1429bb feat(error): integrate MEErrorFormatter for encoder open failure and add one-time config issues summary
+- c24d959 feat(config+error): validate x264/x265 params (trim colons/whitespace) and introduce MEErrorFormatter utility
+- 4769720 refactor(config): clean validation logic, de-duplicate issues, add bitrate=0 warning
+- 4fac85e feat(config): add bitrate string parsing (k/M suffix) and verbose logging of config issues
+- f4e2ee1 feat(config): introduce MEVideoEncoderConfig and codec kind enum
 
 ---
 End of progress log.
