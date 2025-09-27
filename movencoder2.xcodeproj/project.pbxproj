@@ -30,6 +30,36 @@
 		16B81260218D754600E24173 /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125F218D754600E24173 /* METranscoder.m */; };
 		16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */; };
 		16C1DAEA2E87D47600DD415F /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */; };
+		16C1DAEF2E87F02000DD415F /* MEVideoEncoderConfigTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAEB2E87EF1F00DD415F /* MEVideoEncoderConfigTests.m */; };
+		16C1DAF42E87F0A000DD415F /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16C1DAF32E87F0A000DD415F /* XCTest.framework */; };
+		16C1DAFD2E87F28B00DD415F /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CA26DC75D500E7DBB8 /* libbz2.dylib */; };
+		16C1DAFE2E87F29200DD415F /* liblzma.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C826DC75D500E7DBB8 /* liblzma.dylib */; };
+		16C1DAFF2E87F29800DD415F /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C926DC75D500E7DBB8 /* libz.dylib */; };
+		16C1DB002E87F29E00DD415F /* libx265.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D726DC768F00E7DBB8 /* libx265.dylib */; };
+		16C1DB012E87F2A500DD415F /* libx264.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D026DC768F00E7DBB8 /* libx264.dylib */; };
+		16C1DB022E87F2AA00DD415F /* libswscale.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CF26DC768F00E7DBB8 /* libswscale.dylib */; };
+		16C1DB032E87F2B100DD415F /* libswresample.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D626DC768F00E7DBB8 /* libswresample.dylib */; };
+		16C1DB042E87F2B700DD415F /* libavutil.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D526DC768F00E7DBB8 /* libavutil.dylib */; };
+		16C1DB052E87F2C000DD415F /* libavformat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D326DC768F00E7DBB8 /* libavformat.dylib */; };
+		16C1DB062E87F2C600DD415F /* libavfilter.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D126DC768F00E7DBB8 /* libavfilter.dylib */; };
+		16C1DB072E87F2CC00DD415F /* libavdevice.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D426DC768F00E7DBB8 /* libavdevice.dylib */; };
+		16C1DB082E87F2D200DD415F /* libavcodec.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D826DC768F00E7DBB8 /* libavcodec.dylib */; };
+		16C1DB092E87F32D00DD415F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B81254218D701000E24173 /* main.m */; };
+		16C1DB0A2E87F32D00DD415F /* METranscoder+paramParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62482E6C86BD00152AD8 /* METranscoder+paramParser.m */; };
+		16C1DB0B2E87F32D00DD415F /* SBChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CE321A922C1000EEC78 /* SBChannel.m */; };
+		16C1DB0C2E87F32D00DD415F /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
+		16C1DB0D2E87F32D00DD415F /* MEManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CF021B37DCD000EEC78 /* MEManager.m */; };
+		16C1DB0E2E87F32D00DD415F /* MEOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CED21A92DD1000EEC78 /* MEOutput.m */; };
+		16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */; };
+		16C1DB102E87F32D00DD415F /* METranscoder+prepareChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62492E6C86BD00152AD8 /* METranscoder+prepareChannels.m */; };
+		16C1DB112E87F32D00DD415F /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1613EE162E69BB01001F7E56 /* MEAudioConverter.m */; };
+		16C1DB122E87F32D00DD415F /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125F218D754600E24173 /* METranscoder.m */; };
+		16C1DB132E87F32D00DD415F /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */; };
+		16C1DB142E87F32D00DD415F /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125B218D72AD00E24173 /* monitorUtil.m */; };
+		16C1DB152E87F32D00DD415F /* MEUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 169986E921F324F600072E5D /* MEUtils.m */; };
+		16C1DB162E87F32D00DD415F /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
+		16C1DB172E87F32D00DD415F /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CEA21A92DC6000EEC78 /* MEInput.m */; };
+		16C1DB182E87F32D00DD415F /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
 		16CA58622E7850420080658C /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
 		16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
 		16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
@@ -90,6 +120,10 @@
 		16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEVideoEncoderConfig.m; sourceTree = "<group>"; };
 		16C1DAE82E87D47600DD415F /* MEErrorFormatter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEErrorFormatter.h; sourceTree = "<group>"; };
 		16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEErrorFormatter.m; sourceTree = "<group>"; };
+		16C1DAEB2E87EF1F00DD415F /* MEVideoEncoderConfigTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEVideoEncoderConfigTests.m; sourceTree = "<group>"; };
+		16C1DAF32E87F0A000DD415F /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = movencoder2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		16C1DB192E87F36800DD415F /* movencoder2Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = movencoder2Tests.xctestplan; sourceTree = "<group>"; };
 		16CA58602E7850420080658C /* MESecureLogging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESecureLogging.h; sourceTree = "<group>"; };
 		16CA58612E7850420080658C /* MESecureLogging.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESecureLogging.m; sourceTree = "<group>"; };
 		16D36C9222B5B4D7006E3DBF /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
@@ -118,6 +152,26 @@
 				1654A0CB26DC75D500E7DBB8 /* liblzma.dylib in Frameworks */,
 				1654A0DE26DC768F00E7DBB8 /* libavdevice.dylib in Frameworks */,
 				1654A0CC26DC75D500E7DBB8 /* libz.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		16C1DAF52E87F0A000DD415F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				16C1DB052E87F2C000DD415F /* libavformat.dylib in Frameworks */,
+				16C1DAF42E87F0A000DD415F /* XCTest.framework in Frameworks */,
+				16C1DB042E87F2B700DD415F /* libavutil.dylib in Frameworks */,
+				16C1DAFF2E87F29800DD415F /* libz.dylib in Frameworks */,
+				16C1DAFE2E87F29200DD415F /* liblzma.dylib in Frameworks */,
+				16C1DB072E87F2CC00DD415F /* libavdevice.dylib in Frameworks */,
+				16C1DB062E87F2C600DD415F /* libavfilter.dylib in Frameworks */,
+				16C1DAFD2E87F28B00DD415F /* libbz2.dylib in Frameworks */,
+				16C1DB012E87F2A500DD415F /* libx264.dylib in Frameworks */,
+				16C1DB082E87F2D200DD415F /* libavcodec.dylib in Frameworks */,
+				16C1DB022E87F2AA00DD415F /* libswscale.dylib in Frameworks */,
+				16C1DB002E87F29E00DD415F /* libx265.dylib in Frameworks */,
+				16C1DB032E87F2B100DD415F /* libswresample.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,8 +230,10 @@
 			children = (
 				16A9573922C05AC8008868AF /* resource */,
 				16B81253218D701000E24173 /* movencoder2 */,
+				16C1DAEC2E87EF1F00DD415F /* movencoder2Tests */,
 				16B81252218D701000E24173 /* Products */,
 				16AD45BF21965FB500A0BB95 /* Frameworks */,
+				16C1DAFC2E87F21B00DD415F /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -185,6 +241,7 @@
 			isa = PBXGroup;
 			children = (
 				16B81251218D701000E24173 /* movencoder2 */,
+				16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -235,6 +292,23 @@
 			path = Config;
 			sourceTree = "<group>";
 		};
+		16C1DAEC2E87EF1F00DD415F /* movencoder2Tests */ = {
+			isa = PBXGroup;
+			children = (
+				16C1DB192E87F36800DD415F /* movencoder2Tests.xctestplan */,
+				16C1DAEB2E87EF1F00DD415F /* MEVideoEncoderConfigTests.m */,
+			);
+			path = movencoder2Tests;
+			sourceTree = "<group>";
+		};
+		16C1DAFC2E87F21B00DD415F /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				16C1DAF32E87F0A000DD415F /* XCTest.framework */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -255,6 +329,22 @@
 			productReference = 16B81251218D701000E24173 /* movencoder2 */;
 			productType = "com.apple.product-type.tool";
 		};
+		16C1DAED2E87F02000DD415F /* movencoder2Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 16C1DAF22E87F02000DD415F /* Build configuration list for PBXNativeTarget "movencoder2Tests" */;
+			buildPhases = (
+				16C1DAEE2E87F02000DD415F /* Sources */,
+				16C1DAF52E87F0A000DD415F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = movencoder2Tests;
+			productName = movencoder2Tests;
+			productReference = 16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -267,6 +357,9 @@
 				TargetAttributes = {
 					16B81250218D701000E24173 = {
 						CreatedOnToolsVersion = 10.0;
+					};
+					16C1DAED2E87F02000DD415F = {
+						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
@@ -284,6 +377,7 @@
 			projectRoot = "";
 			targets = (
 				16B81250218D701000E24173 /* movencoder2 */,
+				16C1DAED2E87F02000DD415F /* movencoder2Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -309,6 +403,30 @@
 				16C1DAEA2E87D47600DD415F /* MEErrorFormatter.m in Sources */,
 				16741CEB21A92DC6000EEC78 /* MEInput.m in Sources */,
 				169986EA21F324F600072E5D /* MEUtils.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		16C1DAEE2E87F02000DD415F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				16C1DB092E87F32D00DD415F /* main.m in Sources */,
+				16C1DB0A2E87F32D00DD415F /* METranscoder+paramParser.m in Sources */,
+				16C1DB0B2E87F32D00DD415F /* SBChannel.m in Sources */,
+				16C1DB0C2E87F32D00DD415F /* MECommon.m in Sources */,
+				16C1DB0D2E87F32D00DD415F /* MEManager.m in Sources */,
+				16C1DB0E2E87F32D00DD415F /* MEOutput.m in Sources */,
+				16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */,
+				16C1DB102E87F32D00DD415F /* METranscoder+prepareChannels.m in Sources */,
+				16C1DB112E87F32D00DD415F /* MEAudioConverter.m in Sources */,
+				16C1DB122E87F32D00DD415F /* METranscoder.m in Sources */,
+				16C1DB132E87F32D00DD415F /* MEErrorFormatter.m in Sources */,
+				16C1DB142E87F32D00DD415F /* monitorUtil.m in Sources */,
+				16C1DB152E87F32D00DD415F /* MEUtils.m in Sources */,
+				16C1DB162E87F32D00DD415F /* parseUtil.m in Sources */,
+				16C1DB172E87F32D00DD415F /* MEInput.m in Sources */,
+				16C1DB182E87F32D00DD415F /* MESecureLogging.m in Sources */,
+				16C1DAEF2E87F02000DD415F /* MEVideoEncoderConfigTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -479,6 +597,61 @@
 			};
 			name = Release;
 		};
+		16C1DAF02E87F02000DD415F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/usr/local/include/**",
+					"$(SRCROOT)/**",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/lib,
+					/opt/local/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		16C1DAF12E87F02000DD415F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/usr/local/include/**",
+					"$(SRCROOT)/**",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/lib,
+					/opt/local/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -496,6 +669,15 @@
 			buildConfigurations = (
 				16B81259218D701000E24173 /* Debug */,
 				16B8125A218D701000E24173 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		16C1DAF22E87F02000DD415F /* Build configuration list for PBXNativeTarget "movencoder2Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				16C1DAF02E87F02000DD415F /* Debug */,
+				16C1DAF12E87F02000DD415F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

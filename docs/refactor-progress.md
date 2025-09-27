@@ -38,7 +38,7 @@ Branch: feature/type-safe-config (based off `work`)
 | Error Handling | Apply `MEErrorFormatter` to more FFmpeg return sites (frame alloc, send/receive frame, buffer add). |
 | Pipeline Refactor | Split MEManager into distinct components (FilterPipeline / EncoderPipeline / SampleBufferFactory). |
 | State Management | Consolidate filter/encoder flags into a single state struct / state machine doc. |
-| Tests | Add unit tests for config parsing, bitrate normalization, issue collection. |
+| Tests | Phase 1 complete: parsing & normalization tests (bitrate numeric/k/M/decimal, invalid & zero, overflow detection, frameRate, WxH, PAR, x264/x265 trimming, empty param issues, multi-issue coexistence). Next: invalid PAR edge cases & semantic validation. |
 | Docs | Architect diagram & pipeline state doc (planned: `docs/dev/architecture.md`). |
 | CLI | Potential `--dump-config` or `--stats` option (not started). |
 | Performance | Back-off tuning for EAGAIN, metrics collection. |

@@ -102,8 +102,6 @@
             [issues addObject:@"codecBitRate resolved to 0 (check input)."];
         }
 
-        cfg.issues = issues.count ? [[NSOrderedSet orderedSetWithArray:issues] array] : @[];
-
         NSDictionary *opts = dict[kMEVECodecOptionsKey];
         if ([opts isKindOfClass:[NSDictionary class]] && opts.count) {
             // Filter only string->string
@@ -121,7 +119,13 @@
             if (trim.length) {
                 if ([trim hasPrefix:@":"]) trim = [trim substringFromIndex:1];
                 if ([trim hasSuffix:@":"]) trim = [trim substringToIndex:trim.length-1];
-                cfg.x264Params = trim;
+                // After removing edge colons trimming again to catch ":   :" forms
+                trim = [trim stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                if (trim.length) {
+                    cfg.x264Params = trim;
+                } else {
+                    [issues addObject:@"x264_params provided but empty after trimming."];
+                }
             } else {
                 [issues addObject:@"x264_params provided but empty after trimming."];
             }
@@ -132,13 +136,24 @@
             if (trim.length) {
                 if ([trim hasPrefix:@":"]) trim = [trim substringFromIndex:1];
                 if ([trim hasSuffix:@":"]) trim = [trim substringToIndex:trim.length-1];
-                cfg.x265Params = trim;
+                trim = [trim stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                if (trim.length) {
+                    cfg.x265Params = trim;
+                } else {
+                    [issues addObject:@"x265_params provided but empty after trimming."];
+                }
             } else {
                 [issues addObject:@"x265_params provided but empty after trimming."];
             }
         }
         NSValue *clean = dict[kMEVECleanApertureKey];
         if ([clean isKindOfClass:[NSValue class]]) cfg.cleanAperture = clean;
+        // Finalize issues after all parsing (including x264/x265 params)
+        if (issues.count) {
+            cfg.issues = [[NSOrderedSet orderedSetWithArray:issues] array];
+        } else {
+            cfg.issues = @[];
+        }
     }
     return cfg;
 }
