@@ -104,5 +104,22 @@ To start next refactor phase (example):
 # (You would then request: "Extract filter pipeline from MEManager")
 ```
 
+<!-- Additional completed items discovered in feature/type-safe-config -->
+
+### Additional completed items (found in branch)
+
+- Project & test enhancements
+  - A test target and `xctest` plan were added (`movencoder2Tests`) along with plist auto-generation for the test target.
+  - Unit tests for `MEVideoEncoderConfig` were added (bitrate parsing, param trimming, overflow handling, empty params, deduplication).
+
+- Utility & build hygiene
+  - `MECreateError` helper was introduced in `METranscoder` to centralize NSError creation for FFmpeg-related failures.
+  - Include guards were added to several header files to address build/compile warnings.
+  - Xcode project updates: uses `$(SRCROOT)` and includes newly added files/folders.
+  - Minor fixes: header import and nullability warning fixes.
+
+- MEErrorFormatter status
+  - `MEErrorFormatter` has been integrated for encoder open failures and filter graph errors; additional FFmpeg return sites (frame allocation, avcodec_send_frame / avcodec_receive_packet, buffer add) remain to be expanded (see Pending).
+
 ---
 End of progress log.
