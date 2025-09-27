@@ -29,6 +29,7 @@
 #import "MEUtils.h"
 #import "MESecureLogging.h"
 #import "Config/MEVideoEncoderConfig.h"
+#import "MEErrorFormatter.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -185,6 +186,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setVideoEncoderSetting:(NSMutableDictionary *)setting
 {
+    // One-time verbose summary of configuration issues (if any)
+    if (self.verbose) {
+        MEVideoEncoderConfig *cfgOnce = self.videoEncoderConfig;
+        if (cfgOnce.issues.count) {
+            SecureDebugLogf(@"[MEManager][ConfigSummary] %lu issue(s)", (unsigned long)cfgOnce.issues.count);
+            for (NSString *msg in cfgOnce.issues) {
+                SecureDebugLogf(@"[MEManager][ConfigIssue] %@", msg);
+            }
+        }
+    }
+
     videoEncoderSetting = setting;
     videoEncoderConfig = nil; // reset cache
 }
@@ -657,7 +669,8 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     }
     ret = avcodec_open2(avctx, codec, &opts);
     if (ret < 0) {
-        SecureErrorLogf(@"[MEManager] ERROR: Cannot open video encoder.");
+        NSString *fferr = [MEErrorFormatter stringFromFFmpegCode:ret];
+        SecureErrorLogf(@"[MEManager] ERROR: Cannot open video encoder. %@", fferr);
         goto end;
     }
     SecureLogf(@"");
