@@ -116,9 +116,27 @@
             if (filtered.count) cfg.codecOptions = [filtered copy];
         }
         NSString *x264 = dict[kMEVEx264_paramsKey];
-        if ([x264 isKindOfClass:[NSString class]] && x264.length) cfg.x264Params = x264;
+        if ([x264 isKindOfClass:[NSString class]]) {
+            NSString *trim = [x264 stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            if (trim.length) {
+                if ([trim hasPrefix:@":"]) trim = [trim substringFromIndex:1];
+                if ([trim hasSuffix:@":"]) trim = [trim substringToIndex:trim.length-1];
+                cfg.x264Params = trim;
+            } else {
+                [issues addObject:@"x264_params provided but empty after trimming."];
+            }
+        }
         NSString *x265 = dict[kMEVEx265_paramsKey];
-        if ([x265 isKindOfClass:[NSString class]] && x265.length) cfg.x265Params = x265;
+        if ([x265 isKindOfClass:[NSString class]]) {
+            NSString *trim = [x265 stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            if (trim.length) {
+                if ([trim hasPrefix:@":"]) trim = [trim substringFromIndex:1];
+                if ([trim hasSuffix:@":"]) trim = [trim substringToIndex:trim.length-1];
+                cfg.x265Params = trim;
+            } else {
+                [issues addObject:@"x265_params provided but empty after trimming."];
+            }
+        }
         NSValue *clean = dict[kMEVECleanApertureKey];
         if ([clean isKindOfClass:[NSValue class]]) cfg.cleanAperture = clean;
     }
