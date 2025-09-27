@@ -238,6 +238,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation METranscoder (export)
 
+#pragma mark - Error Helper
+
+static inline NSError* MECreateError(NSString* description, NSString* reason, NSInteger code) {
+    if (!description) description = @"unknown description";
+    if (!reason) reason = @"unknown failureReason";
+    NSString *domain = @"com.MyCometG3.movencoder2.ErrorDomain";
+    NSDictionary *userInfo = @{NSLocalizedDescriptionKey : description,
+                               NSLocalizedFailureReasonErrorKey : reason};
+    return [NSError errorWithDomain:domain code:code userInfo:userInfo];
+}
+
 // MARK: - private properties
 
 - (dispatch_queue_t _Nullable) controlQueue
@@ -590,14 +601,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
            to:(NSError * _Nullable * _Nullable)error
 {
     if (error) {
-        if (!description) description = @"unknown description";
-        if (!failureReason) failureReason = @"unknown failureReason";
-        
-        NSString *domain = @"com.MyCometG3.movencoder2.ErrorDomain";
-        NSInteger code = (NSInteger)result;
-        NSDictionary *userInfo = @{NSLocalizedDescriptionKey : description,
-                                   NSLocalizedFailureReasonErrorKey : failureReason,};
-        *error = [NSError errorWithDomain:domain code:code userInfo:userInfo];
+        *error = MECreateError(description, failureReason, result);
         return YES;
     }
     return NO;
