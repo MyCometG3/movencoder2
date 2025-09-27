@@ -658,11 +658,14 @@ finalize:
 - (void) cleanupTemporaryFilesForOutput:(NSURL*)outputURL
 {
     if (!outputURL) return;
-    
+
+    static const NSTimeInterval kMETempFileMaxAge = 60.0; // seconds
+    static NSString* const kMETempFileMarker = @".sb-";   // fragment inside temp file name
+
     NSFileManager* fm = [NSFileManager defaultManager];
     NSURL* outputDirURL = [outputURL URLByDeletingLastPathComponent];
     NSString* outputFilename = [outputURL lastPathComponent];
-    
+
     NSError* error = nil;
     NSArray<NSURLResourceKey>* keys = @[NSURLContentModificationDateKey, NSURLNameKey];
     NSArray<NSURL*>* dirContents = [fm contentsOfDirectoryAtURL:outputDirURL
@@ -673,41 +676,29 @@ finalize:
         SecureErrorLogf(@"[METranscoder] Failed to list directory contents for temp file cleanup: %@", error.localizedDescription);
         return;
     }
-    
-    // Sort all files by modification date first (most recent first)
+
     NSArray<NSURL*>* sortedFiles = [dirContents sortedArrayUsingComparator:^NSComparisonResult(NSURL* _Nonnull url1, NSURL* _Nonnull url2) {
-        NSDate* date1 = nil;
-        NSDate* date2 = nil;
+        NSDate* date1 = nil; NSDate* date2 = nil;
         [url1 getResourceValue:&date1 forKey:NSURLContentModificationDateKey error:nil];
         [url2 getResourceValue:&date2 forKey:NSURLContentModificationDateKey error:nil];
-        return [date2 compare:date1]; // Most recent first
+        return [date2 compare:date1];
     }];
-    
-    // Get the current time for timestamp comparison (allow files created within the last 1 minute)
+
     NSDate* now = [NSDate date];
-    NSTimeInterval maxAge = 60; // 1 minute
-    
-    // Filter sorted files for cleanup candidates
     NSMutableArray<NSURL*>* candidateFiles = [NSMutableArray array];
-    
+
     for (NSURL* fileURL in sortedFiles) {
-        NSString* filename = nil;
-        NSDate* modDate = nil;
-        
+        NSString* filename = nil; NSDate* modDate = nil;
         if ([fileURL getResourceValue:&filename forKey:NSURLNameKey error:nil] &&
             [fileURL getResourceValue:&modDate forKey:NSURLContentModificationDateKey error:nil]) {
-            
-            // Timestamp validation first, then filename validation
-            if (modDate && [now timeIntervalSinceDate:modDate] <= maxAge) {
-                // Check if this looks like an AVAssetWriter temporary file for our output (concatenated check)
-                if ([filename hasPrefix:outputFilename] && [filename containsString:@".sb-"]) {
+            if (modDate && [now timeIntervalSinceDate:modDate] <= kMETempFileMaxAge) {
+                if ([filename hasPrefix:outputFilename] && [filename containsString:kMETempFileMarker]) {
                     [candidateFiles addObject:fileURL];
                 }
             }
         }
     }
-    
-    // Remove the temporary files (already sorted by timestamp)
+
     for (NSURL* fileURL in candidateFiles) {
         NSString* filename = [fileURL lastPathComponent];
         BOOL removed = [fm removeItemAtURL:fileURL error:&error];
