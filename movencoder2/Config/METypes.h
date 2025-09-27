@@ -7,6 +7,9 @@
 //  This file is part of movencoder2 (GPLv2 or later).
 //
 
+#ifndef METypes_h
+#define METypes_h
+
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -24,3 +27,5 @@ static inline MEVideoCodecKind MEVideoCodecKindFromName(NSString *name) {
 }
 
 NS_ASSUME_NONNULL_END
+
+#endif /* METypes_h */

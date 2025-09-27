@@ -7,6 +7,9 @@
 //  Copyright © 2025.
 //
 
+#ifndef MEProgressUtil_h
+#define MEProgressUtil_h
+
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
 #import <CoreVideo/CoreVideo.h>
@@ -21,3 +24,5 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif /* MEProgressUtil_h */

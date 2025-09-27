@@ -7,6 +7,9 @@
 //  This file is part of movencoder2 (GPLv2 or later).
 //
 
+#ifndef MEErrorFormatter_h
+#define MEErrorFormatter_h
+
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -17,3 +20,5 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif /* MEErrorFormatter_h */

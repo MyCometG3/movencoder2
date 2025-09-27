@@ -7,6 +7,9 @@
 //  This file is part of movencoder2 (GPLv2 or later).
 //
 
+#ifndef MEVideoEncoderConfig_h
+#define MEVideoEncoderConfig_h
+
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
 #import "METypes.h"
@@ -34,3 +37,5 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif /* MEVideoEncoderConfig_h */
