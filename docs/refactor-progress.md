@@ -74,6 +74,20 @@ If you want a quick status recap first:
 - fix(thread-safety): synchronized getter/setter for videoEncoderConfig
 
 ## Quick Reference Commands
+
+## Recent Priority A Internal Refactors (METranscoder)
+1. Split export flow into helper methods (me_prepareExportSession / me_configureWriterAndPrepareChannels / me_startIOAndWait / me_finalizeSession).
+2. Extract shared audio bitrate/layout adjustment helper (MEAdjustAudioBitrateIfNeeded) reducing duplication.
+3. Centralized NSError creation via MECreateError; simplified post: helper.
+4. Moved progress calculation to MEProgressUtil (progressPercentForSampleBuffer:start:end:).
+5. Constantized temporary file cleanup parameters (kMETempFileMaxAge, kMETempFileMarker) for clarity.
+
+Pending follow-ups (not yet started):
+- Unify naming (rwDidStarted → didStartRW; rwDidFinished → didFinishRW).
+- State flag thread-safety review (writerIsBusy/finalSuccess/finalError/cancelled) potential dedicated sync primitive.
+- Reader/Writer addInput/addOutput utility wrappers.
+- Further extraction of audio layout parsing into standalone utility module if more evolution required.
+
 To list commits in this branch:
 ```
 git log work..feature/type-safe-config --oneline

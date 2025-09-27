@@ -252,3 +252,18 @@ Or to reduce audio by 2dB:
     reference: x265 -h; x265 --fullhelp;
 
 ---
+
+
+### Refactoring Progress (2025-09)
+The following internal refactoring steps were completed (Priority A set):
+1. Split exportCustomOnError into helper steps (me_prepareExportSession / me_configureWriterAndPrepareChannels / me_startIOAndWait / me_finalizeSession) for readability and maintenance.
+2. Extracted shared audio bitrate/layout helper (MEAdjustAudioBitrateIfNeeded) to remove duplicated bitrate adjustment logic in audio channel preparation paths.
+3. Centralized error creation via MECreateError helper and simplified post:reason:code:to: implementation.
+4. Extracted progress calculation into MEProgressUtil (progressPercentForSampleBuffer:start:end:) and removed inline static calculator.
+5. Constantized temporary file cleanup criteria (kMETempFileMaxAge, kMETempFileMarker) for clarity.
+
+Next candidate tasks (not yet done):
+- Step B items: thread-safety clarification of status flags, utility for reader/writer add operations, further layout parsing consolidation.
+- Additional naming consistency (rwDidStarted/rwDidFinished), logging unification, and parameter key namespace adjustments.
+
+This section helps future continuation after interruption.
