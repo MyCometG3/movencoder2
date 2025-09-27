@@ -117,7 +117,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) AVAssetWriterStatus writerStatus; // MEInput
 @property (readwrite) AVAssetReaderStatus readerStatus; // MEOutput
 
-@property (atomic, strong, readwrite) MEVideoEncoderConfig *videoEncoderConfig; // lazy from videoEncoderSetting
+@property (atomic, strong, readwrite, nullable) MEVideoEncoderConfig *videoEncoderConfig; // lazy from videoEncoderSetting
 @property (atomic, assign) BOOL configIssuesLogged;
 
 @end
@@ -203,12 +203,21 @@ NS_ASSUME_NONNULL_BEGIN
     videoEncoderConfig = nil; // reset cache
 }
 
-- (MEVideoEncoderConfig *)videoEncoderConfig
+- (MEVideoEncoderConfig * _Nullable)videoEncoderConfig
 {
-    if (!videoEncoderConfig && videoEncoderSetting) {
-        videoEncoderConfig = [MEVideoEncoderConfig configFromLegacyDictionary:videoEncoderSetting error:NULL];
+    @synchronized (self) {
+        if (!videoEncoderConfig && videoEncoderSetting) {
+            videoEncoderConfig = [MEVideoEncoderConfig configFromLegacyDictionary:videoEncoderSetting error:NULL];
+        }
+        return videoEncoderConfig;
     }
-    return videoEncoderConfig;
+}
+
+- (void)setVideoEncoderConfig:(MEVideoEncoderConfig * _Nullable)config
+{
+    @synchronized (self) {
+        videoEncoderConfig = config; // explicit setter to satisfy atomic contract
+    }
 }
 
 + (instancetype) new
@@ -344,6 +353,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     int ret = 0;
     const AVCodec* codec = NULL;
     AVDictionary* opts = NULL;
+    MEVideoEncoderConfig *cfgLog = nil;
     
     if (self.videoEncoderIsReady)
         return TRUE;
@@ -663,7 +673,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
     // Initialize encoder
     SecureLogf(@"");
     // Log any soft validation issues (verbose only)
-    MEVideoEncoderConfig *cfgLog = self.videoEncoderConfig;
+    cfgLog = self.videoEncoderConfig;
     if (self.verbose && cfgLog.issues.count) {
         for (NSString *msg in cfgLog.issues) {
             SecureDebugLogf(@"[MEManager][ConfigIssue] %@", msg);
