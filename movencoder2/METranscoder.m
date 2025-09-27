@@ -554,17 +554,7 @@ finalize:
     }
 }
 
-static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime endTime) {
-    
-    CMTime pts = CMSampleBufferGetPresentationTimeStamp(buffer);
-    CMTime dur = CMSampleBufferGetDuration(buffer);
-    if (CMTIME_IS_NUMERIC(dur))
-        pts = CMTimeAdd(pts, dur);
-    Float64 offsetSec = CMTimeGetSeconds(CMTimeSubtract(pts, startTime));
-    Float64 lenSec = CMTimeGetSeconds(CMTimeSubtract(endTime, startTime));
-    Float64 progress = (lenSec > 0.0) ? (offsetSec/lenSec) : 0.0;
-    return progress * 100.0;
-}
+#import "MEProgressUtil.h"
 
 /**
  Enqueue progressCallback <SBChannelDelegate>
@@ -577,7 +567,7 @@ static float calcProgressOf(CMSampleBufferRef buffer, CMTime startTime, CMTime e
     dispatch_queue_t queue = self.callbackQueue;
     progress_block_t block = self.progressCallback;
     if (queue && block) {
-        float progress = calcProgressOf(sb, self.startTime, self.endTime);
+        float progress = [MEProgressUtil progressPercentForSampleBuffer:sb start:self.startTime end:self.endTime];
         float pts = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(sb));
         float dts = CMTimeGetSeconds(CMSampleBufferGetDecodeTimeStamp(sb));
         int count = channel.count;
