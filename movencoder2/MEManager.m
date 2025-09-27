@@ -28,7 +28,7 @@
 #import "MEManager.h"
 #import "MEUtils.h"
 #import "MESecureLogging.h"
-#import "MEVideoEncoderConfig.h"
+#import "Config/MEVideoEncoderConfig.h"
 
 /* =================================================================================== */
 // MARK: -
