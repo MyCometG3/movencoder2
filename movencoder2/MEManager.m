@@ -185,7 +185,7 @@ NS_ASSUME_NONNULL_BEGIN
     return self;
 }
 
-- (void)setVideoEncoderSetting:(NSMutableDictionary *)setting
+- (void)setVideoEncoderSetting:(NSMutableDictionary * _Nullable)setting
 {
     // One-time verbose summary of configuration issues (if any)
     if (self.verbose && !self.configIssuesLogged) {
