@@ -3,6 +3,7 @@
 //  movencoder2
 //
 //  Lightweight adapter without changing existing behavior.
+//  TS-3: Collect simple validation issues for verbose logging.
 //
 //  This file is part of movencoder2 (GPLv2 or later).
 //
@@ -24,6 +25,7 @@
 @property (nonatomic, copy, readwrite, nullable) NSString *x264Params;
 @property (nonatomic, copy, readwrite, nullable) NSString *x265Params;
 @property (nonatomic, strong, readwrite, nullable) NSValue *cleanAperture;
+@property (nonatomic, copy, readwrite) NSArray<NSString*> *issues;
 @end
 
 @implementation MEVideoEncoderConfig
@@ -31,23 +33,41 @@
 + (instancetype)configFromLegacyDictionary:(NSDictionary*)dict error:(NSError* _Nullable * _Nullable)error {
     MEVideoEncoderConfig *cfg = [MEVideoEncoderConfig new];
     if (![dict isKindOfClass:[NSDictionary class]]) {
+        cfg.issues = @["Legacy dictionary missing or invalid."];
         return cfg; // empty
     }
+    NSMutableArray<NSString*> *issues = [NSMutableArray array];
     @autoreleasepool {
         NSString *codec = dict[kMEVECodecNameKey];
         if ([codec isKindOfClass:[NSString class]] && codec.length) {
             cfg.rawCodecName = codec;
             cfg.codecKind = MEVideoCodecKindFromName(codec);
         } else {
+        else {
+            [issues addObject:@"codecName is missing or empty."];
+        }
+
             cfg.rawCodecName = @""; // preserve legacy possibility of missing name
             cfg.codecKind = MEVideoCodecKindOther;
         }
         NSValue *fpsValue = dict[kMEVECodecFrameRateKey];
+        else if (fpsValue && !cfg.hasFrameRate) {
+            [issues addObject:@"codecFrameRate is invalid CMTime."];
+        }
+
         if ([fpsValue isKindOfClass:[NSValue class]]) {
             CMTime t = [fpsValue CMTimeValue];
             if (CMTIME_IS_VALID(t) && t.value>0 && t.timescale>0) {
+        else if (sizeVal) {
+            [issues addObject:@"codecWxH has non-positive dimension."];
+        }
+
                 cfg.frameRate = t;
                 cfg.hasFrameRate = YES;
+        else if (parVal) {
+            [issues addObject:@"codecPAR has non-positive values."];
+        }
+
             }
         }
         NSNumber *bitRateNum = dict[kMEVECodecBitRateKey];
@@ -63,6 +83,8 @@
         if ([parVal isKindOfClass:[NSValue class]]) {
             CGSize p = [parVal sizeValue];
             if (p.width>0 && p.height>0) { cfg.pixelAspect = p; cfg.hasPixelAspect = YES; }
+    cfg.issues = issues.count ? [issues copy] : @[];
+
         }
         NSDictionary *opts = dict[kMEVECodecOptionsKey];
         if ([opts isKindOfClass:[NSDictionary class]] && opts.count) {

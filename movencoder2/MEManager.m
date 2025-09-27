@@ -28,7 +28,7 @@
 #import "MEManager.h"
 #import "MEUtils.h"
 #import "MESecureLogging.h"
-#import "Config/MEVideoEncoderConfig.h"
+#import "MEVideoEncoderConfig.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -235,19 +235,13 @@ static inline BOOL useVideoEncoder(MEManager *obj) {
 static inline BOOL uselibx264(MEManager *obj) {
     if (!useVideoEncoder(obj)) return FALSE;
     MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
-    if (cfg) return (cfg.codecKind == MEVideoCodecKindX264);
-    NSDictionary *videoEncoderSetting = obj->videoEncoderSetting;
-    NSString *codecName = videoEncoderSetting[kMEVECodecNameKey];
-    return ([codecName isEqualToString:@"libx264"]);
+    return (cfg && cfg.codecKind == MEVideoCodecKindX264);
 }
 
 static inline BOOL uselibx265(MEManager *obj) {
     if (!useVideoEncoder(obj)) return FALSE;
     MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
-    if (cfg) return (cfg.codecKind == MEVideoCodecKindX265);
-    NSDictionary *videoEncoderSetting = obj->videoEncoderSetting;
-    NSString *codecName = videoEncoderSetting[kMEVECodecNameKey];
-    return ([codecName isEqualToString:@"libx265"]);
+    return (cfg && cfg.codecKind == MEVideoCodecKindX265);
 }
 
 static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t timeoutMilliseconds) {

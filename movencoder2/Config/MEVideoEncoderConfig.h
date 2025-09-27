@@ -14,6 +14,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface MEVideoEncoderConfig : NSObject
+
+@property (nonatomic, copy, readonly) NSArray<NSString*> *issues; // collected soft validation messages
 @property (nonatomic, copy, readonly) NSString *rawCodecName;
 @property (nonatomic, assign, readonly) MEVideoCodecKind codecKind;
 @property (nonatomic, assign, readonly) CMTime frameRate;          // invalid if not provided
