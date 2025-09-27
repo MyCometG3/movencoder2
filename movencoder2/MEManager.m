@@ -118,6 +118,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) AVAssetReaderStatus readerStatus; // MEOutput
 
 @property (atomic, strong, readwrite) MEVideoEncoderConfig *videoEncoderConfig; // lazy from videoEncoderSetting
+@property (atomic, assign) BOOL configIssuesLogged;
 
 @end
 
@@ -187,13 +188,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setVideoEncoderSetting:(NSMutableDictionary *)setting
 {
     // One-time verbose summary of configuration issues (if any)
-    if (self.verbose) {
+    if (self.verbose && !self.configIssuesLogged) {
         MEVideoEncoderConfig *cfgOnce = self.videoEncoderConfig;
         if (cfgOnce.issues.count) {
-            SecureDebugLogf(@"[MEManager][ConfigSummary] %lu issue(s)", (unsigned long)cfgOnce.issues.count);
+            SecureLogf(@"[MEManager][ConfigSummary] %lu issue(s)", (unsigned long)cfgOnce.issues.count);
             for (NSString *msg in cfgOnce.issues) {
                 SecureDebugLogf(@"[MEManager][ConfigIssue] %@", msg);
             }
+            self.configIssuesLogged = YES;
         }
     }
 
@@ -764,7 +766,7 @@ end:
         ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
                                            args, NULL, filter_graph);
         if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer source");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer source (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
@@ -772,7 +774,7 @@ end:
         const AVFilter *buffersink = avfilter_get_by_name("buffersink");
         buffersink_ctx = avfilter_graph_alloc_filter(filter_graph, buffersink, "out");
         if (!buffersink_ctx) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer sink");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer sink (%@)", [MEErrorFormatter stringFromFFmpegCode:AVERROR_UNKNOWN]);
             goto end;
         }
         
@@ -789,13 +791,13 @@ end:
                              (int)size_bytes,
                              AV_OPT_SEARCH_CHILDREN);
         if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot set output pixel format");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot set output pixel format (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
         ret = avfilter_init_str(buffersink_ctx, NULL);
         if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot initialize buffer sink");
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot initialize buffer sink (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
@@ -831,12 +833,12 @@ end:
         filters_descr = av_strdup([videoFilterString UTF8String]);
         if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
                                             &inputs, &outputs, NULL)) < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot parse filter descriptions. (%d)", ret);
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot parse filter descriptions. %@", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
         
         if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot configure filter graph. (%d)", ret);
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot configure filter graph. %@", [MEErrorFormatter stringFromFFmpegCode:ret]);
             goto end;
         }
     }
