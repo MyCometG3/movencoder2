@@ -28,6 +28,8 @@
 		16B81255218D701000E24173 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B81254218D701000E24173 /* main.m */; };
 		16B8125C218D72AD00E24173 /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125B218D72AD00E24173 /* monitorUtil.m */; };
 		16B81260218D754600E24173 /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125F218D754600E24173 /* METranscoder.m */; };
+		16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */; };
+		16C1DAEA2E87D47600DD415F /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */; };
 		16CA58622E7850420080658C /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
 		16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
 		16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
@@ -83,6 +85,11 @@
 		16B8125D218D72BB00E24173 /* monitorUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = monitorUtil.h; sourceTree = "<group>"; };
 		16B8125E218D754600E24173 /* METranscoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METranscoder.h; sourceTree = "<group>"; };
 		16B8125F218D754600E24173 /* METranscoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscoder.m; sourceTree = "<group>"; };
+		16C1DAE32E87D32700DD415F /* METypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METypes.h; sourceTree = "<group>"; };
+		16C1DAE42E87D32700DD415F /* MEVideoEncoderConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEVideoEncoderConfig.h; sourceTree = "<group>"; };
+		16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEVideoEncoderConfig.m; sourceTree = "<group>"; };
+		16C1DAE82E87D47600DD415F /* MEErrorFormatter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEErrorFormatter.h; sourceTree = "<group>"; };
+		16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEErrorFormatter.m; sourceTree = "<group>"; };
 		16CA58602E7850420080658C /* MESecureLogging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESecureLogging.h; sourceTree = "<group>"; };
 		16CA58612E7850420080658C /* MESecureLogging.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESecureLogging.m; sourceTree = "<group>"; };
 		16D36C9222B5B4D7006E3DBF /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
@@ -185,6 +192,7 @@
 		16B81253218D701000E24173 /* movencoder2 */ = {
 			isa = PBXGroup;
 			children = (
+				16C1DAE62E87D32700DD415F /* Config */,
 				16B81254218D701000E24173 /* main.m */,
 				16D36C9422B5B549006E3DBF /* parseUtil.h */,
 				16D36C9222B5B4D7006E3DBF /* parseUtil.m */,
@@ -192,6 +200,8 @@
 				16B8125B218D72AD00E24173 /* monitorUtil.m */,
 				16ED62412E6BD1F800152AD8 /* MECommon.h */,
 				16ED62422E6BD1F800152AD8 /* MECommon.m */,
+				16C1DAE82E87D47600DD415F /* MEErrorFormatter.h */,
+				16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */,
 				16CA58602E7850420080658C /* MESecureLogging.h */,
 				16CA58612E7850420080658C /* MESecureLogging.m */,
 				16B8125E218D754600E24173 /* METranscoder.h */,
@@ -213,6 +223,16 @@
 				169986E921F324F600072E5D /* MEUtils.m */,
 			);
 			path = movencoder2;
+			sourceTree = "<group>";
+		};
+		16C1DAE62E87D32700DD415F /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				16C1DAE32E87D32700DD415F /* METypes.h */,
+				16C1DAE42E87D32700DD415F /* MEVideoEncoderConfig.h */,
+				16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -282,9 +302,11 @@
 				16CA58622E7850420080658C /* MESecureLogging.m in Sources */,
 				16741CF121B37DCD000EEC78 /* MEManager.m in Sources */,
 				16ED624A2E6C86BD00152AD8 /* METranscoder+prepareChannels.m in Sources */,
+				16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */,
 				16ED624B2E6C86BD00152AD8 /* METranscoder+paramParser.m in Sources */,
 				16B81260218D754600E24173 /* METranscoder.m in Sources */,
 				16B81255218D701000E24173 /* main.m in Sources */,
+				16C1DAEA2E87D47600DD415F /* MEErrorFormatter.m in Sources */,
 				16741CEB21A92DC6000EEC78 /* MEInput.m in Sources */,
 				169986EA21F324F600072E5D /* MEUtils.m in Sources */,
 			);
@@ -422,6 +444,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"/usr/local/include/**",
+					"$(SRCROOT)/**",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -445,6 +468,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"/usr/local/include/**",
+					"$(SRCROOT)/**",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
