@@ -26,6 +26,7 @@
 
 #import "METranscoder+Internal.h"
 #import "MESecureLogging.h"
+#import "MEProgressUtil.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -553,8 +554,6 @@ finalize:
         dispatch_async(queue, block);
     }
 }
-
-#import "MEProgressUtil.h"
 
 /**
  Enqueue progressCallback <SBChannelDelegate>

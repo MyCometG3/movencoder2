@@ -60,6 +60,8 @@
 		16C1DB162E87F32D00DD415F /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
 		16C1DB172E87F32D00DD415F /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CEA21A92DC6000EEC78 /* MEInput.m */; };
 		16C1DB182E87F32D00DD415F /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
+		16C1DB1C2E88168600DD415F /* MEProgressUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB1B2E88168600DD415F /* MEProgressUtil.m */; };
+		16C1DB1D2E88168600DD415F /* MEProgressUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB1B2E88168600DD415F /* MEProgressUtil.m */; };
 		16CA58622E7850420080658C /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
 		16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
 		16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
@@ -124,6 +126,8 @@
 		16C1DAF32E87F0A000DD415F /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = movencoder2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		16C1DB192E87F36800DD415F /* movencoder2Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = movencoder2Tests.xctestplan; sourceTree = "<group>"; };
+		16C1DB1A2E88168600DD415F /* MEProgressUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEProgressUtil.h; sourceTree = "<group>"; };
+		16C1DB1B2E88168600DD415F /* MEProgressUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEProgressUtil.m; sourceTree = "<group>"; };
 		16CA58602E7850420080658C /* MESecureLogging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESecureLogging.h; sourceTree = "<group>"; };
 		16CA58612E7850420080658C /* MESecureLogging.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESecureLogging.m; sourceTree = "<group>"; };
 		16D36C9222B5B4D7006E3DBF /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
@@ -266,6 +270,8 @@
 				16B8125F218D754600E24173 /* METranscoder.m */,
 				16ED62482E6C86BD00152AD8 /* METranscoder+paramParser.m */,
 				16ED62492E6C86BD00152AD8 /* METranscoder+prepareChannels.m */,
+				16C1DB1A2E88168600DD415F /* MEProgressUtil.h */,
+				16C1DB1B2E88168600DD415F /* MEProgressUtil.m */,
 				1613EE152E69BB01001F7E56 /* MEAudioConverter.h */,
 				1613EE162E69BB01001F7E56 /* MEAudioConverter.m */,
 				16741CE221A922C1000EEC78 /* SBChannel.h */,
@@ -352,7 +358,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2600;
 				ORGANIZATIONNAME = MyCometG3;
 				TargetAttributes = {
 					16B81250218D701000E24173 = {
@@ -394,6 +400,7 @@
 				16741CEE21A92DD1000EEC78 /* MEOutput.m in Sources */,
 				16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */,
 				16CA58622E7850420080658C /* MESecureLogging.m in Sources */,
+				16C1DB1C2E88168600DD415F /* MEProgressUtil.m in Sources */,
 				16741CF121B37DCD000EEC78 /* MEManager.m in Sources */,
 				16ED624A2E6C86BD00152AD8 /* METranscoder+prepareChannels.m in Sources */,
 				16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */,
@@ -422,6 +429,7 @@
 				16C1DB122E87F32D00DD415F /* METranscoder.m in Sources */,
 				16C1DB132E87F32D00DD415F /* MEErrorFormatter.m in Sources */,
 				16C1DB142E87F32D00DD415F /* monitorUtil.m in Sources */,
+				16C1DB1D2E88168600DD415F /* MEProgressUtil.m in Sources */,
 				16C1DB152E87F32D00DD415F /* MEUtils.m in Sources */,
 				16C1DB162E87F32D00DD415F /* parseUtil.m in Sources */,
 				16C1DB172E87F32D00DD415F /* MEInput.m in Sources */,
@@ -491,6 +499,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 			};
 			name = Debug;
 		};
@@ -546,6 +555,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 			};
 			name = Release;
 		};
