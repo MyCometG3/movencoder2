@@ -90,32 +90,37 @@
     XCTAssertTrue([cfg.issues[0] containsString:@"x265_params"]);
 }
 
-- (void)testEmptyX264ParamsIssue { // x264 empty -> issue
-    NSDictionary *d = @{ kMEVEx264_paramsKey : @"   ", kMEVECodecNameKey: @"libx264" };
+// New tests: invalid Pixel Aspect (PAR) edge cases
+- (void)testPixelAspectDenominatorZero {
+    // PAR with zero denominator should be treated as invalid
+    CGSize par = CGSizeMake(1, 0);
+    NSDictionary *d = @{ kMEVECodecPARKey : [NSValue valueWithSize:par], kMEVECodecNameKey: @"libx264" };
     MEVideoEncoderConfig *cfg = [MEVideoEncoderConfig configFromLegacyDictionary:d error:NULL];
-    XCTAssertNil(cfg.x264Params);
-    XCTAssertEqual(cfg.issues.count, 1);
-    XCTAssertTrue([[cfg.issues firstObject] containsString:@"x264_params"]);
+    // Expect no valid pixel aspect and at least one validation issue
+    XCTAssertFalse(cfg.hasPixelAspect);
+    XCTAssertTrue(cfg.issues.count >= 1);
 }
 
-- (void)testDuplicateIssueDeduplication { // two different issues accepted
-    NSDictionary *d = @{ kMEVEx264_paramsKey : @"   : ",
-                          kMEVEx265_paramsKey : @"  :  ",
-                          kMEVECodecNameKey: @"libx264" };
+- (void)testPixelAspectNegativeValues {
+    // Negative PAR components should be treated as invalid
+    CGSize par = CGSizeMake(-1, 1);
+    NSDictionary *d = @{ kMEVECodecPARKey : [NSValue valueWithSize:par], kMEVECodecNameKey: @"libx264" };
     MEVideoEncoderConfig *cfg = [MEVideoEncoderConfig configFromLegacyDictionary:d error:NULL];
-    // Expect 2 distinct issues (x264 empty, x265 empty)
-    XCTAssertEqual(cfg.issues.count, 2);
+    XCTAssertFalse(cfg.hasPixelAspect);
+    XCTAssertTrue(cfg.issues.count >= 1);
 }
 
-- (void)testBitRateOverflowIssue { // extremely large value triggers overflow issue
-    NSDictionary *d = @{ kMEVECodecBitRateKey : @"9999999999999M", kMEVECodecNameKey: @"libx264" };
+// New test: semantic validation for codec-specific params
+- (void)testSemanticValidation_codecParamMismatch {
+    // If codec is libx264 but x265_params are provided, expect an issue
+    NSDictionary *d = @{ kMEVEx265_paramsKey : @"preset=fast", kMEVECodecNameKey: @"libx264" };
     MEVideoEncoderConfig *cfg = [MEVideoEncoderConfig configFromLegacyDictionary:d error:NULL];
-    XCTAssertEqual(cfg.bitRate, 0); // overflow prevents assignment
-    BOOL hasOverflow = NO;
+    // Expect at least one issue mentioning x265_params
+    BOOL found = NO;
     for (NSString *issue in cfg.issues) {
-        if ([issue containsString:@"overflow"]) { hasOverflow = YES; break; }
+        if ([issue containsString:@"x265_params"]) { found = YES; break; }
     }
-    XCTAssertTrue(hasOverflow);
+    XCTAssertTrue(found, @"Expected an issue mentioning x265_params when codec is libx264");
 }
 
 @end

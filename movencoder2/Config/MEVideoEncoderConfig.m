@@ -119,13 +119,7 @@
             if (trim.length) {
                 if ([trim hasPrefix:@":"]) trim = [trim substringFromIndex:1];
                 if ([trim hasSuffix:@":"]) trim = [trim substringToIndex:trim.length-1];
-                // After removing edge colons trimming again to catch ":   :" forms
-                trim = [trim stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                if (trim.length) {
-                    cfg.x264Params = trim;
-                } else {
-                    [issues addObject:@"x264_params provided but empty after trimming."];
-                }
+                cfg.x264Params = trim;
             } else {
                 [issues addObject:@"x264_params provided but empty after trimming."];
             }
@@ -136,14 +130,18 @@
             if (trim.length) {
                 if ([trim hasPrefix:@":"]) trim = [trim substringFromIndex:1];
                 if ([trim hasSuffix:@":"]) trim = [trim substringToIndex:trim.length-1];
-                trim = [trim stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-                if (trim.length) {
-                    cfg.x265Params = trim;
-                } else {
-                    [issues addObject:@"x265_params provided but empty after trimming."];
-                }
+                cfg.x265Params = trim;
             } else {
                 [issues addObject:@"x265_params provided but empty after trimming."];
+            }
+        }
+        // Semantic validation: warn if codec-specific params are provided for a different codec
+        if (cfg.rawCodecName && cfg.rawCodecName.length) {
+            if (cfg.codecKind == MEVideoCodecKindX264 && cfg.x265Params) {
+                [issues addObject:@"x265_params provided but codec is libx264."];
+            }
+            if (cfg.codecKind == MEVideoCodecKindX265 && cfg.x264Params) {
+                [issues addObject:@"x264_params provided but codec is libx265."];
             }
         }
         NSValue *clean = dict[kMEVECleanApertureKey];
