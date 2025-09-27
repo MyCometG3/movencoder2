@@ -28,6 +28,7 @@
 #import "MEManager.h"
 #import "MEUtils.h"
 #import "MESecureLogging.h"
+#import "Config/MEVideoEncoderConfig.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -115,6 +116,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readwrite) AVAssetWriterStatus writerStatus; // MEInput
 @property (readwrite) AVAssetReaderStatus readerStatus; // MEOutput
 
+@property (atomic, strong, readwrite) MEVideoEncoderConfig *videoEncoderConfig; // lazy from videoEncoderSetting
+
 @end
 
 NS_ASSUME_NONNULL_END
@@ -152,6 +155,7 @@ NS_ASSUME_NONNULL_BEGIN
 // public
 @synthesize videoFilterString;
 @synthesize videoEncoderSetting;
+@synthesize videoEncoderConfig;
 @synthesize sourceExtensions;
 @synthesize initialDelayInSec;
 @synthesize verbose;
@@ -177,6 +181,20 @@ NS_ASSUME_NONNULL_BEGIN
         eagainDelaySemaphore = dispatch_semaphore_create(0);
     }
     return self;
+}
+
+- (void)setVideoEncoderSetting:(NSMutableDictionary *)setting
+{
+    videoEncoderSetting = setting;
+    videoEncoderConfig = nil; // reset cache
+}
+
+- (MEVideoEncoderConfig *)videoEncoderConfig
+{
+    if (!videoEncoderConfig && videoEncoderSetting) {
+        videoEncoderConfig = [MEVideoEncoderConfig configFromLegacyDictionary:videoEncoderSetting error:NULL];
+    }
+    return videoEncoderConfig;
 }
 
 + (instancetype) new
@@ -216,6 +234,8 @@ static inline BOOL useVideoEncoder(MEManager *obj) {
 
 static inline BOOL uselibx264(MEManager *obj) {
     if (!useVideoEncoder(obj)) return FALSE;
+    MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
+    if (cfg) return (cfg.codecKind == MEVideoCodecKindX264);
     NSDictionary *videoEncoderSetting = obj->videoEncoderSetting;
     NSString *codecName = videoEncoderSetting[kMEVECodecNameKey];
     return ([codecName isEqualToString:@"libx264"]);
@@ -223,6 +243,8 @@ static inline BOOL uselibx264(MEManager *obj) {
 
 static inline BOOL uselibx265(MEManager *obj) {
     if (!useVideoEncoder(obj)) return FALSE;
+    MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
+    if (cfg) return (cfg.codecKind == MEVideoCodecKindX265);
     NSDictionary *videoEncoderSetting = obj->videoEncoderSetting;
     NSString *codecName = videoEncoderSetting[kMEVECodecNameKey];
     return ([codecName isEqualToString:@"libx265"]);
