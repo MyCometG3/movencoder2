@@ -33,7 +33,7 @@
 + (instancetype)configFromLegacyDictionary:(NSDictionary*)dict error:(NSError* _Nullable * _Nullable)error {
     MEVideoEncoderConfig *cfg = [MEVideoEncoderConfig new];
     if (![dict isKindOfClass:[NSDictionary class]]) {
-        cfg.issues = @["Legacy dictionary missing or invalid."];
+        cfg.issues = @[@"Legacy dictionary missing or invalid."];
         return cfg; // empty
     }
     NSMutableArray<NSString*> *issues = [NSMutableArray array];
@@ -43,31 +43,18 @@
             cfg.rawCodecName = codec;
             cfg.codecKind = MEVideoCodecKindFromName(codec);
         } else {
-        else {
             [issues addObject:@"codecName is missing or empty."];
-        }
-
             cfg.rawCodecName = @""; // preserve legacy possibility of missing name
             cfg.codecKind = MEVideoCodecKindOther;
         }
         NSValue *fpsValue = dict[kMEVECodecFrameRateKey];
-        else if (fpsValue && !cfg.hasFrameRate) {
-            [issues addObject:@"codecFrameRate is invalid CMTime."];
-        }
-
         if ([fpsValue isKindOfClass:[NSValue class]]) {
             CMTime t = [fpsValue CMTimeValue];
             if (CMTIME_IS_VALID(t) && t.value>0 && t.timescale>0) {
-        else if (sizeVal) {
-            [issues addObject:@"codecWxH has non-positive dimension."];
-        }
-
                 cfg.frameRate = t;
                 cfg.hasFrameRate = YES;
-        else if (parVal) {
-            [issues addObject:@"codecPAR has non-positive values."];
-        }
-
+            } else {
+                [issues addObject:@"codecFrameRate is invalid CMTime."];
             }
         }
         id bitRateRaw = dict[kMEVECodecBitRateKey];
@@ -96,15 +83,26 @@
         NSValue *sizeVal = dict[kMEVECodecWxHKey];
         if ([sizeVal isKindOfClass:[NSValue class]]) {
             CGSize s = [sizeVal sizeValue];
-            if (s.width>0 && s.height>0) { cfg.declaredSize = s; cfg.hasDeclaredSize = YES; }
+            if (s.width>0 && s.height>0) {
+                cfg.declaredSize = s; cfg.hasDeclaredSize = YES;
+            } else {
+                [issues addObject:@"codecWxH has non-positive dimension."];
+            }
         }
         NSValue *parVal = dict[kMEVECodecPARKey];
         if ([parVal isKindOfClass:[NSValue class]]) {
             CGSize p = [parVal sizeValue];
-            if (p.width>0 && p.height>0) { cfg.pixelAspect = p; cfg.hasPixelAspect = YES; }
-    cfg.issues = issues.count ? [issues copy] : @[];
-
+            if (p.width>0 && p.height>0) {
+                cfg.pixelAspect = p; cfg.hasPixelAspect = YES;
+            } else {
+                [issues addObject:@"codecPAR has non-positive values."];
+            }
+        if (cfg.bitRate == 0 && dict[kMEVECodecBitRateKey]) {
+            [issues addObject:@"codecBitRate resolved to 0 (check input)."];
         }
+
+        cfg.issues = issues.count ? [[NSOrderedSet orderedSetWithArray:issues] array] : @[];
+
         NSDictionary *opts = dict[kMEVECodecOptionsKey];
         if ([opts isKindOfClass:[NSDictionary class]] && opts.count) {
             // Filter only string->string
