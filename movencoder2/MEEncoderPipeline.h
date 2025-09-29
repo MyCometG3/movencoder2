@@ -106,11 +106,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Send a frame to the encoder for encoding.
  *
- * @param frame The AVFrame to encode
+ * @param frame The AVFrame to encode (nullable - pass NULL to flush)
  * @param result Pointer to store the result code
  * @return YES if successful, NO on error
  */
-- (BOOL)sendFrameToEncoder:(void *)frame withResult:(int *)result;
+- (BOOL)sendFrameToEncoder:(void * _Nullable)frame withResult:(int *)result;
 
 /**
  * Receive an encoded packet from the encoder.
