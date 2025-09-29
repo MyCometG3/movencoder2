@@ -14,6 +14,10 @@
 #import "MEEncoderPipeline.h" 
 #import "MESampleBufferFactory.h"
 
+#ifndef AV_LOG_DEBUG
+#define AV_LOG_DEBUG 48
+#endif
+
 @interface MEPipelineIntegrationTests : XCTestCase
 @property (strong, nonatomic) MEFilterPipeline *filterPipeline;
 @property (strong, nonatomic) MEEncoderPipeline *encoderPipeline;
