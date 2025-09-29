@@ -67,7 +67,6 @@ NS_ASSUME_NONNULL_BEGIN
     struct AVFPixelFormatSpec pxl_fmt_filter;  // Pixel format spec for filter
     
     struct AVFrameColorMetadata cachedColorMetadata;  // Cache for input color metadata
-    BOOL colorMetadataCached;  // Flag to indicate if metadata is cached
     
     void* inputQueueKey;
     void* outputQueueKey;
