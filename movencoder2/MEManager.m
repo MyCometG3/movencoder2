@@ -30,6 +30,9 @@
 #import "MESecureLogging.h"
 #import "Config/MEVideoEncoderConfig.h"
 #import "MEErrorFormatter.h"
+#import "MEFilterPipeline.h"
+#import "MEEncoderPipeline.h"
+#import "MESampleBufferFactory.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -59,17 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface MEManager ()
 {
-    struct AVFPixelFormatSpec pxl_fmt_filter;
-    AVFilterContext *buffersink_ctx;
-    AVFilterContext *buffersrc_ctx;
-    AVFilterGraph *filter_graph;
-
-    struct AVFPixelFormatSpec pxl_fmt_encode;
-    AVCodecContext* avctx;
-    
     AVFrame* input ;
-    AVFrame* filtered;
-    AVPacket* encoded;
     
     struct AVFrameColorMetadata cachedColorMetadata;  // Cache for input color metadata
     BOOL colorMetadataCached;  // Flag to indicate if metadata is cached
@@ -78,17 +71,19 @@ NS_ASSUME_NONNULL_BEGIN
     void* outputQueueKey;
 }
 
-// Synchronization semaphores as private properties
+// Pipeline components
+@property (nonatomic, strong, readwrite) MEFilterPipeline *filterPipeline;
+@property (nonatomic, strong, readwrite) MEEncoderPipeline *encoderPipeline;
+@property (nonatomic, strong, readwrite) MESampleBufferFactory *sampleBufferFactory;
+
+// Synchronization semaphores as private properties (delegated to pipeline components)
 @property (readonly, nonatomic, strong) dispatch_semaphore_t timestampGapSemaphore;
 @property (readonly, nonatomic, strong) dispatch_semaphore_t filterReadySemaphore;
 @property (readonly, nonatomic, strong) dispatch_semaphore_t encoderReadySemaphore;
 @property (readonly, nonatomic, strong) dispatch_semaphore_t eagainDelaySemaphore;
 
-- (BOOL)prepareVideoEncoderWith:(CMSampleBufferRef _Nullable)sb;
-- (BOOL)prepareVideoFilterWith:(CMSampleBufferRef)sb;
+// Input frame management (still needed for pipeline coordination)
 - (BOOL)prepareInputFrameWith:(CMSampleBufferRef)sb;
-- (nullable CMSampleBufferRef)createUncompressedSampleBuffer CF_RETURNS_RETAINED;
-- (nullable CMSampleBufferRef)createCompressedSampleBuffer CF_RETURNS_RETAINED;
 
 // private
 @property (nonatomic, strong) dispatch_queue_t inputQueue;
@@ -97,26 +92,17 @@ NS_ASSUME_NONNULL_BEGIN
 @property (atomic) BOOL queueing;  // Made atomic - accessed across input/output queues
 @property (atomic) CMTimeScale time_base;  // Made atomic - accessed across input/output queues
 @property (atomic, strong, nullable) __attribute__((NSObject)) CMFormatDescriptionRef desc;  // Made atomic - for output CMSampleBufferRef
-@property (atomic, strong, nullable) __attribute__((NSObject)) CVPixelBufferPoolRef cvpbpool;  // Made atomic - accessed across queues
 @property (atomic, strong, nullable) __attribute__((NSObject)) CFDictionaryRef pbAttachments; // Made atomic - for CVImageBufferRef
 
-// private atomic
-@property (readwrite) BOOL videoFilterIsReady;
-@property (readwrite) BOOL videoFilterEOF;
-@property (readwrite) BOOL filteredValid;
-@property (readwrite) BOOL videoEncoderIsReady;
-@property (readwrite) BOOL videoEncoderEOF;
-@property (readwrite) BOOL videoFilterFlushed;
-@property (readwrite) BOOL videoEncoderFlushed;
-
+// private atomic - state management that coordinates across pipeline components
 @property (atomic, readwrite) int64_t lastEnqueuedPTS; // Made atomic - for Filter, accessed across queues
-@property (atomic, readwrite) int64_t lastDequeuedPTS; // Made atomic - for Filter, accessed across queues
 
 // public atomic redefined
 @property (readwrite) BOOL failed;
 @property (readwrite) AVAssetWriterStatus writerStatus; // MEInput
 @property (readwrite) AVAssetReaderStatus readerStatus; // MEOutput
 
+// Configuration management (now delegated to encoder pipeline)
 @property (atomic, strong, readwrite, nullable) MEVideoEncoderConfig *videoEncoderConfig; // lazy from videoEncoderSetting
 @property (atomic, assign) BOOL configIssuesLogged;
 
@@ -133,23 +119,12 @@ NS_ASSUME_NONNULL_BEGIN
 @implementation MEManager
 
 //
-@synthesize time_base;
-@synthesize desc;
-@synthesize cvpbpool;
 @synthesize pbAttachments;
 // Synchronization semaphores
 @synthesize timestampGapSemaphore;
 @synthesize filterReadySemaphore;
 @synthesize encoderReadySemaphore;
 @synthesize eagainDelaySemaphore;
-// private atomic
-@synthesize videoFilterIsReady;
-@synthesize videoFilterEOF;
-@synthesize filteredValid;
-@synthesize videoEncoderIsReady;
-@synthesize videoEncoderEOF;
-@synthesize videoFilterFlushed;
-@synthesize videoEncoderFlushed;
 // public atomic redefined
 @synthesize failed;
 @synthesize readerStatus;

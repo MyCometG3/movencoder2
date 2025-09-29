@@ -31,6 +31,10 @@
 @import AVFoundation;
 @import CoreMedia;
 
+@class MEFilterPipeline;
+@class MEEncoderPipeline;
+@class MESampleBufferFactory;
+
 /* =================================================================================== */
 // MARK: -
 /* =================================================================================== */
@@ -90,6 +94,21 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) float initialDelayInSec;
 @property (nonatomic) BOOL verbose;
 @property (nonatomic) int log_level;
+
+/**
+ * Filter pipeline component for video filtering operations
+ */
+@property (nonatomic, strong, readonly) MEFilterPipeline *filterPipeline;
+
+/**
+ * Encoder pipeline component for video encoding operations
+ */
+@property (nonatomic, strong, readonly) MEEncoderPipeline *encoderPipeline;
+
+/**
+ * Sample buffer factory component for creating sample buffers
+ */
+@property (nonatomic, strong, readonly) MESampleBufferFactory *sampleBufferFactory;
 
 /* =================================================================================== */
 // MARK: - for MEInput; queue SB from previous AVAssetReaderOutput to MEInput
