@@ -193,7 +193,7 @@ NS_ASSUME_NONNULL_BEGIN
     self.sampleBufferFactory.videoEncoderSetting = setting;
 }
 
-- (void)setVideoFilterString:(NSString *)filterString
+- (void)setVideoFilterString:(NSString * _Nullable)filterString
 {
     videoFilterString = filterString;
     
@@ -220,7 +220,7 @@ NS_ASSUME_NONNULL_BEGIN
     self.encoderPipeline.logLevel = logLevel;
 }
 
-- (void)setSourceExtensions:(CFDictionaryRef)extensions
+- (void)setSourceExtensions:(CFDictionaryRef _Nullable)extensions
 {
     sourceExtensions = extensions;
     
