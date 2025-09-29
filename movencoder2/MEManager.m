@@ -106,6 +106,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (atomic, strong, readwrite, nullable) MEVideoEncoderConfig *videoEncoderConfig; // lazy from videoEncoderSetting
 @property (atomic, assign) BOOL configIssuesLogged;
 
+// Computed properties that delegate to pipeline components
+@property (readonly) BOOL videoFilterIsReady;
+@property (readonly) BOOL videoFilterEOF;
+@property (readonly) BOOL filteredValid;
+@property (readonly) BOOL videoEncoderIsReady;
+@property (readonly) BOOL videoEncoderEOF;
+@property (readonly) BOOL videoFilterFlushed;
+@property (readonly) BOOL videoEncoderFlushed;
+
 @end
 
 NS_ASSUME_NONNULL_END
@@ -146,15 +155,17 @@ NS_ASSUME_NONNULL_BEGIN
         writerStatus = AVAssetWriterStatusUnknown;
         initialDelayInSec = 1.0;
         
-        // default = 420 planar 8bit MPEG color range
-        pxl_fmt_encode = AVFPixelFormatSpec420P;
-        
         log_level = AV_LOG_INFO;
         
-        // Initialize synchronization semaphores
-        timestampGapSemaphore = dispatch_semaphore_create(0);
-        filterReadySemaphore = dispatch_semaphore_create(0);
-        encoderReadySemaphore = dispatch_semaphore_create(0);
+        // Initialize pipeline components
+        _filterPipeline = [[MEFilterPipeline alloc] init];
+        _encoderPipeline = [[MEEncoderPipeline alloc] init];
+        _sampleBufferFactory = [[MESampleBufferFactory alloc] init];
+        
+        // Initialize synchronization semaphores (delegate to components where appropriate)
+        timestampGapSemaphore = _filterPipeline.timestampGapSemaphore;
+        filterReadySemaphore = _filterPipeline.filterReadySemaphore;
+        encoderReadySemaphore = _encoderPipeline.encoderReadySemaphore;
         eagainDelaySemaphore = dispatch_semaphore_create(0);
     }
     return self;
@@ -176,6 +187,98 @@ NS_ASSUME_NONNULL_BEGIN
 
     videoEncoderSetting = setting;
     videoEncoderConfig = nil; // reset cache
+    
+    // Sync to encoder pipeline and sample buffer factory
+    self.encoderPipeline.videoEncoderSetting = setting;
+    self.sampleBufferFactory.videoEncoderSetting = setting;
+}
+
+- (void)setVideoFilterString:(NSString *)filterString
+{
+    videoFilterString = filterString;
+    
+    // Sync to filter pipeline
+    self.filterPipeline.filterString = filterString;
+}
+
+- (void)setVerbose:(BOOL)verbose
+{
+    verbose = verbose;
+    
+    // Sync to all pipeline components
+    self.filterPipeline.verbose = verbose;
+    self.encoderPipeline.verbose = verbose;
+    self.sampleBufferFactory.verbose = verbose;
+}
+
+- (void)setLog_level:(int)logLevel
+{
+    log_level = logLevel;
+    
+    // Sync to all pipeline components
+    self.filterPipeline.logLevel = logLevel;
+    self.encoderPipeline.logLevel = logLevel;
+}
+
+- (void)setSourceExtensions:(CFDictionaryRef)extensions
+{
+    sourceExtensions = extensions;
+    
+    // Sync to encoder pipeline
+    self.encoderPipeline.sourceExtensions = extensions;
+}
+
+/* =================================================================================== */
+// MARK: - Computed properties that delegate to pipeline components
+/* =================================================================================== */
+
+- (BOOL)videoFilterIsReady
+{
+    return self.filterPipeline.isReady;
+}
+
+- (BOOL)videoFilterEOF
+{
+    return self.filterPipeline.isEOF;
+}
+
+- (BOOL)filteredValid
+{
+    return self.filterPipeline.hasValidFilteredFrame;
+}
+
+- (BOOL)videoEncoderIsReady
+{
+    return self.encoderPipeline.isReady;
+}
+
+- (BOOL)videoEncoderEOF
+{
+    return self.encoderPipeline.isEOF;
+}
+
+- (BOOL)videoFilterFlushed
+{
+    // For now, we consider filter flushed when EOF is reached
+    return self.filterPipeline.isEOF;
+}
+
+- (BOOL)videoEncoderFlushed
+{
+    return self.encoderPipeline.isFlushed;
+}
+
+// Delegate time base to pipeline components
+- (CMTimeScale)timeBase
+{
+    return self.filterPipeline.timeBase;
+}
+
+- (void)setTimeBase:(CMTimeScale)timeBase
+{
+    self.filterPipeline.timeBase = timeBase;
+    self.encoderPipeline.timeBase = timeBase;
+    self.sampleBufferFactory.timeBase = timeBase;
 }
 
 - (MEVideoEncoderConfig * _Nullable)videoEncoderConfig
@@ -183,6 +286,8 @@ NS_ASSUME_NONNULL_BEGIN
     @synchronized (self) {
         if (!videoEncoderConfig && videoEncoderSetting) {
             videoEncoderConfig = [MEVideoEncoderConfig configFromLegacyDictionary:videoEncoderSetting error:NULL];
+            // Sync to encoder pipeline
+            self.encoderPipeline.videoEncoderConfig = videoEncoderConfig;
         }
         return videoEncoderConfig;
     }
@@ -207,14 +312,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)cleanup
 {
-    av_packet_free(&encoded);
-    av_frame_free(&filtered);
     av_frame_free(&input);
-    avcodec_free_context(&avctx);
-    avfilter_graph_free(&filter_graph);
 
-    self.desc = nil;
-    self.cvpbpool = nil;
+    // Cleanup pipeline components
+    [self.filterPipeline cleanup];
+    [self.encoderPipeline cleanup];
+    [self.sampleBufferFactory cleanup];
+    
     self.pbAttachments = nil;
 }
 
@@ -223,11 +327,11 @@ NS_ASSUME_NONNULL_BEGIN
 /* =================================================================================== */
 
 static inline BOOL useVideoFilter(MEManager *obj) {
-    return (obj->videoFilterString != NULL);
+    return (obj.videoFilterString != NULL);
 }
 
 static inline BOOL useVideoEncoder(MEManager *obj) {
-    return (obj->videoEncoderSetting != NULL);
+    return (obj.videoEncoderSetting != NULL);
 }
 
 static inline BOOL uselibx264(MEManager *obj) {
@@ -675,178 +779,23 @@ end:
 
 /**
  Setup VideoFilter using parameters from CMSampleBuffer
+ Now delegates to MEFilterPipeline component.
 
  @param sb CMSampleBuffer
  @return TRUE if success. FALSE if fail.
  */
 - (BOOL)prepareVideoFilterWith:(CMSampleBufferRef)sb
 {
-    char *filters_descr = NULL;
-    AVFilterInOut *outputs = NULL;
-    AVFilterInOut *inputs  = NULL;
-    char args[512] = {0};
-
-    if (self.videoFilterIsReady) {
-        return TRUE;
-    }
-    if (!(videoFilterString && videoFilterString.length)) {
-        SecureErrorLogf(@"[MEManager] ERROR: Invalid video filter parameters.");
-        goto end;
-    }
-    if (sb == NULL) {
-        SecureErrorLogf(@"[MEManager] ERROR: Invalid video filter parameters.");
-        goto end;
-    }
-    
-    // Validate source CMSampleBuffer
-    {
-        int width = 0, height = 0;
-        if (CMSBGetWidthHeight(sb, &width, &height) == FALSE) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate dimensions.");
-            goto end;
-        }
-        AVRational sample_aspect_ratio = av_make_q(1, 1);
-        if (CMSBGetAspectRatio(sb, &sample_aspect_ratio) == FALSE) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate aspect ratio.");
-            goto end;
-        }
-        
-        pxl_fmt_filter = AVFPixelFormatSpecNone;
-        if (!(CMSBGetPixelFormatSpec(sb, &pxl_fmt_filter) && pxl_fmt_filter.avf_id != 0)) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate pixel_format.");
-            goto end;
-        }
-        
-        AVRational timebase_q = av_make_q(1, time_base);
-        if (time_base == 0) { // fallback
-            if (CMSBGetTimeBase(sb, &timebase_q)) {
-                time_base = timebase_q.den;
-            } else {
-                SecureErrorLogf(@"[MEManager] ERROR: Cannot validate timebase.");
-                goto end;
-            }
-        }
-        
-        snprintf(args, sizeof(args),
-                 "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-                 width, height, pxl_fmt_filter.ff_id,
-                 timebase_q.num, timebase_q.den,
-                 sample_aspect_ratio.num, sample_aspect_ratio.den);
-        
-        if (self.verbose) {
-            SecureDebugLogf(@"[MEManager] avfilter.buffer = %@", [NSString stringWithUTF8String:args]);
+    // Sync time base before preparation
+    if (self.timeBase == 0) {
+        AVRational timebase_q = {1, 1};
+        if (CMSBGetTimeBase(sb, &timebase_q)) {
+            self.timeBase = timebase_q.den;
         }
     }
     
-    // Update log_level
-    av_log_set_level(self.log_level);
-    
-    // Initialize AVFilter
-    {
-        int ret = AVERROR_UNKNOWN;
-        filter_graph = avfilter_graph_alloc();
-        
-        /* buffer video source: the decoded frames from the decoder will be inserted here. */
-        const AVFilter *buffersrc  = avfilter_get_by_name("buffer");
-        ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in",
-                                           args, NULL, filter_graph);
-        if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer source (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
-            goto end;
-        }
-        
-        /* buffer video sink: to terminate the filter chain. */
-        const AVFilter *buffersink = avfilter_get_by_name("buffersink");
-        buffersink_ctx = avfilter_graph_alloc_filter(filter_graph, buffersink, "out");
-        if (!buffersink_ctx) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot create buffer sink (%@)", [MEErrorFormatter stringFromFFmpegCode:AVERROR_UNKNOWN]);
-            goto end;
-        }
-        
-        // Old approach (deprecated in FFmpeg 8.0+): av_opt_set_int_list was used to set pixel formats.
-        // This API is now deprecated and may cause issues with newer FFmpeg versions.
-        // The current recommended approach is to use av_opt_set_bin (see below).
-        size_t pix_fmts_length = 0;
-        for (size_t i = 0; pix_fmt_list[i] != AV_PIX_FMT_NONE; i++) {
-            pix_fmts_length++;
-        }
-        size_t size_bytes = pix_fmts_length * sizeof(enum AVPixelFormat);
-        ret = av_opt_set_bin(buffersink_ctx, "pix_fmts",
-                             (uint8_t *)pix_fmt_list,
-                             (int)size_bytes,
-                             AV_OPT_SEARCH_CHILDREN);
-        if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot set output pixel format (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
-            goto end;
-        }
-        
-        ret = avfilter_init_str(buffersink_ctx, NULL);
-        if (ret < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot initialize buffer sink (%@)", [MEErrorFormatter stringFromFFmpegCode:ret]);
-            goto end;
-        }
-        
-        /*
-         * Set the endpoints for the filter graph. The filter_graph will
-         * be linked to the graph described by filters_descr.
-         */
-        
-        /*
-         * The buffer source output must be connected to the input pad of
-         * the first filter described by filters_descr; since the first
-         * filter input label is not specified, it is set to "in" by
-         * default.
-         */
-        outputs = avfilter_inout_alloc();
-        outputs->name       = av_strdup("in");
-        outputs->filter_ctx = buffersrc_ctx;
-        outputs->pad_idx    = 0;
-        outputs->next       = NULL;
-        
-        /*
-         * The buffer sink input must be connected to the output pad of
-         * the last filter described by filters_descr; since the last
-         * filter output label is not specified, it is set to "out" by
-         * default.
-         */
-        inputs  = avfilter_inout_alloc();
-        inputs->name       = av_strdup("out");
-        inputs->filter_ctx = buffersink_ctx;
-        inputs->pad_idx    = 0;
-        inputs->next       = NULL;
-        
-        filters_descr = av_strdup([videoFilterString UTF8String]);
-        if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_descr,
-                                            &inputs, &outputs, NULL)) < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot parse filter descriptions. %@", [MEErrorFormatter stringFromFFmpegCode:ret]);
-            goto end;
-        }
-        
-        if ((ret = avfilter_graph_config(filter_graph, NULL)) < 0) {
-            SecureErrorLogf(@"[MEManager] ERROR: Cannot configure filter graph. %@", [MEErrorFormatter stringFromFFmpegCode:ret]);
-            goto end;
-        }
-    }
-    self.videoFilterIsReady = TRUE;
-    
-    // Signal that filter is ready
-    dispatch_semaphore_signal(self.filterReadySemaphore);
-    
-    if (self.verbose) {
-        char* dump = avfilter_graph_dump(filter_graph, NULL);
-        if (dump) {
-            SecureDebugLogf(@"[MEManager] avfilter_graph_dump() returned %lu bytes.", (unsigned long)strlen(dump));
-            av_log(NULL, AV_LOG_INFO, "%s\n", dump);
-        }
-        av_free(dump);
-    }
-    
-end:
-    avfilter_inout_free(&inputs);
-    avfilter_inout_free(&outputs);
-    av_free(filters_descr);
-    
-    return self.videoFilterIsReady;
+    // Delegate to filter pipeline
+    return [self.filterPipeline prepareVideoFilterWith:sb];
 }
 
 /**
