@@ -119,11 +119,11 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Push a frame into the filter graph for processing.
  *
- * @param frame The AVFrame to push into the filter graph
+ * @param frame The AVFrame to push into the filter graph (nullable - pass NULL to flush)
  * @param result Pointer to store the result code
  * @return YES if successful, NO on error
  */
-- (BOOL)pushFrameToFilter:(void *)frame withResult:(int *)result;
+- (BOOL)pushFrameToFilter:(void * _Nullable)frame withResult:(int *)result;
 
 /**
  * Get the current filtered AVFrame pointer.

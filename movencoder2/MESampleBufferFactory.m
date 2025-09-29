@@ -225,6 +225,7 @@ end:
                 CFRelease(_formatDescription);
                 _formatDescription = newDesc;
             }
+            // If newDesc is NULL, we keep the original _formatDescription instead of leaking it
         }
         if (!_formatDescription) {
             SecureErrorLogf(@"[MESampleBufferFactory] ERROR: Cannot setup CMVideoFormatDescription with clean aperture.");
