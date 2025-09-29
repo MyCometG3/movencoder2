@@ -53,6 +53,7 @@ NS_ASSUME_NONNULL_END
 @implementation MEEncoderPipeline
 
 @synthesize encoderReadySemaphore = _encoderReadySemaphore;
+@synthesize videoEncoderConfig = _videoEncoderConfig;
 
 // Utility functions for encoder pipeline
 static inline BOOL useVideoEncoder(MEEncoderPipeline *obj) {
