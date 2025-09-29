@@ -114,7 +114,7 @@ static inline BOOL uselibx265(MEEncoderPipeline *obj) {
 {
     @synchronized(self) {
         if (!_videoEncoderConfig && self.videoEncoderSetting) {
-            _videoEncoderConfig = [[MEVideoEncoderConfig alloc] initWithSettings:self.videoEncoderSetting];
+            _videoEncoderConfig = [MEVideoEncoderConfig configFromLegacyDictionary:self.videoEncoderSetting error:NULL];
         }
         return _videoEncoderConfig;
     }
