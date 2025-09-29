@@ -28,6 +28,7 @@
 #import "MECommon.h"
 #import "MEUtils.h"
 #import "MESecureLogging.h"
+#import "MEManager.h"
 #import "Config/MEVideoEncoderConfig.h"
 
 NS_ASSUME_NONNULL_BEGIN

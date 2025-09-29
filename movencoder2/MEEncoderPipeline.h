@@ -135,6 +135,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (void *)encodedPacket;
 
 /**
+ * Get the codec context pointer.
+ * This should only be used by components that understand AVCodecContext memory management.
+ */
+- (void *)codecContext;
+
+/**
  * Get the video encoder configuration object.
  */
 - (MEVideoEncoderConfig * _Nullable)videoEncoderConfig;

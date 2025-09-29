@@ -471,6 +471,11 @@ end:
     return encoded;
 }
 
+- (void *)codecContext
+{
+    return avctx;
+}
+
 - (void)getPixelFormatSpec:(void *)spec
 {
     if (spec) {
