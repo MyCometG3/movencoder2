@@ -469,7 +469,6 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
                                            filteredFrame:filteredFrame
                                      hasValidFilteredFrame:hasValidFilteredFrame];
 }
-}
 
 /**
  Setup VideoFilter using parameters from CMSampleBuffer
@@ -631,7 +630,6 @@ end:
     
     return [self.sampleBufferFactory createUncompressedSampleBufferFromFilteredFrame:filteredFrame];
 }
-}
 
 /**
  Create CMSampleBuffer using output from VideoEncoder
@@ -652,7 +650,6 @@ end:
     return [self.sampleBufferFactory createCompressedSampleBufferFromPacket:encodedPacket 
                                                                codecContext:codecContext
                                                          videoEncoderConfig:self.videoEncoderConfig];
-}
 }
 
 /* =================================================================================== */
