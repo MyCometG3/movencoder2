@@ -64,6 +64,8 @@ NS_ASSUME_NONNULL_BEGIN
 {
     AVFrame* input ;
     
+    struct AVFPixelFormatSpec pxl_fmt_filter;  // Pixel format spec for filter
+    
     struct AVFrameColorMetadata cachedColorMetadata;  // Cache for input color metadata
     BOOL colorMetadataCached;  // Flag to indicate if metadata is cached
     
@@ -96,6 +98,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 // private atomic - state management that coordinates across pipeline components
 @property (atomic, readwrite) int64_t lastEnqueuedPTS; // Made atomic - for Filter, accessed across queues
+@property (atomic, readwrite) int64_t lastDequeuedPTS; // Made atomic - for Filter, accessed across queues
+
+// private properties for metadata caching
+@property (atomic, assign) BOOL colorMetadataCached;
 
 // public atomic redefined
 @property (readwrite) BOOL failed;
@@ -279,6 +285,17 @@ NS_ASSUME_NONNULL_BEGIN
     self.filterPipeline.timeBase = timeBase;
     self.encoderPipeline.timeBase = timeBase;
     self.sampleBufferFactory.timeBase = timeBase;
+}
+
+// Delegate lastDequeuedPTS to filter pipeline
+- (int64_t)lastDequeuedPTS
+{
+    return [self.filterPipeline lastDequeuedPTS];
+}
+
+- (void)setLastDequeuedPTS:(int64_t)pts
+{
+    [self.filterPipeline setLastDequeuedPTS:pts];
 }
 
 - (MEVideoEncoderConfig * _Nullable)videoEncoderConfig
@@ -484,10 +501,10 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
 - (BOOL)prepareInputFrameWith:(CMSampleBufferRef)sb
 {
     // get input stream timebase
-    if (time_base == 0) { // fallbak
+    if (self.timeBase == 0) { // fallback
         AVRational timebase_q = {1, 1};
         if (CMSBGetTimeBase(sb, &timebase_q)) {
-            time_base = timebase_q.den;
+            self.timeBase = timebase_q.den;
         } else {
             SecureErrorLogf(@"[MEManager] ERROR: Cannot validate timebase.");
             goto end;
@@ -519,7 +536,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         input->format = pxl_fmt_filter.ff_id;
         input->width = width;
         input->height = height;
-        input->time_base = av_make_q(1,time_base);
+        input->time_base = av_make_q(1, self.timeBase);
         
         // allocate new input buffer
         int ret = AVERROR_UNKNOWN;
@@ -536,7 +553,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         }
         
         // fill input AVFrame parameters
-        result = CMSBCopyParametersToAVFrame(sb, input, time_base);
+        result = CMSBCopyParametersToAVFrame(sb, input, self.timeBase);
         if (!result) {
             SecureErrorLogf(@"[MEManager] ERROR: Cannot fill property values.");
             goto end;
@@ -574,13 +591,13 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         }
         
         // Cache color metadata from input frame (first sample only)
-        if (!colorMetadataCached) {
+        if (!self.colorMetadataCached) {
             cachedColorMetadata.color_range = input->color_range;
             cachedColorMetadata.color_primaries = input->color_primaries;
             cachedColorMetadata.color_trc = input->color_trc;
             cachedColorMetadata.colorspace = input->colorspace;
             cachedColorMetadata.chroma_location = input->chroma_location;
-            colorMetadataCached = TRUE;
+            self.colorMetadataCached = YES;
         }
         
         // copy image data into input AVFrame buffer
@@ -798,7 +815,7 @@ error:
     
     {
         __block int ret = 0;
-        int64_t gapLimitInSec = self->time_base * 10;
+        int64_t gapLimitInSec = self.timeBase * 10;
         do {
             @autoreleasepool {
                 // Wait until the input/output timestamp gap is less than 10 seconds.
@@ -861,12 +878,12 @@ error:
 
 - (CMTimeScale)mediaTimeScale
 {
-    return time_base;
+    return self.timeBase;
 }
 
 - (void)setMediaTimeScale:(CMTimeScale)mediaTimeScale
 {
-    time_base = mediaTimeScale;
+    self.timeBase = mediaTimeScale;
 }
 
 - (CGSize)naturalSize
@@ -1085,7 +1102,7 @@ error:
             do {
                 @autoreleasepool {
                     countEAGAIN = 0;
-                    if (!videoFilterEOF) {
+                    if (!self.videoFilterEOF) {
                         [self output_sync:^{
                             pullFilteredFrame(self, &ret);      // Pull filtered frame from the filtergraph
                         }];
@@ -1179,7 +1196,7 @@ error:
         if (ret == 0) {
             sb = [self createCompressedSampleBuffer];       // Create CMSampleBuffer from encoded packet
             if (sb) {
-                av_packet_unref(encoded);
+                // Let the encoder pipeline handle the packet cleanup
                 return sb;
             } else {
                 SecureErrorLogf(@"[MEManager] ERROR: Failed to createCompressedSampleBuffer.");
@@ -1228,8 +1245,7 @@ error:
         if (ret == 0) {
             sb = [self createUncompressedSampleBuffer];     // Create CMSampleBuffer from filtered frame
             if (sb) {
-                self.filteredValid = FALSE;
-                av_frame_unref(filtered);
+                [self.filterPipeline resetFilteredFrame];
                 return sb;
             } else {
                 SecureErrorLogf(@"[MEManager] ERROR: Failed to createUncompressedSampleBuffer.");
