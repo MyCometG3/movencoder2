@@ -1,6 +1,4 @@
 //
-#define _GNU_SOURCE
-
 //  MESecureLogging.m
 //  movencoder2
 //
@@ -11,6 +9,8 @@
 #import <stdarg.h>
 
 #import <libavutil/log.h>
+
+#define _GNU_SOURCE
 
 typedef NS_OPTIONS(NSUInteger, SanitizeOptions) {
     SanitizeOptionsNone = 0,
