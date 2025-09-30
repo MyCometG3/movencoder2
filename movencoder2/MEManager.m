@@ -208,7 +208,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setVerbose:(BOOL)verbose
 {
-    verbose = verbose;
+    _verbose = verbose;
     
     // Sync to all pipeline components
     self.filterPipeline.verbose = verbose;
