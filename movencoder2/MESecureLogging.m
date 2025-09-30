@@ -5,12 +5,11 @@
 //  Created by Security Enhancement
 //
 
+#define _GNU_SOURCE
 #import "MESecureLogging.h"
 #import <stdarg.h>
 
 #import <libavutil/log.h>
-
-#define _GNU_SOURCE
 
 typedef NS_OPTIONS(NSUInteger, SanitizeOptions) {
     SanitizeOptionsNone = 0,
