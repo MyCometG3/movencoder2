@@ -409,7 +409,9 @@ end:
     if (frame) {
         ret = avcodec_send_frame(avctx, (AVFrame *)frame);
         // Take ownership: unref the frame since avcodec_send_frame makes internal copy
-        av_frame_unref((AVFrame *)frame);
+        if (ret == 0) {
+            av_frame_unref((AVFrame *)frame);
+        }
     } else {
         ret = avcodec_send_frame(avctx, NULL); // Flush
         self.isFlushed = YES;
