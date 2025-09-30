@@ -2,6 +2,8 @@
 
 This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a wheel".
 
+Key components are now physically grouped (Plan A) into Config/Core/Pipeline/IO/Utils for easier navigation and future public/internal API separation.
+
 ### Source Tree Layout
 After recent reorganization (Plan A):
 ```
@@ -12,8 +14,19 @@ movencoder2/
   IO/                   # Input / Output & channel abstraction
   Utils/                # Helpers, common utilities, logging, parsing
   main.m                # CLI entry point
+
+#### Module Purpose Summary
+- Config: Type-safe encoder configuration & enums.
+- Core: Orchestration (transcoding control, manager, audio conversion helpers).
+- Pipeline: Encoder / filter / sample buffer pipeline components.
+- IO: Input/Output abstractions & channel coordination.
+- Utils: Cross-cutting utilities (logging, progress, parsing, common helpers).
+
 ```
-This is a purely physical grouping change; public APIs are not yet separated. Future steps may introduce Public/Internal split.
+This is a purely physical grouping change; public APIs are not yet separated. Planned future steps:
+- Extract clear Public API surface (METranscoder, MEVideoEncoderConfig, selective progress callbacks)
+- Add umbrella header (MovEncoder2.h)
+- Optionally prepare for SwiftPM / CocoaPods distribution
 
 #### Features:
 ###### Movie file support:
