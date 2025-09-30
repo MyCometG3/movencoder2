@@ -17,6 +17,7 @@ The movencoder2 project represents exemplary software engineering practices for 
 ### 🏗️ Architecture Quality  
 - **Clean modular design** with clear separation of concerns
 - **5-layer architecture** from CLI to infrastructure with proper abstractions
+- **Physical folder grouping added (Config/Core/Pipeline/IO/Utils) improving navigability**
 - **Professional Objective-C implementation** following Apple best practices
 - **Excellent encapsulation** with proper public/private API boundaries
 

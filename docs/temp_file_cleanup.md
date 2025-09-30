@@ -20,7 +20,7 @@ The solution implements automatic detection and removal of AVAssetWriter tempora
 ### Implementation Details
 
 #### Location
-- **File**: `movencoder2/METranscoder.m`
+- **File**: `movencoder2/Core/METranscoder.m`
 - **Method**: `cleanupTemporaryFilesForOutput:(NSURL*)outputURL`
 - **Trigger**: Called after all export attempts (success, failure, or cancellation) in `exportCustomOnError:`
 
@@ -101,5 +101,5 @@ A test demonstration is provided in `test_temp_cleanup.m` that shows:
 - **Backwards compatible**: No changes to public API
 
 ## Files Modified
-1. `movencoder2/METranscoder+Internal.h` - Added method declaration
-2. `movencoder2/METranscoder.m` - Added implementation and integration
+1. `movencoder2/Core/METranscoder+Internal.h` - Added method declaration (path updated)
+2. `movencoder2/Core/METranscoder.m` - Added implementation and integration (path updated)

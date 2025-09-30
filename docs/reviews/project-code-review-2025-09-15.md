@@ -44,21 +44,38 @@
 - **Architecture:** Command-line macOS application
 - **Target Platform:** macOS 12.x - 15.x (Monterey through Sequoia)
 
-### Major Modules and Structure
+### Major Modules and Structure (updated layout)
 ```
 movencoder2/
-├── main.m (635 LOC) - CLI entry point and argument parsing
-├── METranscoder.* (752 LOC) - Main transcoding controller
-├── MEManager.* (1953 LOC) - Video encoding via libavcodec/ffmpeg 
-├── MEAudioConverter.* (838 LOC) - Audio transcoding via AVFoundation
-├── MEInput.* (244 LOC) - Asset reading abstraction
-├── MEOutput.* (228 LOC) - Asset writing abstraction  
-├── SBChannel.* (301 LOC) - Sample buffer channel coordination
-├── MEUtils.* (1246 LOC) - Video format utilities and helpers
-├── parseUtil.* (354 LOC) - Command-line parameter parsing
-├── monitorUtil.* (195 LOC) - Process monitoring and signal handling
-└── MECommon.* (130 LOC) - Shared constants and definitions
+├── main.m (CLI entry point / argument parsing)
+├── Config/
+│   ├── METypes.h
+│   └── MEVideoEncoderConfig.*
+├── Core/
+│   ├── METranscoder.*
+│   ├── METranscoder+Internal.h
+│   ├── METranscoder+paramParser.m
+│   ├── METranscoder+prepareChannels.m
+│   ├── MEManager.*
+│   └── MEAudioConverter.*
+├── Pipeline/
+│   ├── MEEncoderPipeline.*
+│   ├── MEFilterPipeline.*
+│   └── MESampleBufferFactory.*
+├── IO/
+│   ├── MEInput.*
+│   ├── MEOutput.*  
+│   └── SBChannel.*
+├── Utils/
+│   ├── MEUtils.*
+│   ├── MECommon.*
+│   ├── MEProgressUtil.*
+│   ├── MEErrorFormatter.*
+│   ├── MESecureLogging.*
+│   ├── monitorUtil.*
+│   └── parseUtil.*
 ```
+(Original review pre-dated the physical reorganization; structure list updated.)
 
 ### Build System and Dependencies
 - **Build System:** Xcode project (movencoder2.xcodeproj)

@@ -37,18 +37,34 @@
 ```
 movencoder2/
 ├── main.m (635 LOC) - CLI entry point and enhanced argument parsing
-├── METranscoder.* (752 LOC) - Main transcoding controller
-├── MEManager.* (1953 LOC) - Video encoding via libavcodec/ffmpeg 
-├── MEAudioConverter.* (728 LOC) - Audio transcoding via AVFoundation
-├── MEInput.* (244 LOC) - Asset reading abstraction
-├── MEOutput.* (228 LOC) - Asset writing abstraction  
-├── SBChannel.* (301 LOC) - Sample buffer channel coordination
-├── MEUtils.* (1246 LOC) - Video format utilities and helpers
-├── parseUtil.* (359 LOC) - Secure command-line parameter parsing
-├── monitorUtil.* (169 LOC) - Process monitoring and signal handling
-├── MECommon.* (130 LOC) - Shared constants and definitions
-└── MESecureLogging.* (89 LOC) - NEW: Secure logging infrastructure
+├── Config/
+│   ├── METypes.h (codec enums, types)
+│   └── MEVideoEncoderConfig.* (type-safe encoder configuration)
+├── Core/
+│   ├── METranscoder.* (752 LOC) - Main transcoding controller
+│   ├── METranscoder+Internal.h (internal helpers)
+│   ├── METranscoder+paramParser.m (param parsing helpers)
+│   ├── METranscoder+prepareChannels.m (channel prep helpers)
+│   ├── MEManager.* (1953 LOC) - Video encoding orchestration
+│   └── MEAudioConverter.* (728 LOC) - Audio transcoding via AVFoundation
+├── Pipeline/
+│   ├── MEEncoderPipeline.*
+│   ├── MEFilterPipeline.*
+│   └── MESampleBufferFactory.*
+├── IO/
+│   ├── MEInput.* - Asset reading abstraction
+│   ├── MEOutput.* - Asset writing abstraction
+│   └── SBChannel.* - Sample buffer channel coordination
+├── Utils/
+│   ├── MEUtils.* (1246 LOC) - Video format utilities and helpers
+│   ├── MECommon.* (130 LOC) - Shared constants and definitions
+│   ├── MEProgressUtil.* - Progress calculation
+│   ├── MEErrorFormatter.* - Human friendly errors
+│   ├── MESecureLogging.* (89 LOC) - Secure logging infrastructure
+│   ├── monitorUtil.* (169 LOC) - Process monitoring and signal handling
+│   └── parseUtil.* (359 LOC) - Secure command-line parameter parsing
 ```
+(LOC counts are approximate; structural layout updated after reorganization.)
 
 ### Build System and Dependencies
 - **Build System**: Xcode project with explicit library linking

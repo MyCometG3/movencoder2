@@ -46,8 +46,8 @@ The cleanup is triggered after all export attempts (success, failure, or cancell
 
 ### Files Modified
 
-- `movencoder2/METranscoder+Internal.h` - Added method declaration
-- `movencoder2/METranscoder.m` - Added optimized cleanup implementation and integration
+- `movencoder2/Core/METranscoder+Internal.h` - Added method declaration (path updated after source tree reorganization)
+- `movencoder2/Core/METranscoder.m` - Added optimized cleanup implementation and integration (path updated)
 - `docs/temp_file_cleanup.md` - Added comprehensive documentation with implementation history
 - `.gitignore` - Updated to exclude test files
 

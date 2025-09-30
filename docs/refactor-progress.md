@@ -50,7 +50,7 @@ This document summarizes the refactor/incremental improvements merged recently i
 ## Not Yet Done / Pending (Future Phases)
 - Expand `MEErrorFormatter` coverage to more FFmpeg sites (av_frame alloc, avcodec_send_frame/receive_packet, buffer add, etc.).
 - Stronger semantic validation (mutually exclusive params, ranges, PAR edge cases).
-- Split `MEManager` into dedicated pipeline components (FilterPipeline, EncoderPipeline, SampleBufferFactory).
+- Split `MEManager` into dedicated pipeline components (FilterPipeline, EncoderPipeline, SampleBufferFactory). (Partially reflected physically: Pipeline/, Core/, IO/ folders added)
 - Consolidate encoder/filter state into a single state struct/state machine and add docs/architecture diagram (`docs/dev/architecture.md`).
 - Add CLI option(s) like `--dump-config` for normalized config output.
 - Performance metrics and back-off tuning for EAGAIN / retries (potential exponential back-off + instrumentation counters).
