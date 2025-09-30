@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1613EE172E69BB01001F7E56 /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1613EE162E69BB01001F7E56 /* MEAudioConverter.m */; };
 		1654A0CB26DC75D500E7DBB8 /* liblzma.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C826DC75D500E7DBB8 /* liblzma.dylib */; };
 		1654A0CC26DC75D500E7DBB8 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C926DC75D500E7DBB8 /* libz.dylib */; };
 		1654A0CD26DC75D500E7DBB8 /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CA26DC75D500E7DBB8 /* libbz2.dylib */; };
@@ -20,16 +19,8 @@
 		1654A0E026DC769000E7DBB8 /* libswresample.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D626DC768F00E7DBB8 /* libswresample.dylib */; };
 		1654A0E126DC769000E7DBB8 /* libx265.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D726DC768F00E7DBB8 /* libx265.dylib */; };
 		1654A0E226DC769000E7DBB8 /* libavcodec.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D826DC768F00E7DBB8 /* libavcodec.dylib */; };
-		16741CE421A922C1000EEC78 /* SBChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CE321A922C1000EEC78 /* SBChannel.m */; };
-		16741CEB21A92DC6000EEC78 /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CEA21A92DC6000EEC78 /* MEInput.m */; };
-		16741CEE21A92DD1000EEC78 /* MEOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CED21A92DD1000EEC78 /* MEOutput.m */; };
-		16741CF121B37DCD000EEC78 /* MEManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CF021B37DCD000EEC78 /* MEManager.m */; };
-		169986EA21F324F600072E5D /* MEUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 169986E921F324F600072E5D /* MEUtils.m */; };
 		16B81255218D701000E24173 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B81254218D701000E24173 /* main.m */; };
-		16B8125C218D72AD00E24173 /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125B218D72AD00E24173 /* monitorUtil.m */; };
-		16B81260218D754600E24173 /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125F218D754600E24173 /* METranscoder.m */; };
 		16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */; };
-		16C1DAEA2E87D47600DD415F /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */; };
 		16C1DAEF2E87F02000DD415F /* MEVideoEncoderConfigTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAEB2E87EF1F00DD415F /* MEVideoEncoderConfigTests.m */; };
 		16C1DAF42E87F0A000DD415F /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16C1DAF32E87F0A000DD415F /* XCTest.framework */; };
 		16C1DAFD2E87F28B00DD415F /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CA26DC75D500E7DBB8 /* libbz2.dylib */; };
@@ -45,35 +36,44 @@
 		16C1DB072E87F2CC00DD415F /* libavdevice.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D426DC768F00E7DBB8 /* libavdevice.dylib */; };
 		16C1DB082E87F2D200DD415F /* libavcodec.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D826DC768F00E7DBB8 /* libavcodec.dylib */; };
 		16C1DB092E87F32D00DD415F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B81254218D701000E24173 /* main.m */; };
-		16C1DB0A2E87F32D00DD415F /* METranscoder+paramParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62482E6C86BD00152AD8 /* METranscoder+paramParser.m */; };
-		16C1DB0B2E87F32D00DD415F /* SBChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CE321A922C1000EEC78 /* SBChannel.m */; };
-		16C1DB0C2E87F32D00DD415F /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
-		16C1DB0D2E87F32D00DD415F /* MEManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CF021B37DCD000EEC78 /* MEManager.m */; };
-		16C1DB0E2E87F32D00DD415F /* MEOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CED21A92DD1000EEC78 /* MEOutput.m */; };
 		16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */; };
-		16C1DB102E87F32D00DD415F /* METranscoder+prepareChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62492E6C86BD00152AD8 /* METranscoder+prepareChannels.m */; };
-		16C1DB112E87F32D00DD415F /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 1613EE162E69BB01001F7E56 /* MEAudioConverter.m */; };
-		16C1DB122E87F32D00DD415F /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125F218D754600E24173 /* METranscoder.m */; };
-		16C1DB132E87F32D00DD415F /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */; };
-		16C1DB142E87F32D00DD415F /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B8125B218D72AD00E24173 /* monitorUtil.m */; };
-		16C1DB152E87F32D00DD415F /* MEUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 169986E921F324F600072E5D /* MEUtils.m */; };
-		16C1DB162E87F32D00DD415F /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
-		16C1DB172E87F32D00DD415F /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16741CEA21A92DC6000EEC78 /* MEInput.m */; };
-		16C1DB182E87F32D00DD415F /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
-		16C1DB1C2E88168600DD415F /* MEProgressUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB1B2E88168600DD415F /* MEProgressUtil.m */; };
-		16C1DB1D2E88168600DD415F /* MEProgressUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB1B2E88168600DD415F /* MEProgressUtil.m */; };
 		16C1DB282E8AAC4400DD415F /* MEPipelineIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB272E8AAC4400DD415F /* MEPipelineIntegrationTests.m */; };
-		16C1DB2F2E8AACD100DD415F /* MEEncoderPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB2A2E8AACD100DD415F /* MEEncoderPipeline.m */; };
-		16C1DB302E8AACD100DD415F /* MEFilterPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB2C2E8AACD100DD415F /* MEFilterPipeline.m */; };
-		16C1DB312E8AACD100DD415F /* MESampleBufferFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB2E2E8AACD100DD415F /* MESampleBufferFactory.m */; };
-		16C1DB322E8AACD100DD415F /* MEEncoderPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB2A2E8AACD100DD415F /* MEEncoderPipeline.m */; };
-		16C1DB332E8AACD100DD415F /* MEFilterPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB2C2E8AACD100DD415F /* MEFilterPipeline.m */; };
-		16C1DB342E8AACD100DD415F /* MESampleBufferFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB2E2E8AACD100DD415F /* MESampleBufferFactory.m */; };
-		16CA58622E7850420080658C /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16CA58612E7850420080658C /* MESecureLogging.m */; };
-		16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16D36C9222B5B4D7006E3DBF /* parseUtil.m */; };
-		16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62422E6BD1F800152AD8 /* MECommon.m */; };
-		16ED624A2E6C86BD00152AD8 /* METranscoder+prepareChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62492E6C86BD00152AD8 /* METranscoder+prepareChannels.m */; };
-		16ED624B2E6C86BD00152AD8 /* METranscoder+paramParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 16ED62482E6C86BD00152AD8 /* METranscoder+paramParser.m */; };
+		16DF462F2E8C1A2B006AF79A /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462D2E8C1A2B006AF79A /* parseUtil.m */; };
+		16DF46302E8C1A2B006AF79A /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462B2E8C1A2B006AF79A /* monitorUtil.m */; };
+		16DF46312E8C1A2B006AF79A /* METranscoder+paramParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460F2E8C1A2B006AF79A /* METranscoder+paramParser.m */; };
+		16DF46322E8C1A2B006AF79A /* MEManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460B2E8C1A2B006AF79A /* MEManager.m */; };
+		16DF46332E8C1A2B006AF79A /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46272E8C1A2B006AF79A /* MESecureLogging.m */; };
+		16DF46342E8C1A2B006AF79A /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46232E8C1A2B006AF79A /* MEErrorFormatter.m */; };
+		16DF46352E8C1A2B006AF79A /* SBChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46172E8C1A2B006AF79A /* SBChannel.m */; };
+		16DF46362E8C1A2B006AF79A /* MEUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46292E8C1A2B006AF79A /* MEUtils.m */; };
+		16DF46372E8C1A2B006AF79A /* MEEncoderPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461A2E8C1A2B006AF79A /* MEEncoderPipeline.m */; };
+		16DF46382E8C1A2B006AF79A /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46212E8C1A2B006AF79A /* MECommon.m */; };
+		16DF46392E8C1A2B006AF79A /* MEOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46152E8C1A2B006AF79A /* MEOutput.m */; };
+		16DF463A2E8C1A2B006AF79A /* METranscoder+prepareChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46102E8C1A2B006AF79A /* METranscoder+prepareChannels.m */; };
+		16DF463B2E8C1A2B006AF79A /* MEFilterPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461C2E8C1A2B006AF79A /* MEFilterPipeline.m */; };
+		16DF463C2E8C1A2B006AF79A /* MEProgressUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46252E8C1A2B006AF79A /* MEProgressUtil.m */; };
+		16DF463D2E8C1A2B006AF79A /* MESampleBufferFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461E2E8C1A2B006AF79A /* MESampleBufferFactory.m */; };
+		16DF463E2E8C1A2B006AF79A /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46132E8C1A2B006AF79A /* MEInput.m */; };
+		16DF463F2E8C1A2B006AF79A /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */; };
+		16DF46402E8C1A2B006AF79A /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460D2E8C1A2B006AF79A /* METranscoder.m */; };
+		16DF46412E8C1A2B006AF79A /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462D2E8C1A2B006AF79A /* parseUtil.m */; };
+		16DF46422E8C1A2B006AF79A /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462B2E8C1A2B006AF79A /* monitorUtil.m */; };
+		16DF46432E8C1A2B006AF79A /* METranscoder+paramParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460F2E8C1A2B006AF79A /* METranscoder+paramParser.m */; };
+		16DF46442E8C1A2B006AF79A /* MEManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460B2E8C1A2B006AF79A /* MEManager.m */; };
+		16DF46452E8C1A2B006AF79A /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46272E8C1A2B006AF79A /* MESecureLogging.m */; };
+		16DF46462E8C1A2B006AF79A /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46232E8C1A2B006AF79A /* MEErrorFormatter.m */; };
+		16DF46472E8C1A2B006AF79A /* SBChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46172E8C1A2B006AF79A /* SBChannel.m */; };
+		16DF46482E8C1A2B006AF79A /* MEUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46292E8C1A2B006AF79A /* MEUtils.m */; };
+		16DF46492E8C1A2B006AF79A /* MEEncoderPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461A2E8C1A2B006AF79A /* MEEncoderPipeline.m */; };
+		16DF464A2E8C1A2B006AF79A /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46212E8C1A2B006AF79A /* MECommon.m */; };
+		16DF464B2E8C1A2B006AF79A /* MEOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46152E8C1A2B006AF79A /* MEOutput.m */; };
+		16DF464C2E8C1A2B006AF79A /* METranscoder+prepareChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46102E8C1A2B006AF79A /* METranscoder+prepareChannels.m */; };
+		16DF464D2E8C1A2B006AF79A /* MEFilterPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461C2E8C1A2B006AF79A /* MEFilterPipeline.m */; };
+		16DF464E2E8C1A2B006AF79A /* MEProgressUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46252E8C1A2B006AF79A /* MEProgressUtil.m */; };
+		16DF464F2E8C1A2B006AF79A /* MESampleBufferFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461E2E8C1A2B006AF79A /* MESampleBufferFactory.m */; };
+		16DF46502E8C1A2B006AF79A /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46132E8C1A2B006AF79A /* MEInput.m */; };
+		16DF46512E8C1A2B006AF79A /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */; };
+		16DF46522E8C1A2B006AF79A /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460D2E8C1A2B006AF79A /* METranscoder.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -89,8 +89,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		1613EE152E69BB01001F7E56 /* MEAudioConverter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEAudioConverter.h; sourceTree = "<group>"; };
-		1613EE162E69BB01001F7E56 /* MEAudioConverter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEAudioConverter.m; sourceTree = "<group>"; };
 		161907892884E28B001BFA7E /* HowToBuildLibs.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = HowToBuildLibs.md; sourceTree = "<group>"; };
 		1654A0C826DC75D500E7DBB8 /* liblzma.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblzma.dylib; path = ../../../../../opt/local/lib/liblzma.dylib; sourceTree = "<group>"; };
 		1654A0C926DC75D500E7DBB8 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = ../../../../../opt/local/lib/libz.dylib; sourceTree = "<group>"; };
@@ -104,53 +102,55 @@
 		1654A0D626DC768F00E7DBB8 /* libswresample.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libswresample.dylib; path = ../../../../../usr/local/lib/libswresample.dylib; sourceTree = "<group>"; };
 		1654A0D726DC768F00E7DBB8 /* libx265.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libx265.dylib; path = ../../../../../usr/local/lib/libx265.dylib; sourceTree = "<group>"; };
 		1654A0D826DC768F00E7DBB8 /* libavcodec.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavcodec.dylib; path = ../../../../../usr/local/lib/libavcodec.dylib; sourceTree = "<group>"; };
-		16741CE221A922C1000EEC78 /* SBChannel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBChannel.h; sourceTree = "<group>"; };
-		16741CE321A922C1000EEC78 /* SBChannel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SBChannel.m; sourceTree = "<group>"; };
 		16741CE521A924FB000EEC78 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		16741CE721A92550000EEC78 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
-		16741CE921A92DC6000EEC78 /* MEInput.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEInput.h; sourceTree = "<group>"; };
-		16741CEA21A92DC6000EEC78 /* MEInput.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEInput.m; sourceTree = "<group>"; };
-		16741CEC21A92DD1000EEC78 /* MEOutput.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEOutput.h; sourceTree = "<group>"; };
-		16741CED21A92DD1000EEC78 /* MEOutput.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEOutput.m; sourceTree = "<group>"; };
-		16741CEF21B37DCD000EEC78 /* MEManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEManager.h; sourceTree = "<group>"; };
-		16741CF021B37DCD000EEC78 /* MEManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEManager.m; sourceTree = "<group>"; };
-		169986E921F324F600072E5D /* MEUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEUtils.m; sourceTree = "<group>"; };
-		169986EB21F3250400072E5D /* MEUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEUtils.h; sourceTree = "<group>"; };
 		16A9573A22C05AED008868AF /* COPYING.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.txt; sourceTree = "<group>"; };
 		16A9573B22C05AED008868AF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		16B81251218D701000E24173 /* movencoder2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = movencoder2; sourceTree = BUILT_PRODUCTS_DIR; };
 		16B81254218D701000E24173 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		16B8125B218D72AD00E24173 /* monitorUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = monitorUtil.m; sourceTree = "<group>"; };
-		16B8125D218D72BB00E24173 /* monitorUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = monitorUtil.h; sourceTree = "<group>"; };
-		16B8125E218D754600E24173 /* METranscoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METranscoder.h; sourceTree = "<group>"; };
-		16B8125F218D754600E24173 /* METranscoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscoder.m; sourceTree = "<group>"; };
 		16C1DAE32E87D32700DD415F /* METypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METypes.h; sourceTree = "<group>"; };
 		16C1DAE42E87D32700DD415F /* MEVideoEncoderConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEVideoEncoderConfig.h; sourceTree = "<group>"; };
 		16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEVideoEncoderConfig.m; sourceTree = "<group>"; };
-		16C1DAE82E87D47600DD415F /* MEErrorFormatter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEErrorFormatter.h; sourceTree = "<group>"; };
-		16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEErrorFormatter.m; sourceTree = "<group>"; };
 		16C1DAEB2E87EF1F00DD415F /* MEVideoEncoderConfigTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEVideoEncoderConfigTests.m; sourceTree = "<group>"; };
 		16C1DAF32E87F0A000DD415F /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = movencoder2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		16C1DB192E87F36800DD415F /* movencoder2Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = movencoder2Tests.xctestplan; sourceTree = "<group>"; };
-		16C1DB1A2E88168600DD415F /* MEProgressUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEProgressUtil.h; sourceTree = "<group>"; };
-		16C1DB1B2E88168600DD415F /* MEProgressUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEProgressUtil.m; sourceTree = "<group>"; };
 		16C1DB272E8AAC4400DD415F /* MEPipelineIntegrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEPipelineIntegrationTests.m; sourceTree = "<group>"; };
-		16C1DB292E8AACD100DD415F /* MEEncoderPipeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEEncoderPipeline.h; sourceTree = "<group>"; };
-		16C1DB2A2E8AACD100DD415F /* MEEncoderPipeline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEEncoderPipeline.m; sourceTree = "<group>"; };
-		16C1DB2B2E8AACD100DD415F /* MEFilterPipeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEFilterPipeline.h; sourceTree = "<group>"; };
-		16C1DB2C2E8AACD100DD415F /* MEFilterPipeline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEFilterPipeline.m; sourceTree = "<group>"; };
-		16C1DB2D2E8AACD100DD415F /* MESampleBufferFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESampleBufferFactory.h; sourceTree = "<group>"; };
-		16C1DB2E2E8AACD100DD415F /* MESampleBufferFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESampleBufferFactory.m; sourceTree = "<group>"; };
-		16CA58602E7850420080658C /* MESecureLogging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESecureLogging.h; sourceTree = "<group>"; };
-		16CA58612E7850420080658C /* MESecureLogging.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESecureLogging.m; sourceTree = "<group>"; };
-		16D36C9222B5B4D7006E3DBF /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
-		16D36C9422B5B549006E3DBF /* parseUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parseUtil.h; sourceTree = "<group>"; };
-		16ED62412E6BD1F800152AD8 /* MECommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MECommon.h; sourceTree = "<group>"; };
-		16ED62422E6BD1F800152AD8 /* MECommon.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MECommon.m; sourceTree = "<group>"; };
-		16ED62482E6C86BD00152AD8 /* METranscoder+paramParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+paramParser.m"; sourceTree = "<group>"; };
-		16ED62492E6C86BD00152AD8 /* METranscoder+prepareChannels.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+prepareChannels.m"; sourceTree = "<group>"; };
-		16ED624C2E6C878C00152AD8 /* METranscoder+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "METranscoder+Internal.h"; sourceTree = "<group>"; };
+		16DF46082E8C1A2B006AF79A /* MEAudioConverter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEAudioConverter.h; sourceTree = "<group>"; };
+		16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEAudioConverter.m; sourceTree = "<group>"; };
+		16DF460A2E8C1A2B006AF79A /* MEManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEManager.h; sourceTree = "<group>"; };
+		16DF460B2E8C1A2B006AF79A /* MEManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEManager.m; sourceTree = "<group>"; };
+		16DF460C2E8C1A2B006AF79A /* METranscoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METranscoder.h; sourceTree = "<group>"; };
+		16DF460D2E8C1A2B006AF79A /* METranscoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscoder.m; sourceTree = "<group>"; };
+		16DF460E2E8C1A2B006AF79A /* METranscoder+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "METranscoder+Internal.h"; sourceTree = "<group>"; };
+		16DF460F2E8C1A2B006AF79A /* METranscoder+paramParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+paramParser.m"; sourceTree = "<group>"; };
+		16DF46102E8C1A2B006AF79A /* METranscoder+prepareChannels.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+prepareChannels.m"; sourceTree = "<group>"; };
+		16DF46122E8C1A2B006AF79A /* MEInput.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEInput.h; sourceTree = "<group>"; };
+		16DF46132E8C1A2B006AF79A /* MEInput.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEInput.m; sourceTree = "<group>"; };
+		16DF46142E8C1A2B006AF79A /* MEOutput.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEOutput.h; sourceTree = "<group>"; };
+		16DF46152E8C1A2B006AF79A /* MEOutput.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEOutput.m; sourceTree = "<group>"; };
+		16DF46162E8C1A2B006AF79A /* SBChannel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SBChannel.h; sourceTree = "<group>"; };
+		16DF46172E8C1A2B006AF79A /* SBChannel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SBChannel.m; sourceTree = "<group>"; };
+		16DF46192E8C1A2B006AF79A /* MEEncoderPipeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEEncoderPipeline.h; sourceTree = "<group>"; };
+		16DF461A2E8C1A2B006AF79A /* MEEncoderPipeline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEEncoderPipeline.m; sourceTree = "<group>"; };
+		16DF461B2E8C1A2B006AF79A /* MEFilterPipeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEFilterPipeline.h; sourceTree = "<group>"; };
+		16DF461C2E8C1A2B006AF79A /* MEFilterPipeline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEFilterPipeline.m; sourceTree = "<group>"; };
+		16DF461D2E8C1A2B006AF79A /* MESampleBufferFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESampleBufferFactory.h; sourceTree = "<group>"; };
+		16DF461E2E8C1A2B006AF79A /* MESampleBufferFactory.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESampleBufferFactory.m; sourceTree = "<group>"; };
+		16DF46202E8C1A2B006AF79A /* MECommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MECommon.h; sourceTree = "<group>"; };
+		16DF46212E8C1A2B006AF79A /* MECommon.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MECommon.m; sourceTree = "<group>"; };
+		16DF46222E8C1A2B006AF79A /* MEErrorFormatter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEErrorFormatter.h; sourceTree = "<group>"; };
+		16DF46232E8C1A2B006AF79A /* MEErrorFormatter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEErrorFormatter.m; sourceTree = "<group>"; };
+		16DF46242E8C1A2B006AF79A /* MEProgressUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEProgressUtil.h; sourceTree = "<group>"; };
+		16DF46252E8C1A2B006AF79A /* MEProgressUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEProgressUtil.m; sourceTree = "<group>"; };
+		16DF46262E8C1A2B006AF79A /* MESecureLogging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MESecureLogging.h; sourceTree = "<group>"; };
+		16DF46272E8C1A2B006AF79A /* MESecureLogging.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESecureLogging.m; sourceTree = "<group>"; };
+		16DF46282E8C1A2B006AF79A /* MEUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEUtils.h; sourceTree = "<group>"; };
+		16DF46292E8C1A2B006AF79A /* MEUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEUtils.m; sourceTree = "<group>"; };
+		16DF462A2E8C1A2B006AF79A /* monitorUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = monitorUtil.h; sourceTree = "<group>"; };
+		16DF462B2E8C1A2B006AF79A /* monitorUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = monitorUtil.m; sourceTree = "<group>"; };
+		16DF462C2E8C1A2B006AF79A /* parseUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parseUtil.h; sourceTree = "<group>"; };
+		16DF462D2E8C1A2B006AF79A /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -222,16 +222,6 @@
 			name = "dylib at usr-local-lib";
 			sourceTree = "<group>";
 		};
-		16A9573922C05AC8008868AF /* resource */ = {
-			isa = PBXGroup;
-			children = (
-				16A9573A22C05AED008868AF /* COPYING.txt */,
-				16A9573B22C05AED008868AF /* README.md */,
-				161907892884E28B001BFA7E /* HowToBuildLibs.md */,
-			);
-			name = resource;
-			sourceTree = "<group>";
-		};
 		16AD45BF21965FB500A0BB95 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -246,7 +236,9 @@
 		16B81248218D701000E24173 = {
 			isa = PBXGroup;
 			children = (
-				16A9573922C05AC8008868AF /* resource */,
+				16A9573A22C05AED008868AF /* COPYING.txt */,
+				16A9573B22C05AED008868AF /* README.md */,
+				161907892884E28B001BFA7E /* HowToBuildLibs.md */,
 				16B81253218D701000E24173 /* movencoder2 */,
 				16C1DAEC2E87EF1F00DD415F /* movencoder2Tests */,
 				16B81252218D701000E24173 /* Products */,
@@ -267,43 +259,12 @@
 		16B81253218D701000E24173 /* movencoder2 */ = {
 			isa = PBXGroup;
 			children = (
-				16C1DAE62E87D32700DD415F /* Config */,
 				16B81254218D701000E24173 /* main.m */,
-				1613EE152E69BB01001F7E56 /* MEAudioConverter.h */,
-				1613EE162E69BB01001F7E56 /* MEAudioConverter.m */,
-				16ED62412E6BD1F800152AD8 /* MECommon.h */,
-				16ED62422E6BD1F800152AD8 /* MECommon.m */,
-				16C1DB292E8AACD100DD415F /* MEEncoderPipeline.h */,
-				16C1DB2A2E8AACD100DD415F /* MEEncoderPipeline.m */,
-				16C1DAE82E87D47600DD415F /* MEErrorFormatter.h */,
-				16C1DAE92E87D47600DD415F /* MEErrorFormatter.m */,
-				16C1DB2B2E8AACD100DD415F /* MEFilterPipeline.h */,
-				16C1DB2C2E8AACD100DD415F /* MEFilterPipeline.m */,
-				16741CE921A92DC6000EEC78 /* MEInput.h */,
-				16741CEA21A92DC6000EEC78 /* MEInput.m */,
-				16741CEF21B37DCD000EEC78 /* MEManager.h */,
-				16741CF021B37DCD000EEC78 /* MEManager.m */,
-				16741CEC21A92DD1000EEC78 /* MEOutput.h */,
-				16741CED21A92DD1000EEC78 /* MEOutput.m */,
-				16C1DB1A2E88168600DD415F /* MEProgressUtil.h */,
-				16C1DB1B2E88168600DD415F /* MEProgressUtil.m */,
-				16C1DB2D2E8AACD100DD415F /* MESampleBufferFactory.h */,
-				16C1DB2E2E8AACD100DD415F /* MESampleBufferFactory.m */,
-				16CA58602E7850420080658C /* MESecureLogging.h */,
-				16CA58612E7850420080658C /* MESecureLogging.m */,
-				16B8125E218D754600E24173 /* METranscoder.h */,
-				16B8125F218D754600E24173 /* METranscoder.m */,
-				16ED624C2E6C878C00152AD8 /* METranscoder+Internal.h */,
-				16ED62482E6C86BD00152AD8 /* METranscoder+paramParser.m */,
-				16ED62492E6C86BD00152AD8 /* METranscoder+prepareChannels.m */,
-				169986EB21F3250400072E5D /* MEUtils.h */,
-				169986E921F324F600072E5D /* MEUtils.m */,
-				16B8125D218D72BB00E24173 /* monitorUtil.h */,
-				16B8125B218D72AD00E24173 /* monitorUtil.m */,
-				16D36C9422B5B549006E3DBF /* parseUtil.h */,
-				16D36C9222B5B4D7006E3DBF /* parseUtil.m */,
-				16741CE221A922C1000EEC78 /* SBChannel.h */,
-				16741CE321A922C1000EEC78 /* SBChannel.m */,
+				16C1DAE62E87D32700DD415F /* Config */,
+				16DF46112E8C1A2B006AF79A /* Core */,
+				16DF46182E8C1A2B006AF79A /* IO */,
+				16DF461F2E8C1A2B006AF79A /* Pipeline */,
+				16DF462E2E8C1A2B006AF79A /* Utils */,
 			);
 			path = movencoder2;
 			sourceTree = "<group>";
@@ -334,6 +295,69 @@
 				16C1DAF32E87F0A000DD415F /* XCTest.framework */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		16DF46112E8C1A2B006AF79A /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				16DF46082E8C1A2B006AF79A /* MEAudioConverter.h */,
+				16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */,
+				16DF460A2E8C1A2B006AF79A /* MEManager.h */,
+				16DF460B2E8C1A2B006AF79A /* MEManager.m */,
+				16DF460C2E8C1A2B006AF79A /* METranscoder.h */,
+				16DF460D2E8C1A2B006AF79A /* METranscoder.m */,
+				16DF460E2E8C1A2B006AF79A /* METranscoder+Internal.h */,
+				16DF460F2E8C1A2B006AF79A /* METranscoder+paramParser.m */,
+				16DF46102E8C1A2B006AF79A /* METranscoder+prepareChannels.m */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		16DF46182E8C1A2B006AF79A /* IO */ = {
+			isa = PBXGroup;
+			children = (
+				16DF46122E8C1A2B006AF79A /* MEInput.h */,
+				16DF46132E8C1A2B006AF79A /* MEInput.m */,
+				16DF46142E8C1A2B006AF79A /* MEOutput.h */,
+				16DF46152E8C1A2B006AF79A /* MEOutput.m */,
+				16DF46162E8C1A2B006AF79A /* SBChannel.h */,
+				16DF46172E8C1A2B006AF79A /* SBChannel.m */,
+			);
+			path = IO;
+			sourceTree = "<group>";
+		};
+		16DF461F2E8C1A2B006AF79A /* Pipeline */ = {
+			isa = PBXGroup;
+			children = (
+				16DF46192E8C1A2B006AF79A /* MEEncoderPipeline.h */,
+				16DF461A2E8C1A2B006AF79A /* MEEncoderPipeline.m */,
+				16DF461B2E8C1A2B006AF79A /* MEFilterPipeline.h */,
+				16DF461C2E8C1A2B006AF79A /* MEFilterPipeline.m */,
+				16DF461D2E8C1A2B006AF79A /* MESampleBufferFactory.h */,
+				16DF461E2E8C1A2B006AF79A /* MESampleBufferFactory.m */,
+			);
+			path = Pipeline;
+			sourceTree = "<group>";
+		};
+		16DF462E2E8C1A2B006AF79A /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				16DF46202E8C1A2B006AF79A /* MECommon.h */,
+				16DF46212E8C1A2B006AF79A /* MECommon.m */,
+				16DF46222E8C1A2B006AF79A /* MEErrorFormatter.h */,
+				16DF46232E8C1A2B006AF79A /* MEErrorFormatter.m */,
+				16DF46242E8C1A2B006AF79A /* MEProgressUtil.h */,
+				16DF46252E8C1A2B006AF79A /* MEProgressUtil.m */,
+				16DF46262E8C1A2B006AF79A /* MESecureLogging.h */,
+				16DF46272E8C1A2B006AF79A /* MESecureLogging.m */,
+				16DF46282E8C1A2B006AF79A /* MEUtils.h */,
+				16DF46292E8C1A2B006AF79A /* MEUtils.m */,
+				16DF462A2E8C1A2B006AF79A /* monitorUtil.h */,
+				16DF462B2E8C1A2B006AF79A /* monitorUtil.m */,
+				16DF462C2E8C1A2B006AF79A /* parseUtil.h */,
+				16DF462D2E8C1A2B006AF79A /* parseUtil.m */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -414,26 +438,26 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				16741CE421A922C1000EEC78 /* SBChannel.m in Sources */,
-				16D36C9322B5B4D7006E3DBF /* parseUtil.m in Sources */,
-				16B8125C218D72AD00E24173 /* monitorUtil.m in Sources */,
-				1613EE172E69BB01001F7E56 /* MEAudioConverter.m in Sources */,
-				16741CEE21A92DD1000EEC78 /* MEOutput.m in Sources */,
-				16ED62432E6BD1F800152AD8 /* MECommon.m in Sources */,
-				16CA58622E7850420080658C /* MESecureLogging.m in Sources */,
-				16C1DB1C2E88168600DD415F /* MEProgressUtil.m in Sources */,
-				16741CF121B37DCD000EEC78 /* MEManager.m in Sources */,
-				16C1DB2F2E8AACD100DD415F /* MEEncoderPipeline.m in Sources */,
-				16C1DB302E8AACD100DD415F /* MEFilterPipeline.m in Sources */,
-				16C1DB312E8AACD100DD415F /* MESampleBufferFactory.m in Sources */,
-				16ED624A2E6C86BD00152AD8 /* METranscoder+prepareChannels.m in Sources */,
+				16DF46412E8C1A2B006AF79A /* parseUtil.m in Sources */,
+				16DF46422E8C1A2B006AF79A /* monitorUtil.m in Sources */,
+				16DF46432E8C1A2B006AF79A /* METranscoder+paramParser.m in Sources */,
+				16DF46442E8C1A2B006AF79A /* MEManager.m in Sources */,
+				16DF46452E8C1A2B006AF79A /* MESecureLogging.m in Sources */,
+				16DF46462E8C1A2B006AF79A /* MEErrorFormatter.m in Sources */,
+				16DF46472E8C1A2B006AF79A /* SBChannel.m in Sources */,
+				16DF46482E8C1A2B006AF79A /* MEUtils.m in Sources */,
+				16DF46492E8C1A2B006AF79A /* MEEncoderPipeline.m in Sources */,
+				16DF464A2E8C1A2B006AF79A /* MECommon.m in Sources */,
+				16DF464B2E8C1A2B006AF79A /* MEOutput.m in Sources */,
+				16DF464C2E8C1A2B006AF79A /* METranscoder+prepareChannels.m in Sources */,
+				16DF464D2E8C1A2B006AF79A /* MEFilterPipeline.m in Sources */,
+				16DF464E2E8C1A2B006AF79A /* MEProgressUtil.m in Sources */,
+				16DF464F2E8C1A2B006AF79A /* MESampleBufferFactory.m in Sources */,
+				16DF46502E8C1A2B006AF79A /* MEInput.m in Sources */,
+				16DF46512E8C1A2B006AF79A /* MEAudioConverter.m in Sources */,
+				16DF46522E8C1A2B006AF79A /* METranscoder.m in Sources */,
 				16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */,
-				16ED624B2E6C86BD00152AD8 /* METranscoder+paramParser.m in Sources */,
-				16B81260218D754600E24173 /* METranscoder.m in Sources */,
 				16B81255218D701000E24173 /* main.m in Sources */,
-				16C1DAEA2E87D47600DD415F /* MEErrorFormatter.m in Sources */,
-				16741CEB21A92DC6000EEC78 /* MEInput.m in Sources */,
-				169986EA21F324F600072E5D /* MEUtils.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -442,26 +466,26 @@
 			buildActionMask = 2147483647;
 			files = (
 				16C1DB092E87F32D00DD415F /* main.m in Sources */,
-				16C1DB0A2E87F32D00DD415F /* METranscoder+paramParser.m in Sources */,
-				16C1DB0B2E87F32D00DD415F /* SBChannel.m in Sources */,
-				16C1DB0C2E87F32D00DD415F /* MECommon.m in Sources */,
-				16C1DB0D2E87F32D00DD415F /* MEManager.m in Sources */,
+				16DF462F2E8C1A2B006AF79A /* parseUtil.m in Sources */,
+				16DF46302E8C1A2B006AF79A /* monitorUtil.m in Sources */,
+				16DF46312E8C1A2B006AF79A /* METranscoder+paramParser.m in Sources */,
+				16DF46322E8C1A2B006AF79A /* MEManager.m in Sources */,
+				16DF46332E8C1A2B006AF79A /* MESecureLogging.m in Sources */,
+				16DF46342E8C1A2B006AF79A /* MEErrorFormatter.m in Sources */,
+				16DF46352E8C1A2B006AF79A /* SBChannel.m in Sources */,
+				16DF46362E8C1A2B006AF79A /* MEUtils.m in Sources */,
+				16DF46372E8C1A2B006AF79A /* MEEncoderPipeline.m in Sources */,
+				16DF46382E8C1A2B006AF79A /* MECommon.m in Sources */,
+				16DF46392E8C1A2B006AF79A /* MEOutput.m in Sources */,
+				16DF463A2E8C1A2B006AF79A /* METranscoder+prepareChannels.m in Sources */,
+				16DF463B2E8C1A2B006AF79A /* MEFilterPipeline.m in Sources */,
+				16DF463C2E8C1A2B006AF79A /* MEProgressUtil.m in Sources */,
+				16DF463D2E8C1A2B006AF79A /* MESampleBufferFactory.m in Sources */,
+				16DF463E2E8C1A2B006AF79A /* MEInput.m in Sources */,
+				16DF463F2E8C1A2B006AF79A /* MEAudioConverter.m in Sources */,
+				16DF46402E8C1A2B006AF79A /* METranscoder.m in Sources */,
 				16C1DB282E8AAC4400DD415F /* MEPipelineIntegrationTests.m in Sources */,
-				16C1DB0E2E87F32D00DD415F /* MEOutput.m in Sources */,
 				16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */,
-				16C1DB102E87F32D00DD415F /* METranscoder+prepareChannels.m in Sources */,
-				16C1DB112E87F32D00DD415F /* MEAudioConverter.m in Sources */,
-				16C1DB122E87F32D00DD415F /* METranscoder.m in Sources */,
-				16C1DB132E87F32D00DD415F /* MEErrorFormatter.m in Sources */,
-				16C1DB142E87F32D00DD415F /* monitorUtil.m in Sources */,
-				16C1DB1D2E88168600DD415F /* MEProgressUtil.m in Sources */,
-				16C1DB152E87F32D00DD415F /* MEUtils.m in Sources */,
-				16C1DB162E87F32D00DD415F /* parseUtil.m in Sources */,
-				16C1DB172E87F32D00DD415F /* MEInput.m in Sources */,
-				16C1DB322E8AACD100DD415F /* MEEncoderPipeline.m in Sources */,
-				16C1DB332E8AACD100DD415F /* MEFilterPipeline.m in Sources */,
-				16C1DB342E8AACD100DD415F /* MESampleBufferFactory.m in Sources */,
-				16C1DB182E87F32D00DD415F /* MESecureLogging.m in Sources */,
 				16C1DAEF2E87F02000DD415F /* MEVideoEncoderConfigTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
