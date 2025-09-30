@@ -408,9 +408,7 @@ end:
     int ret;
     if (frame) {
         ret = avcodec_send_frame(avctx, (AVFrame *)frame);
-        if (frame) {
-            av_frame_unref((AVFrame *)frame);
-        }
+        av_frame_unref((AVFrame *)frame);
     } else {
         ret = avcodec_send_frame(avctx, NULL); // Flush
         self.isFlushed = YES;
