@@ -149,7 +149,7 @@ NS_ASSUME_NONNULL_BEGIN
 @synthesize videoEncoderConfig;
 @synthesize sourceExtensions;
 @synthesize initialDelayInSec;
-@synthesize verbose;
+@synthesize verbose = _verbose;
 @synthesize log_level;
 
 - (instancetype) init
