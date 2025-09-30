@@ -2,6 +2,19 @@
 
 This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a wheel".
 
+### Source Tree Layout
+After recent reorganization (Plan A):
+```
+movencoder2/
+  Config/               # Types & encoder configuration (METypes, MEVideoEncoderConfig)
+  Core/                 # Central orchestration & core logic (METranscoder, MEManager, MEAudioConverter)
+  Pipeline/             # Encoding / filtering pipeline components
+  IO/                   # Input / Output & channel abstraction
+  Utils/                # Helpers, common utilities, logging, parsing
+  main.m                # CLI entry point
+```
+This is a purely physical grouping change; public APIs are not yet separated. Future steps may introduce Public/Internal split.
+
 #### Features:
 ###### Movie file support:
 - Read/write mov file. Possiblly common mp4 file would also work for read.
