@@ -347,10 +347,8 @@ end:
         return NO;
     }
     
-    if (!frame) {
-        if (result) *result = AVERROR(EINVAL);
-        return NO;
-    }
+    // Allow NULL frame for flushing the filter graph (FFmpeg API)
+    // See: av_buffersrc_add_frame_flags() documentation
     
     int ret = av_buffersrc_add_frame_flags(buffersrc_ctx, (AVFrame *)frame, AV_BUFFERSRC_FLAG_KEEP_REF);
     if (result) *result = ret;
