@@ -96,9 +96,43 @@ static void ffmpeg_log_callback(void *ptr, int level, const char *fmt, va_list v
     // Respect global FFmpeg log level
     if (level > av_log_get_level()) return;
     // Compose message
-    char buf[2048];
-    vsnprintf(buf, sizeof(buf), fmt, vl);
+    va_list vl_copy;
+    va_copy(vl_copy, vl);
+    int needed = vsnprintf(NULL, 0, fmt, vl_copy);
+    va_end(vl_copy);
+    if (needed < 0) {
+        // Formatting error, fallback to empty string
+        NSString *line = @"";
+        if (level <= AV_LOG_ERROR) {
+            SecureErrorLog(line);
+        } else if (level <= AV_LOG_WARNING) {
+            SecureLog(line);
+        } else if (level <= AV_LOG_INFO) {
+            SecureLog(line);
+        } else {
+            SecureDebugLog(line);
+        }
+        return;
+    }
+    size_t bufsize = (size_t)needed + 1;
+    char *buf = (char *)malloc(bufsize);
+    if (!buf) {
+        // Allocation failed, fallback to empty string
+        NSString *line = @"";
+        if (level <= AV_LOG_ERROR) {
+            SecureErrorLog(line);
+        } else if (level <= AV_LOG_WARNING) {
+            SecureLog(line);
+        } else if (level <= AV_LOG_INFO) {
+            SecureLog(line);
+        } else {
+            SecureDebugLog(line);
+        }
+        return;
+    }
+    vsnprintf(buf, bufsize, fmt, vl);
     NSString *line = [NSString stringWithUTF8String:buf ?: ""]; // may contain '\n'
+    free(buf);
     // FFmpeg often ends lines with '\n'; NSLog will add its own newline, so trim trailing newlines to avoid blank lines
     while ([line hasSuffix:@"\n"]) {
         line = [line substringToIndex:line.length - 1];
