@@ -764,6 +764,8 @@ static void busyWait(METranscoder *transcoder) {
 /* =================================================================================== */
 
 int main(int argc, char * const *argv) {
+    // Setup FFmpeg logging redirection so multi-line ffmpeg outputs (filters, encoder details) are shown
+    SetupFFmpegLogging();
     @autoreleasepool {
         // validate opt and prepare transcoder object
         METranscoder* transcoder = validateOpt(argc, argv);
