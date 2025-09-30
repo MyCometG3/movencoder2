@@ -454,16 +454,18 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         }
     }
     
-    // Delegate to encoder pipeline
+    // If filter pipeline is active and a filtered frame is not yet available, delay encoder initialization
+    if (self.filterPipeline.filterString.length > 0 && !self.filteredValid) {
+        return NO; // retry later
+    }
+
+    // Delegate to encoder pipeline (prefer filtered frame if available)
     void *filteredFrame = NULL;
     BOOL hasValidFilteredFrame = NO;
-    
-    // If we have a valid filtered frame from the filter pipeline, use that instead of sample buffer
     if (self.filteredValid) {
         filteredFrame = [self.filterPipeline filteredFrame];
         hasValidFilteredFrame = YES;
     }
-    
     return [self.encoderPipeline prepareVideoEncoderWith:sb 
                                            filteredFrame:filteredFrame
                                      hasValidFilteredFrame:hasValidFilteredFrame];
@@ -536,6 +538,11 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
         av_frame_unref(input);
         AVFrameReset(input);
         
+        // Obtain pixel format spec (lost after refactor) so that input->format matches source buffer
+        if (!(CMSBGetPixelFormatSpec(sb, &pxl_fmt_filter) && pxl_fmt_filter.avf_id != 0)) {
+            SecureErrorLogf(@"[MEManager] ERROR: Cannot validate pixel_format.");
+            goto end;
+        }
         input->format = pxl_fmt_filter.ff_id;
         input->width = width;
         input->height = height;
