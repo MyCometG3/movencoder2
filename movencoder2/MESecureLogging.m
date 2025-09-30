@@ -41,6 +41,8 @@ static NSString* sanitizeStringWithOptions(NSString* input, SanitizeOptions opti
     return result;
 }
 
+// Note: We intentionally do NOT escape newlines here for FFmpeg logging compatibility.
+// Preserving newlines in log output is required for correct integration with FFmpeg's log handling.
 static NSString* sanitizeForOutput(NSString* s) {
     return sanitizeStringWithOptions(s, SanitizeOptionsEscapeTab | SanitizeOptionsEscapeCarriageReturn);
 }
