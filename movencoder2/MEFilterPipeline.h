@@ -118,6 +118,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Push a frame into the filter graph for processing.
+ * 
+ * OWNERSHIP: The caller retains ownership of the frame. This method makes an internal
+ * copy using AV_BUFFERSRC_FLAG_KEEP_REF, so the caller is responsible for calling
+ * av_frame_unref() on the frame after this method returns.
  *
  * @param frame The AVFrame to push into the filter graph (nullable - pass NULL to flush)
  * @param result Pointer to store the result code
@@ -132,7 +136,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void *)filteredFrame;
 
 /**
- * Reset the filtered frame validity.
+ * Reset the filtered frame validity and free its resources.
+ * 
+ * OWNERSHIP: This method owns the internal 'filtered' frame and is responsible
+ * for calling av_frame_unref() to free its data when resetting.
  */
 - (void)resetFilteredFrame;
 

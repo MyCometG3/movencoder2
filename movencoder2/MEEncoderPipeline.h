@@ -105,6 +105,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Send a frame to the encoder for encoding.
+ * 
+ * OWNERSHIP: This method takes ownership of the frame and will call av_frame_unref()
+ * on it internally. The caller should not unref the frame after calling this method.
+ * The encoder makes an internal copy as needed via avcodec_send_frame().
  *
  * @param frame The AVFrame to encode (nullable - pass NULL to flush)
  * @param result Pointer to store the result code

@@ -348,8 +348,8 @@ end:
     }
     
     // Allow NULL frame for flushing the filter graph (FFmpeg API)
-    // See: av_buffersrc_add_frame_flags() documentation
-    
+    // OWNERSHIP: Use AV_BUFFERSRC_FLAG_KEEP_REF so caller retains ownership
+    // and must call av_frame_unref() after this method returns
     int ret = av_buffersrc_add_frame_flags(buffersrc_ctx, (AVFrame *)frame, AV_BUFFERSRC_FLAG_KEEP_REF);
     if (result) *result = ret;
     
@@ -369,6 +369,7 @@ end:
 - (void)resetFilteredFrame
 {
     if (filtered) {
+        // Cleanup internal filtered frame - we own this frame
         av_frame_unref(filtered);
     }
     self.hasValidFilteredFrame = NO;

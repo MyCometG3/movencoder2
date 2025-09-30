@@ -491,10 +491,14 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
 }
 
 /**
- Prepare input AVFrame from CMSampleBuffer and it's CVImageBuffer
-
- @param sb CMSampleBuffer
- @return TRUE if success. FALSE if fail.
+ * Prepare input AVFrame from CMSampleBuffer and its CVImageBuffer.
+ * 
+ * FRAME OWNERSHIP: This method manages the internal 'input' frame lifecycle.
+ * The input frame is owned by MEManager and is reused across calls.
+ * av_frame_unref() is called to clear previous data before reuse.
+ *
+ * @param sb CMSampleBuffer to extract frame data from
+ * @return TRUE if success, FALSE if fail
  */
 - (BOOL)prepareInputFrameWith:(CMSampleBufferRef)sb
 {
@@ -528,6 +532,7 @@ static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t time
             goto end;
         }
         
+        // Clear previous frame data before reuse (proper frame lifecycle management)
         av_frame_unref(input);
         AVFrameReset(input);
         
@@ -702,6 +707,8 @@ static void enqueueToME(MEManager *self, int *ret) {
         
         if (success && *ret == 0) {
             if (inputFrameIsReady) {
+                // Filter pipeline keeps reference (AV_BUFFERSRC_FLAG_KEEP_REF), 
+                // so caller must unref the original frame
                 av_frame_unref(self->input);
                 self.lastEnqueuedPTS = newPTS;
                 // Signal timestamp gap semaphore when PTS is updated
@@ -742,11 +749,8 @@ static void enqueueToME(MEManager *self, int *ret) {
         BOOL success = [self.encoderPipeline sendFrameToEncoder:frameToSend withResult:ret];
         
         if (success && *ret == 0) {
-            if (inputFrameIsReady) {
-                av_frame_unref(self->input);
-            } else {
-                // videoEncoderFlushed is handled by the encoder pipeline
-            }
+            // Note: Do NOT call av_frame_unref here - sendFrameToEncoder takes ownership
+            // and handles the unref internally
             self.writerStatus = AVAssetWriterStatusWriting;
             return;
         } else {
@@ -842,6 +846,7 @@ error:
         return TRUE;
     }
 error:
+    // Clean up input frame on error to prevent memory leaks
     av_frame_unref(self->input);
     self.failed = TRUE;
     self.writerStatus = AVAssetWriterStatusFailed;
