@@ -259,8 +259,9 @@ NS_ASSUME_NONNULL_END
     if (self.verbose) {
         char* dump = avfilter_graph_dump(filter_graph, NULL);
         if (dump) {
-            SecureDebugLogf(@"[MEFilterPipeline] avfilter_graph_dump() returned %lu bytes.", (unsigned long)strlen(dump));
-            av_log(NULL, AV_LOG_INFO, "%s\n", dump);
+            size_t dump_len = strlen(dump);
+            NSString *dumpStr = [NSString stringWithUTF8String:dump];
+            SecureDebugMultiline([NSString stringWithFormat:@"[MEFilterPipeline] filter graph dump (%lu bytes) BEGIN", (unsigned long)dump_len], @"[MEFilterPipeline] filter graph dump END", dumpStr);
         }
         av_free(dump);
     }

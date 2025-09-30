@@ -152,3 +152,37 @@ static void ffmpeg_log_callback(void *ptr, int level, const char *fmt, va_list v
 void SetupFFmpegLogging(void) {
     av_log_set_callback(ffmpeg_log_callback);
 }
+
+static void multiline_emit(BOOL debug, NSString *header, NSString *footer, NSString *content) {
+    if (header && header.length) {
+        if (debug) {
+            SecureDebugLog(header);
+        } else {
+            SecureLog(header);
+        }
+    }
+    if (content) {
+        [content enumerateLinesUsingBlock:^(NSString *line, BOOL *stop) {
+            if (debug) {
+                SecureDebugLogf(@"%@", line);
+            } else {
+                SecureLogf(@"%@", line);
+            }
+        }];
+    }
+    if (footer && footer.length) {
+        if (debug) {
+            SecureDebugLog(footer);
+        } else {
+            SecureLog(footer);
+        }
+    }
+}
+
+void SecureInfoMultiline(NSString *header, NSString *footer, NSString *content) {
+    multiline_emit(NO, header, footer, content);
+}
+
+void SecureDebugMultiline(NSString *header, NSString *footer, NSString *content) {
+    multiline_emit(YES, header, footer, content);
+}

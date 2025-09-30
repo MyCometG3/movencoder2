@@ -26,4 +26,8 @@ NSString* sanitizeLogString(NSString* input);
 // Setup FFmpeg log redirection to our secure logging (call once during initialization)
 void SetupFFmpegLogging(void);
 
+// Multiline helpers: output header, each content line, then footer (any may be nil)
+void SecureInfoMultiline(NSString *header, NSString *footer, NSString *content);
+void SecureDebugMultiline(NSString *header, NSString *footer, NSString *content);
+
 #endif /* MESecureLogging_h */
