@@ -167,6 +167,9 @@ NS_ASSUME_NONNULL_BEGIN
         _encoderPipeline = [[MEEncoderPipeline alloc] init];
         _sampleBufferFactory = [[MESampleBufferFactory alloc] init];
         
+        // Propagate initial log level to pipelines (so FFmpeg av_log_set_level gets INFO)
+        self.log_level = log_level;
+        
         // Initialize synchronization semaphores (delegate to components where appropriate)
         timestampGapSemaphore = _filterPipeline.timestampGapSemaphore;
         filterReadySemaphore = _filterPipeline.filterReadySemaphore;

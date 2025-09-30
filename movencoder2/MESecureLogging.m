@@ -1,4 +1,6 @@
 //
+#define _GNU_SOURCE
+
 //  MESecureLogging.m
 //  movencoder2
 //
@@ -7,6 +9,8 @@
 
 #import "MESecureLogging.h"
 #import <stdarg.h>
+
+#import <libavutil/log.h>
 
 typedef NS_OPTIONS(NSUInteger, SanitizeOptions) {
     SanitizeOptionsNone = 0,
@@ -38,7 +42,7 @@ static NSString* sanitizeStringWithOptions(NSString* input, SanitizeOptions opti
 }
 
 static NSString* sanitizeForOutput(NSString* s) {
-    return sanitizeStringWithOptions(s, SanitizeOptionsEscapeNewline | SanitizeOptionsEscapeTab | SanitizeOptionsEscapeCarriageReturn);
+    return sanitizeStringWithOptions(s, SanitizeOptionsEscapeTab | SanitizeOptionsEscapeCarriageReturn);
 }
 
 NSString* sanitizeLogString(NSString* input) {
@@ -85,4 +89,31 @@ void SecureDebugLogf(NSString* format, ...) {
     va_end(args);
     NSString* out = sanitizeForOutput(formatted);
     NSLog(@"[DEBUG] %@", out);
+}
+
+static void ffmpeg_log_callback(void *ptr, int level, const char *fmt, va_list vl) {
+    // Respect global FFmpeg log level
+    if (level > av_log_get_level()) return;
+    // Compose message
+    char buf[2048];
+    vsnprintf(buf, sizeof(buf), fmt, vl);
+    NSString *line = [NSString stringWithUTF8String:buf ?: ""]; // may contain '\n'
+    // FFmpeg often ends lines with '\n'; NSLog will add its own newline, so trim trailing newlines to avoid blank lines
+    while ([line hasSuffix:@"\n"]) {
+        line = [line substringToIndex:line.length - 1];
+    }
+    // Map level to our logger
+    if (level <= AV_LOG_ERROR) {
+        SecureErrorLog(line);
+    } else if (level <= AV_LOG_WARNING) {
+        SecureLog(line);
+    } else if (level <= AV_LOG_INFO) {
+        SecureLog(line);
+    } else {
+        SecureDebugLog(line);
+    }
+}
+
+void SetupFFmpegLogging(void) {
+    av_log_set_callback(ffmpeg_log_callback);
 }

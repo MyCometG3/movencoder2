@@ -23,4 +23,7 @@ void SecureDebugLogf(NSString* format, ...) NS_FORMAT_FUNCTION(1,2);
 // String sanitization
 NSString* sanitizeLogString(NSString* input);
 
+// Setup FFmpeg log redirection to our secure logging (call once during initialization)
+void SetupFFmpegLogging(void);
+
 #endif /* MESecureLogging_h */
