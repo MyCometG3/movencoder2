@@ -21,9 +21,9 @@ movencoder2/
   IO/                   # 🔒 Internal: Input / Output & channel abstraction
   Utils/                # 🔒 Internal: Helpers, utilities, logging, parsing
   main.m                # CLI entry point
-
+```
 ### Public vs Internal APIs
-
+```
 **Public APIs** (🔓 in `Public/`):
 - Stable interface suitable for external use
 - Fully documented and supported
@@ -35,25 +35,30 @@ movencoder2/
 - Implementation details, may change without notice
 - Not intended for direct use by framework consumers
 - Marked with `@internal` in header documentation
-
+```
 For detailed API documentation, see [docs/API_GUIDELINES.md](docs/API_GUIDELINES.md)
-
 ### Module Purpose Summary
+```
 - **Public/**: Framework public interface (METranscoder, MEVideoEncoderConfig, METypes)
 - **Config/**: Type-safe encoder configuration & enums (internal implementation)
 - **Core/**: Orchestration (transcoding control, manager, audio conversion - internal)
 - **Pipeline/**: Encoder / filter / sample buffer pipeline components (internal)
 - **IO/**: Input/Output abstractions & channel coordination (internal)
 - **Utils/**: Cross-cutting utilities (logging, progress, parsing - internal)
+```
+
+---
 
 ## Features
 
 ### Movie file support
+```
 - Read/write mov file. Possibly common mp4 file would also work for read.
 - All read/write is processed via AVFoundation. No compatibility issue would arise.
 - Support reference movie. Both legacy QuickTime and AVFoundation based will work.
-
+```
 ### Video transcode support
+```
 - Use either AVFoundation based encoder or libavcodec based encoder. (video)
 - Support libavcodec and libx264/libx265 for video transcode.
 - Support libavfilter for video filtering.
@@ -62,26 +67,25 @@ For detailed API documentation, see [docs/API_GUIDELINES.md](docs/API_GUIDELINES
 - Keep color information. No color drift.
 - Keep field information. Field count/Field mode can be preserved when transcode.
 - Keep source video media timescale. No change.
-
+```
 ### Audio transcode support
+```
 - Support AAC transcode with target bit rate.
 - BitDepth conversion. i.e. 32bit to 16 bit.
 - Multi Channel. Preserve original channel layout by default.
 - AudioChannelLayout conversion. i.e. 5.1ch to Stereo.
-
+```
 ## Restriction
+```
 - Video: 8bit depth only. No 10/16 bit support.
 - Video: Decoded format is 2vuy/kCVPixelFormatType_422YpCbCr8 = AV_PIX_FMT_UYVY422
-
+```
 ## Development environment
-
 ```
 macOS 26.0.1 Tahoe
 Xcode 26.0.1
 ```
-
 ## License
-
 ```
 GPL v2
 ```
