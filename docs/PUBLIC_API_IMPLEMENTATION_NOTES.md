@@ -1,9 +1,8 @@
 # Public/Internal API Separation - Implementation Notes
 
-**PR Summary:** This PR implements the foundational work for public/internal API separation as described in the README's planned future steps.
+**Summary:** This document describes the public/internal API separation implementation as described in the README's planned future steps.
 
-**Status:** ✅ Core implementation complete (documentation and structure)  
-**Remaining:** ⚠️ Xcode project configuration (requires macOS/Xcode)
+**Status:** ✅ **COMPLETE** - All components implemented including framework target configuration
 
 ---
 
@@ -124,36 +123,48 @@ Created comprehensive documentation (60+ KB total):
 
 ---
 
+### 5. Framework Target Configuration ✅
+
+**Completed:** MovEncoder2Framework target has been successfully implemented and configured.
+
+#### Implemented Components:
+
+1. **Framework Target Created**
+   - Target: MovEncoder2Framework
+   - Product: MovEncoder2.framework
+   - Architecture: arm64
+   - Deployment Target: macOS 12.0
+
+2. **Public Headers Configured**
+   - All 4 public headers properly marked as "Public"
+   - Headers accessible via `#import <MovEncoder2/MovEncoder2.h>`
+   - Internal headers remain private
+
+3. **Build Settings Configured**
+   - Public Headers Folder Path: `$(CONTENTS_FOLDER_PATH)/Headers`
+   - Module support enabled (DEFINES_MODULE = YES)
+   - Proper header search paths configured
+
+4. **Framework Verified**
+   - ✅ Framework builds successfully
+   - ✅ Only public headers in framework's Headers/ directory
+   - ✅ Module map auto-generated
+   - ✅ Standard framework structure verified
+
+5. **Schemes Configured**
+   - All schemes (movencoder2, MovEncoder2Framework, movencoder2Tests)
+   - Configured as shared schemes for team development
+   - No duplicate schemes
+
+**See `docs/FRAMEWORK_TARGET_SETUP.md` for complete framework target documentation.**
+
+---
+
 ## What Still Needs to Be Done
 
-### Xcode Project Configuration (Requires macOS/Xcode)
+### Future Enhancements (Optional)
 
-The Xcode project file needs to be updated to properly expose public headers. This work **requires Xcode on macOS** and cannot be done in the Linux CI environment.
-
-#### Required Steps:
-
-1. **Add Public Directory to Xcode Project**
-   - Open `movencoder2.xcodeproj` in Xcode
-   - Add `movencoder2/Public` folder to project
-   - Ensure "Create groups" is selected
-
-2. **Mark Headers as Public**
-   - Select each header in `Public/` directory
-   - Open File Inspector (⌥⌘1)
-   - Change "Target Membership" from "Project" to **"Public"**
-   - Files to mark: `MovEncoder2.h`, `METranscoder.h`, `MEVideoEncoderConfig.h`, `METypes.h`
-
-3. **Configure Build Settings**
-   - Set "Public Headers Folder Path" to `include/MovEncoder2`
-   - Set "Module Name" to `MovEncoder2`
-   - Add header search path: `$(SRCROOT)/movencoder2/Public` (recursive)
-
-4. **Verify Framework Build**
-   - Build the framework target
-   - Check that only public headers appear in framework's Headers/ directory
-   - Test import: `#import <MovEncoder2/MovEncoder2.h>`
-
-**See `docs/XCODE_PROJECT_SETUP.md` for detailed step-by-step instructions.**
+The following enhancements could be added in the future:
 
 ---
 

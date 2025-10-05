@@ -6,107 +6,86 @@ This document provides instructions for configuring the Xcode project to properl
 
 ---
 
-## ⚠️ Important: Current Project Status
+## ✅ Current Project Status
 
-**The movencoder2 project currently has a command-line tool target, not a framework target.**
+**The movencoder2 project now includes both a command-line tool and a framework target.**
 
-- **Current Target Type:** `com.apple.product-type.tool` (command-line tool)
-- **Current Product:** Executable binary (`mh_execute`)
-- **Framework Target:** Does not exist yet
+- **movencoder2**: Command-line tool target (`com.apple.product-type.tool`)
+- **MovEncoder2Framework**: Framework target (`com.apple.product-type.framework`)
+- **movencoder2Tests**: Unit test bundle
 
-You can verify this with:
+You can verify the targets with:
 ```bash
-xcodebuild -showBuildSettings -project movencoder2.xcodeproj -target movencoder2 | grep -E "(PRODUCT_TYPE|MACH_O_TYPE)"
+xcodebuild -list -project movencoder2.xcodeproj
 ```
 
-**This document describes future framework configuration steps** that will apply once a framework target is added to the project. The Public API structure and headers have been prepared in advance to facilitate this future transition.
+**This document provides reference information** about the framework target configuration. The framework has been successfully implemented with proper public header exposure and module support.
 
-### When to Use This Document
+### About This Document
 
-Use these instructions when you are ready to:
-1. Create a framework target in addition to (or instead of) the command-line tool
-2. Distribute movencoder2 as a reusable framework
-3. Support framework-based integration (e.g., via CocoaPods, Carthage, or manual framework linking)
+This document describes:
+1. The framework target configuration that has been implemented
+2. How public headers are exposed for framework distribution
+3. Technical details of the Xcode project setup for reference and maintenance
 
-The current command-line tool target can continue to use all headers directly via `#import` statements without the framework-specific configuration described below.
-
----
-
-## Creating a Framework Target (Prerequisite)
-
-Before following the configuration steps below, you'll need to add a framework target to the Xcode project:
-
-### Option 1: Create New Framework Target
-
-1. Open `movencoder2.xcodeproj` in Xcode
-2. Select the project in the navigator
-3. Click the "+" button at the bottom of the targets list
-4. Choose **"Framework"** (under macOS → Framework & Library)
-5. Name it `MovEncoder2`
-6. Set Language to **Objective-C**
-7. Click **Finish**
-
-### Option 2: Convert Existing Target
-
-Alternatively, you can create a separate framework target while keeping the command-line tool:
-
-1. Follow Option 1 to create a new framework target
-2. Add all source files (`.m` files) to both targets
-3. Configure headers as described below (public headers only for framework target)
-4. Keep the command-line tool target for CLI usage
-5. Build and distribute both the CLI tool and framework as needed
+For a complete guide on using the framework, see `FRAMEWORK_TARGET_SETUP.md`.
 
 ---
 
-## Steps to Configure Public Headers (For Framework Target)
+## Framework Target Implementation
 
-### 1. Add Public Directory to Framework Target
+The MovEncoder2Framework target has been successfully created and configured with the following setup:
 
-1. Open `movencoder2.xcodeproj` in Xcode
-2. In the Project Navigator, right-click on the `movencoder2` group (or create a new group for the framework)
-3. Select "Add Files to movencoder2..."
-4. Navigate to and select the `movencoder2/Public` folder
-5. Ensure "Create groups" is selected (not "Create folder references")
-6. **Important:** In the "Add to targets" section, check **only the framework target** (MovEncoder2), not the command-line tool target
-7. Click "Add"
+### Target Configuration
 
-### 2. Mark Headers as Public (Framework Target Only)
+**Target Name:** MovEncoder2Framework  
+**Product Name:** MovEncoder2.framework  
+**Type:** macOS Framework  
+**Architecture:** arm64  
+**Deployment Target:** macOS 12.0
 
-For each header in the `Public/` directory:
+### Implementation Details
 
-1. Select the header file in the Project Navigator
-2. Open the File Inspector (⌥⌘1)
-3. In the "Target Membership" section, locate the **framework target** (e.g., "MovEncoder2")
-4. Check the box for the framework target if not already checked
-5. Change the header visibility from "Project" to **"Public"**
+The framework target was created alongside the existing command-line tool target:
+- All source files (`.m` files except `main.m`) are included in the framework
+- Public headers from `movencoder2/Public/` are properly exposed
+- CLI tool and framework coexist, sharing the same codebase
+- Both targets can be built and distributed independently
 
-Public headers to mark:
-- `MovEncoder2.h` (umbrella header)
-- `METranscoder.h`
-- `MEVideoEncoderConfig.h`
-- `METypes.h`
+---
 
-**Note:** Internal headers (in Config/, Core/, Pipeline/, IO/, Utils/) should remain marked as "Project" or "Private" for the framework target.
+## Public Headers Configuration
 
-### 3. Set Framework Umbrella Header
+### Headers in Framework Target
 
-1. Select the **framework target** (MovEncoder2) in the project editor
-2. Go to "Build Settings" tab
-3. Search for "umbrella"
-4. Set **"Public Headers Folder Path"** to: `include/MovEncoder2`
-5. Set **"Module Name"** to: `MovEncoder2`
+The following public headers are configured and exposed in the framework:
 
-### 4. Configure Header Search Paths (Framework Target)
+- **`MovEncoder2.h`** - Umbrella header that imports all public APIs
+- **`METranscoder.h`** - Main transcoding controller API
+- **`MEVideoEncoderConfig.h`** - Type-safe encoder configuration
+- **`METypes.h`** - Public type definitions and enums
 
-1. Select the **framework target** in the project editor
-2. In Build Settings, search for "Header Search Paths"
-3. Add the following paths (if not already present):
-   - `$(SRCROOT)/movencoder2/Public` (recursive)
-   - `$(SRCROOT)/movencoder2` (non-recursive, for internal framework builds only)
+All headers are marked as "Public" in the MovEncoder2Framework target's Target Membership settings.
 
-### 5. Verify Framework Structure
+**Note:** Internal headers (in Config/, Core/, Pipeline/, IO/, Utils/) remain marked as "Project" or "Private" and are not exposed in the framework bundle.
 
-After building the framework, verify the structure:
+### Build Settings
+
+The framework target is configured with the following key settings:
+
+**Header Configuration:**
+- **Public Headers Folder Path**: `$(CONTENTS_FOLDER_PATH)/Headers`
+- **Module Name**: `MovEncoder2`
+- **Defines Module**: YES (enables module support)
+
+**Search Paths:**
+- **Header Search Paths**: Includes `$(SRCROOT)/movencoder2/Public` and other source directories
+
+---
+
+## Framework Structure
+
+The built framework follows Apple's standard framework layout:
 
 ```
 MovEncoder2.framework/
@@ -123,9 +102,9 @@ MovEncoder2.framework/
 └── MovEncoder2 -> Versions/Current/MovEncoder2
 ```
 
-### 6. Test Public API Import
+### Test Public API Import
 
-Create a test file to verify the public API is accessible:
+The framework's public API can be tested with the following code:
 
 ```objective-c
 #import <MovEncoder2/MovEncoder2.h>
@@ -248,7 +227,7 @@ For distribution:
 - [x] Public API headers prepared in `movencoder2/Public/` directory
 - [x] Internal headers marked with `@internal` documentation
 - [x] Documentation structure ready for framework distribution
-- [ ] Framework target configuration (pending - requires framework target creation)
+- [x] Framework target configuration (completed - MovEncoder2Framework target)
 
 ---
 
@@ -358,6 +337,6 @@ Both targets can share the same source files (`.m` files), but the framework tar
 
 ## Notes
 
-This document was created as part of the public/internal API separation initiative. The actual Xcode project modifications should be done using Xcode on macOS for reliability.
+This document describes the Xcode project configuration for the public/internal API separation and framework target implementation. The MovEncoder2Framework target has been successfully implemented and configured.
 
-**Important:** This document describes **future framework configuration**. The current project is a command-line tool and does not require these configuration steps unless you want to add framework distribution capability.
+**Status:** ✅ Framework target fully implemented and operational. Both CLI tool and framework targets coexist and build successfully.
