@@ -59,6 +59,36 @@
             ReferencedContainer = "container:movencoder2.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-mevf &apos;format=yuv444p,yadif=0:-1:0,hqdn3d=1.0,scale=960:540,format=yuv420p&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-meve &apos;&apos;c=libx264;r=30000:1001;b=1.5M;o=preset=medium:profile=main&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-mex264 &apos;level=4.1:vbv-maxrate=50000:vbv-bufsize=62500:keyint=60:min-keyint=6:bframes=3&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ae &apos;encode=y;codec=aac;bitrate=512k;layout=AAC_5_1&apos;"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-verbose"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-i /Users/takashi/Movies/DL-1115173527.mov "
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-o /Users/takashi/Movies/out.mov "
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
