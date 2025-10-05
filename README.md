@@ -4,30 +4,47 @@ This is a simple mov file transcoder - subset of ffmpeg project or "reinvent a w
 
 ## Source Tree Layout
 
-Key components are now physically grouped (Plan A) into Config/Core/Pipeline/IO/Utils for easier navigation and future public/internal API separation.
+The project now features a clear separation between **public** and **internal** APIs, making it suitable for framework distribution and external use.
 
-After recent reorganization (Plan A):
+### Directory Structure
+
 ```
 movencoder2/
-  Config/               # Types & encoder configuration (METypes, MEVideoEncoderConfig)
-  Core/                 # Central orchestration & core logic (METranscoder, MEManager, MEAudioConverter)
-  Pipeline/             # Encoding / filtering pipeline components
-  IO/                   # Input / Output & channel abstraction
-  Utils/                # Helpers, common utilities, logging, parsing
+  Public/               # 🔓 Public API headers (stable interface)
+    MovEncoder2.h       # Umbrella header
+    METranscoder.h      # Main transcoding controller
+    MEVideoEncoderConfig.h  # Type-safe configuration
+    METypes.h           # Public type definitions
+  Config/               # 🔒 Internal: Types & encoder configuration
+  Core/                 # 🔒 Internal: Central orchestration & core logic
+  Pipeline/             # 🔒 Internal: Encoding / filtering pipeline components
+  IO/                   # 🔒 Internal: Input / Output & channel abstraction
+  Utils/                # 🔒 Internal: Helpers, utilities, logging, parsing
   main.m                # CLI entry point
 
-### Module Purpose Summary
-- Config: Type-safe encoder configuration & enums.
-- Core: Orchestration (transcoding control, manager, audio conversion helpers).
-- Pipeline: Encoder / filter / sample buffer pipeline components.
-- IO: Input/Output abstractions & channel coordination.
-- Utils: Cross-cutting utilities (logging, progress, parsing, common helpers).
+### Public vs Internal APIs
 
-```
-This is a purely physical grouping change; public APIs are not yet separated. Planned future steps:
-- Extract clear Public API surface (METranscoder, MEVideoEncoderConfig, selective progress callbacks)
-- Add umbrella header (MovEncoder2.h)
-- Optionally prepare for SwiftPM / CocoaPods distribution
+**Public APIs** (🔓 in `Public/`):
+- Stable interface suitable for external use
+- Fully documented and supported
+- Imported via umbrella header: `#import <MovEncoder2/MovEncoder2.h>`
+- Classes: `METranscoder`, `MEVideoEncoderConfig`, `METypes`
+- Progress callback types and constants
+
+**Internal APIs** (🔒 in other directories):
+- Implementation details, may change without notice
+- Not intended for direct use by framework consumers
+- Marked with `@internal` in header documentation
+
+For detailed API documentation, see [docs/API_GUIDELINES.md](docs/API_GUIDELINES.md)
+
+### Module Purpose Summary
+- **Public/**: Framework public interface (METranscoder, MEVideoEncoderConfig, METypes)
+- **Config/**: Type-safe encoder configuration & enums (internal implementation)
+- **Core/**: Orchestration (transcoding control, manager, audio conversion - internal)
+- **Pipeline/**: Encoder / filter / sample buffer pipeline components (internal)
+- **IO/**: Input/Output abstractions & channel coordination (internal)
+- **Utils/**: Cross-cutting utilities (logging, progress, parsing - internal)
 
 ## Features
 

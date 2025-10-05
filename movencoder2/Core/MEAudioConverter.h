@@ -24,6 +24,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * @header MEAudioConverter.h
+ * @abstract Internal API - Audio processing coordinator
+ * @discussion
+ * This header is part of the internal implementation of movencoder2.
+ * It is not intended for public use and its interface may change without notice.
+ * Use METranscoder for public transcoding operations.
+ *
+ * @internal This is an internal API. Do not use directly.
+ */
+
 #ifndef MEAudioConverter_h
 #define MEAudioConverter_h
 

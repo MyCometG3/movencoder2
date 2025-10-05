@@ -5,6 +5,16 @@
 //  Created by Security Enhancement
 //
 
+/**
+ * @header MESecureLogging.h
+ * @abstract Internal API - Secure logging infrastructure
+ * @discussion
+ * This header is part of the internal implementation of movencoder2.
+ * It is not intended for public use and its interface may change without notice.
+ *
+ * @internal This is an internal API. Do not use directly.
+ */
+
 #ifndef MESecureLogging_h
 #define MESecureLogging_h
 
