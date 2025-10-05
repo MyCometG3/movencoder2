@@ -24,6 +24,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * @header MEInput.h
+ * @abstract Internal API - Asset reading abstraction
+ * @discussion
+ * This header is part of the internal implementation of movencoder2.
+ * It is not intended for public use and its interface may change without notice.
+ *
+ * @internal This is an internal API. Do not use directly.
+ */
+
 #ifndef MEInput_h
 #define MEInput_h
 

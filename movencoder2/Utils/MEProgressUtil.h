@@ -7,6 +7,17 @@
 //  Copyright © 2025.
 //
 
+/**
+ * @header MEProgressUtil.h
+ * @abstract Internal API - Progress calculation utilities
+ * @discussion
+ * This header is part of the internal implementation of movencoder2.
+ * It is not intended for public use and its interface may change without notice.
+ * Use progress callbacks on METranscoder for public progress monitoring.
+ *
+ * @internal This is an internal API. Do not use directly.
+ */
+
 #ifndef MEProgressUtil_h
 #define MEProgressUtil_h
 

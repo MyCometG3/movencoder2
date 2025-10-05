@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03335379BE594B0BE74BE0A0 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C926DC75D500E7DBB8 /* libz.dylib */; };
+		0A7E9E504F17668C803F5E74 /* libswscale.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CF26DC768F00E7DBB8 /* libswscale.dylib */; };
+		135C9D880183A84B1FAD8F33 /* libswresample.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D626DC768F00E7DBB8 /* libswresample.dylib */; };
 		1654A0CB26DC75D500E7DBB8 /* liblzma.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C826DC75D500E7DBB8 /* liblzma.dylib */; };
 		1654A0CC26DC75D500E7DBB8 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C926DC75D500E7DBB8 /* libz.dylib */; };
 		1654A0CD26DC75D500E7DBB8 /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CA26DC75D500E7DBB8 /* libbz2.dylib */; };
@@ -74,6 +77,42 @@
 		16DF46502E8C1A2B006AF79A /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46132E8C1A2B006AF79A /* MEInput.m */; };
 		16DF46512E8C1A2B006AF79A /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */; };
 		16DF46522E8C1A2B006AF79A /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460D2E8C1A2B006AF79A /* METranscoder.m */; };
+		1BAF79E5C585085357F9A73B /* METypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 4FD05FB22946F177AEB42A31 /* METypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1BFF3EE565AB8FB4711ED5EE /* MEManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460B2E8C1A2B006AF79A /* MEManager.m */; };
+		1D11CDEAA37208A00F416DEF /* libavcodec.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D826DC768F00E7DBB8 /* libavcodec.dylib */; };
+		302193E1CC6EA04D0CFE90BA /* MovEncoder2.h in Headers */ = {isa = PBXBuildFile; fileRef = 88E4924A5F224FEBC6F487C6 /* MovEncoder2.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		35847512A10982B9DDE114BF /* METranscoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460D2E8C1A2B006AF79A /* METranscoder.m */; };
+		410B07B6C391F9C0C09C176D /* MEEncoderPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461A2E8C1A2B006AF79A /* MEEncoderPipeline.m */; };
+		4A9287D6166428C1DB3F3945 /* libbz2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0CA26DC75D500E7DBB8 /* libbz2.dylib */; };
+		4C9AF69D58D50AFF1F03EC33 /* MEVideoEncoderConfig.h in Headers */ = {isa = PBXBuildFile; fileRef = 7CA784927658D9205565C4CA /* MEVideoEncoderConfig.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		561FE70C29F15BA9C9FEBE40 /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462B2E8C1A2B006AF79A /* monitorUtil.m */; };
+		5702919591D781D32A32010B /* METranscoder+prepareChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46102E8C1A2B006AF79A /* METranscoder+prepareChannels.m */; };
+		598EE6DB43A904A4B6D4EFBB /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16741CE521A924FB000EEC78 /* AVFoundation.framework */; };
+		59CAAE5124E6A24CA017A55F /* MECommon.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46212E8C1A2B006AF79A /* MECommon.m */; };
+		5A21ABF6702D4913705C3748 /* libavfilter.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D126DC768F00E7DBB8 /* libavfilter.dylib */; };
+		5AC7ED271DDDA1FCECCCE5E8 /* METranscoder+paramParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460F2E8C1A2B006AF79A /* METranscoder+paramParser.m */; };
+		69AF04979304B7A6C8CE98D9 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16741CE721A92550000EEC78 /* CoreMedia.framework */; };
+		6B5D4C3AA6CADEAC6E556FB7 /* MEOutput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46152E8C1A2B006AF79A /* MEOutput.m */; };
+		6F9EF8D740509057050870E8 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 166902585CAFD658422CF0F8 /* Cocoa.framework */; };
+		75E5BE24B73F1C9A77ED9515 /* MESecureLogging.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46272E8C1A2B006AF79A /* MESecureLogging.m */; };
+		783B349165355E5050E83608 /* MEVideoEncoderConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */; };
+		7D4EC5E56AB8374E89114327 /* SBChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46172E8C1A2B006AF79A /* SBChannel.m */; };
+		85CE3B3CFE2A53FA1E25F99B /* libx265.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D726DC768F00E7DBB8 /* libx265.dylib */; };
+		86B15BB2F731FBE26D2C6C9A /* MEUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46292E8C1A2B006AF79A /* MEUtils.m */; };
+		92EFEA24A48009B8A490BF69 /* MEProgressUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46252E8C1A2B006AF79A /* MEProgressUtil.m */; };
+		A0F3DFBEAE2BB3645B40C0AC /* MESampleBufferFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461E2E8C1A2B006AF79A /* MESampleBufferFactory.m */; };
+		AFA669690DC9626C9F111E05 /* MEFilterPipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF461C2E8C1A2B006AF79A /* MEFilterPipeline.m */; };
+		BB36A6D4000AA00152243FE6 /* liblzma.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0C826DC75D500E7DBB8 /* liblzma.dylib */; };
+		C67550F6C4471657E6B67C5D /* libavformat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D326DC768F00E7DBB8 /* libavformat.dylib */; };
+		C76FF6E92A6AD27413CBDEDF /* libx264.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D026DC768F00E7DBB8 /* libx264.dylib */; };
+		C92CF6D954CEFF554F02487D /* MEErrorFormatter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46232E8C1A2B006AF79A /* MEErrorFormatter.m */; };
+		CB8812B29C71ED6F82B4C510 /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462D2E8C1A2B006AF79A /* parseUtil.m */; };
+		CBF8E46DE3E75C3B7F0BD145 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16741CE521A924FB000EEC78 /* AVFoundation.framework */; };
+		CD3BC7B3F5E872CCC5452357 /* MEAudioConverter.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */; };
+		DE577915143D75A96A0DE43E /* libavdevice.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D426DC768F00E7DBB8 /* libavdevice.dylib */; };
+		E4F9A06F257156BF211086FE /* libavutil.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D526DC768F00E7DBB8 /* libavutil.dylib */; };
+		EB9606AA77EBCAF3114F4AFA /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46132E8C1A2B006AF79A /* MEInput.m */; };
+		F9E76642A4DF3EEC2DD8EDD6 /* METranscoder.h in Headers */ = {isa = PBXBuildFile; fileRef = 88EB2448986096AB744FA246 /* METranscoder.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -102,6 +141,7 @@
 		1654A0D626DC768F00E7DBB8 /* libswresample.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libswresample.dylib; path = ../../../../../usr/local/lib/libswresample.dylib; sourceTree = "<group>"; };
 		1654A0D726DC768F00E7DBB8 /* libx265.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libx265.dylib; path = ../../../../../usr/local/lib/libx265.dylib; sourceTree = "<group>"; };
 		1654A0D826DC768F00E7DBB8 /* libavcodec.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libavcodec.dylib; path = ../../../../../usr/local/lib/libavcodec.dylib; sourceTree = "<group>"; };
+		166902585CAFD658422CF0F8 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		16741CE521A924FB000EEC78 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		16741CE721A92550000EEC78 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		16A9573A22C05AED008868AF /* COPYING.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.txt; sourceTree = "<group>"; };
@@ -151,6 +191,12 @@
 		16DF462B2E8C1A2B006AF79A /* monitorUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = monitorUtil.m; sourceTree = "<group>"; };
 		16DF462C2E8C1A2B006AF79A /* parseUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parseUtil.h; sourceTree = "<group>"; };
 		16DF462D2E8C1A2B006AF79A /* parseUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = parseUtil.m; sourceTree = "<group>"; };
+		240B87D07B35999E9BDDD7D0 /* MovEncoder2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MovEncoder2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FD05FB22946F177AEB42A31 /* METypes.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = METypes.h; path = METypes.h; sourceTree = "<group>"; };
+		7CA784927658D9205565C4CA /* MEVideoEncoderConfig.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = MEVideoEncoderConfig.h; path = MEVideoEncoderConfig.h; sourceTree = "<group>"; };
+		88E4924A5F224FEBC6F487C6 /* MovEncoder2.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = MovEncoder2.h; path = MovEncoder2.h; sourceTree = "<group>"; };
+		88EB2448986096AB744FA246 /* METranscoder.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = METranscoder.h; path = METranscoder.h; sourceTree = "<group>"; };
+		96C92E42B9EE5C37768656ED /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -193,6 +239,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DEBA093C898BFCC3E22FFEA1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6F9EF8D740509057050870E8 /* Cocoa.framework in Frameworks */,
+				CBF8E46DE3E75C3B7F0BD145 /* AVFoundation.framework in Frameworks */,
+				598EE6DB43A904A4B6D4EFBB /* AVFoundation.framework in Frameworks */,
+				69AF04979304B7A6C8CE98D9 /* CoreMedia.framework in Frameworks */,
+				E4F9A06F257156BF211086FE /* libavutil.dylib in Frameworks */,
+				4A9287D6166428C1DB3F3945 /* libbz2.dylib in Frameworks */,
+				C76FF6E92A6AD27413CBDEDF /* libx264.dylib in Frameworks */,
+				1D11CDEAA37208A00F416DEF /* libavcodec.dylib in Frameworks */,
+				0A7E9E504F17668C803F5E74 /* libswscale.dylib in Frameworks */,
+				85CE3B3CFE2A53FA1E25F99B /* libx265.dylib in Frameworks */,
+				5A21ABF6702D4913705C3748 /* libavfilter.dylib in Frameworks */,
+				135C9D880183A84B1FAD8F33 /* libswresample.dylib in Frameworks */,
+				C67550F6C4471657E6B67C5D /* libavformat.dylib in Frameworks */,
+				BB36A6D4000AA00152243FE6 /* liblzma.dylib in Frameworks */,
+				DE577915143D75A96A0DE43E /* libavdevice.dylib in Frameworks */,
+				03335379BE594B0BE74BE0A0 /* libz.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -229,6 +298,7 @@
 				1654A0C726DC75C000E7DBB8 /* dylib at opt-local-lib */,
 				16741CE721A92550000EEC78 /* CoreMedia.framework */,
 				16741CE521A924FB000EEC78 /* AVFoundation.framework */,
+				DE67C40EF5420B30BCE3C458 /* OS X */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -244,6 +314,7 @@
 				16B81252218D701000E24173 /* Products */,
 				16AD45BF21965FB500A0BB95 /* Frameworks */,
 				16C1DAFC2E87F21B00DD415F /* Recovered References */,
+				A50EB28E4A257BA3C5CDDEDE /* MovEncoder2Framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -252,6 +323,7 @@
 			children = (
 				16B81251218D701000E24173 /* movencoder2 */,
 				16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */,
+				240B87D07B35999E9BDDD7D0 /* MovEncoder2.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -265,6 +337,7 @@
 				16DF46182E8C1A2B006AF79A /* IO */,
 				16DF461F2E8C1A2B006AF79A /* Pipeline */,
 				16DF462E2E8C1A2B006AF79A /* Utils */,
+				70CA387F81ED3A62AC03E43F /* Public */,
 			);
 			path = movencoder2;
 			sourceTree = "<group>";
@@ -360,7 +433,50 @@
 			path = Utils;
 			sourceTree = "<group>";
 		};
+		70CA387F81ED3A62AC03E43F /* Public */ = {
+			isa = PBXGroup;
+			children = (
+				88E4924A5F224FEBC6F487C6 /* MovEncoder2.h */,
+				88EB2448986096AB744FA246 /* METranscoder.h */,
+				7CA784927658D9205565C4CA /* MEVideoEncoderConfig.h */,
+				4FD05FB22946F177AEB42A31 /* METypes.h */,
+			);
+			name = Public;
+			path = Public;
+			sourceTree = "<group>";
+		};
+		A50EB28E4A257BA3C5CDDEDE /* MovEncoder2Framework */ = {
+			isa = PBXGroup;
+			children = (
+				96C92E42B9EE5C37768656ED /* Info.plist */,
+			);
+			name = MovEncoder2Framework;
+			path = MovEncoder2Framework;
+			sourceTree = "<group>";
+		};
+		DE67C40EF5420B30BCE3C458 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				166902585CAFD658422CF0F8 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		F33F7654C66281245F9739CA /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				302193E1CC6EA04D0CFE90BA /* MovEncoder2.h in Headers */,
+				F9E76642A4DF3EEC2DD8EDD6 /* METranscoder.h in Headers */,
+				4C9AF69D58D50AFF1F03EC33 /* MEVideoEncoderConfig.h in Headers */,
+				1BAF79E5C585085357F9A73B /* METypes.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		16B81250218D701000E24173 /* movencoder2 */ = {
@@ -396,6 +512,24 @@
 			productReference = 16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		5061039C56058C8186274E58 /* MovEncoder2Framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B76F4D3C424EE17D19404AB5 /* Build configuration list for PBXNativeTarget "MovEncoder2Framework" */;
+			buildPhases = (
+				F33F7654C66281245F9739CA /* Headers */,
+				941D9174278D0B2A92B8A7FE /* Sources */,
+				DEBA093C898BFCC3E22FFEA1 /* Frameworks */,
+				D3D2DF6C06606D21159257A8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MovEncoder2Framework;
+			productName = MovEncoder2;
+			productReference = 240B87D07B35999E9BDDD7D0 /* MovEncoder2.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -429,9 +563,20 @@
 			targets = (
 				16B81250218D701000E24173 /* movencoder2 */,
 				16C1DAED2E87F02000DD415F /* movencoder2Tests */,
+				5061039C56058C8186274E58 /* MovEncoder2Framework */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D3D2DF6C06606D21159257A8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		16B8124D218D701000E24173 /* Sources */ = {
@@ -487,6 +632,32 @@
 				16C1DB282E8AAC4400DD415F /* MEPipelineIntegrationTests.m in Sources */,
 				16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */,
 				16C1DAEF2E87F02000DD415F /* MEVideoEncoderConfigTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		941D9174278D0B2A92B8A7FE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				783B349165355E5050E83608 /* MEVideoEncoderConfig.m in Sources */,
+				CD3BC7B3F5E872CCC5452357 /* MEAudioConverter.m in Sources */,
+				1BFF3EE565AB8FB4711ED5EE /* MEManager.m in Sources */,
+				35847512A10982B9DDE114BF /* METranscoder.m in Sources */,
+				5AC7ED271DDDA1FCECCCE5E8 /* METranscoder+paramParser.m in Sources */,
+				5702919591D781D32A32010B /* METranscoder+prepareChannels.m in Sources */,
+				410B07B6C391F9C0C09C176D /* MEEncoderPipeline.m in Sources */,
+				AFA669690DC9626C9F111E05 /* MEFilterPipeline.m in Sources */,
+				A0F3DFBEAE2BB3645B40C0AC /* MESampleBufferFactory.m in Sources */,
+				EB9606AA77EBCAF3114F4AFA /* MEInput.m in Sources */,
+				6B5D4C3AA6CADEAC6E556FB7 /* MEOutput.m in Sources */,
+				7D4EC5E56AB8374E89114327 /* SBChannel.m in Sources */,
+				59CAAE5124E6A24CA017A55F /* MECommon.m in Sources */,
+				C92CF6D954CEFF554F02487D /* MEErrorFormatter.m in Sources */,
+				92EFEA24A48009B8A490BF69 /* MEProgressUtil.m in Sources */,
+				75E5BE24B73F1C9A77ED9515 /* MESecureLogging.m in Sources */,
+				86B15BB2F731FBE26D2C6C9A /* MEUtils.m in Sources */,
+				561FE70C29F15BA9C9FEBE40 /* monitorUtil.m in Sources */,
+				CB8812B29C71ED6F82B4C510 /* parseUtil.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -614,9 +785,11 @@
 		16B81259218D701000E24173 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = arm64;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
+				EXCLUDED_ARCHS = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(USER_LIBRARY_DIR)/Frameworks",
@@ -631,16 +804,20 @@
 					/usr/local/lib,
 					/opt/local/lib,
 				);
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = arm64;
 			};
 			name = Debug;
 		};
 		16B8125A218D701000E24173 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = arm64;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
+				EXCLUDED_ARCHS = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(USER_LIBRARY_DIR)/Frameworks",
@@ -655,7 +832,9 @@
 					/usr/local/lib,
 					/opt/local/lib,
 				);
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = arm64;
 			};
 			name = Release;
 		};
@@ -663,12 +842,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_TESTABILITY = YES;
+				EXCLUDED_ARCHS = "";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -684,8 +865,10 @@
 					/usr/local/lib,
 					/opt/local/lib,
 				);
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				VALID_ARCHS = arm64;
 			};
 			name = Debug;
 		};
@@ -693,11 +876,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				EXCLUDED_ARCHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -709,10 +894,102 @@
 					/usr/local/lib,
 					/opt/local/lib,
 				);
+				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
+				VALID_ARCHS = arm64;
 			};
 			name = Release;
+		};
+		77DF4B2696EA445817ADCD04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EXCLUDED_ARCHS = "";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/usr/local/include/**",
+					"$(SRCROOT)/**",
+				);
+				INFOPLIST_FILE = MovEncoder2Framework/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/lib,
+					/opt/local/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				MODULEMAP_FILE = "";
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mycometg3.MovEncoder2;
+				PRODUCT_NAME = MovEncoder2;
+				PUBLIC_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/Headers";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VALID_ARCHS = arm64;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		7A345CF83273300AF18D679E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EXCLUDED_ARCHS = "";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/usr/local/include/**",
+					"$(SRCROOT)/**",
+				);
+				INFOPLIST_FILE = MovEncoder2Framework/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/lib,
+					/opt/local/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				MODULEMAP_FILE = "";
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mycometg3.MovEncoder2;
+				PRODUCT_NAME = MovEncoder2;
+				PUBLIC_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/Headers";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VALID_ARCHS = arm64;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
@@ -740,6 +1017,15 @@
 			buildConfigurations = (
 				16C1DAF02E87F02000DD415F /* Debug */,
 				16C1DAF12E87F02000DD415F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B76F4D3C424EE17D19404AB5 /* Build configuration list for PBXNativeTarget "MovEncoder2Framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				77DF4B2696EA445817ADCD04 /* Release */,
+				7A345CF83273300AF18D679E /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

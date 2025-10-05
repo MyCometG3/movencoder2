@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "16C1DAED2E87F02000DD415F"
-               BuildableName = "movencoder2Tests.xctest"
-               BlueprintName = "movencoder2Tests"
+               BlueprintIdentifier = "5061039C56058C8186274E58"
+               BuildableName = "MovEncoder2.framework"
+               BlueprintName = "MovEncoder2Framework"
                ReferencedContainer = "container:movencoder2.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -28,16 +28,6 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "16C1DAED2E87F02000DD415F"
-               BuildableName = "movencoder2Tests.xctest"
-               BlueprintName = "movencoder2Tests"
-               ReferencedContainer = "container:movencoder2.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

@@ -7,6 +7,16 @@
 //  This file is part of movencoder2 (GPLv2 or later).
 //
 
+/**
+ * @header MEErrorFormatter.h
+ * @abstract Internal API - Error formatting utilities
+ * @discussion
+ * This header is part of the internal implementation of movencoder2.
+ * It is not intended for public use and its interface may change without notice.
+ *
+ * @internal This is an internal API. Do not use directly.
+ */
+
 #ifndef MEErrorFormatter_h
 #define MEErrorFormatter_h
 

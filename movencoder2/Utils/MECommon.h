@@ -24,6 +24,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+/**
+ * @header MECommon.h
+ * @abstract Internal API - Common definitions and utilities
+ * @discussion
+ * This header is part of the internal implementation of movencoder2.
+ * Constants defined here (like progress callback keys) are re-exported in the public API.
+ *
+ * @internal This is an internal API. Do not import directly - use MovEncoder2.h instead.
+ */
+
 #ifndef MECommon_h
 #define MECommon_h
 
