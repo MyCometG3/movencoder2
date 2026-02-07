@@ -33,6 +33,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+const uint8_t *avc_find_startcode(const uint8_t *p, const uint8_t *end);
+
 static BOOL MENalTypeIsSync(uint8_t nalType, enum AVCodecID codecId)
 {
     if (codecId == AV_CODEC_ID_H264) {
@@ -64,21 +66,21 @@ static BOOL MENalContainsSyncSample(const uint8_t *data, size_t size, enum AVCod
         return NO;
     }
     
-    size_t i = 0;
-    while (i + 3 < size) {
-        if (data[i] == 0 && data[i + 1] == 0 &&
-            (data[i + 2] == 1 || (data[i + 2] == 0 && i + 3 < size && data[i + 3] == 1))) {
-            size_t start = (data[i + 2] == 1) ? i + 3 : i + 4;
-            if (start < size) {
-                uint8_t nalType = MENalTypeForCodec(data[start], codecId);
-                if (MENalTypeIsSync(nalType, codecId)) {
-                    return YES;
-                }
-            }
-            i = start;
-            continue;
+    
+    const uint8_t *p = data;
+    const uint8_t *end = data + size;
+    const uint8_t *nal_start = avc_find_startcode(p, end);
+    while (nal_start < end) {
+        while (nal_start < end && !*(nal_start++)) {
         }
-        i++;
+        if (nal_start >= end) {
+            break;
+        }
+        uint8_t nalType = MENalTypeForCodec(*nal_start, codecId);
+        if (MENalTypeIsSync(nalType, codecId)) {
+            return YES;
+        }
+        nal_start = avc_find_startcode(nal_start, end);
     }
     return NO;
 }

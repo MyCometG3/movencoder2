@@ -14,6 +14,7 @@
 
 #import "MEFilterPipeline.h"
 #import "MEEncoderPipeline.h" 
+#import "MEManager.h"
 #import "MESampleBufferFactory.h"
 
 #ifndef AV_LOG_DEBUG
@@ -34,7 +35,7 @@ static BOOL MEGetNotSyncForPacketBytes(const uint8_t *bytes,
     MESampleBufferFactory *factory = [[MESampleBufferFactory alloc] init];
     factory.timeBase = 30000;
     NSString *codecName = (codecId == AV_CODEC_ID_HEVC) ? @"libx265" : @"libx264";
-    factory.videoEncoderSetting = [@{@"codecName": codecName} mutableCopy];
+    factory.videoEncoderSetting = [@{kMEVECodecNameKey: codecName} mutableCopy];
     
     CMVideoFormatDescriptionRef desc = NULL;
     OSStatus err = CMVideoFormatDescriptionCreate(kCFAllocatorDefault,
@@ -148,7 +149,7 @@ static BOOL MEGetNotSyncForPacketBytes(const uint8_t *bytes,
     XCTAssertEqualObjects(self.filterPipeline.filterString, @"scale=640:480");
     
     // Test encoder pipeline properties
-    NSMutableDictionary *encoderSettings = [@{@"codecName": @"libx264"} mutableCopy];
+    NSMutableDictionary *encoderSettings = [@{kMEVECodecNameKey: @"libx264"} mutableCopy];
     self.encoderPipeline.videoEncoderSetting = encoderSettings;
     self.encoderPipeline.verbose = YES;
     self.encoderPipeline.logLevel = AV_LOG_DEBUG;
@@ -172,7 +173,7 @@ static BOOL MEGetNotSyncForPacketBytes(const uint8_t *bytes,
 - (void)testPipelineComponentCleanup {
     // Test cleanup functionality
     self.filterPipeline.filterString = @"scale=640:480";
-    self.encoderPipeline.videoEncoderSetting = [@{@"codecName": @"libx264"} mutableCopy];
+    self.encoderPipeline.videoEncoderSetting = [@{kMEVECodecNameKey: @"libx264"} mutableCopy];
     
     [self.filterPipeline cleanup];
     [self.encoderPipeline cleanup];
@@ -191,7 +192,7 @@ static BOOL MEGetNotSyncForPacketBytes(const uint8_t *bytes,
     XCTAssertFalse([self.sampleBufferFactory isUsingVideoEncoder]);
     
     // After setting encoder settings, should detect encoder usage
-    self.sampleBufferFactory.videoEncoderSetting = [@{@"codecName": @"libx264"} mutableCopy];
+    self.sampleBufferFactory.videoEncoderSetting = [@{kMEVECodecNameKey: @"libx264"} mutableCopy];
     XCTAssertTrue([self.sampleBufferFactory isUsingVideoEncoder]);
 }
 
