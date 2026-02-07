@@ -48,7 +48,7 @@
  * [transcoder startAsync];
  * @endcode
  *
- * @copyright Copyright © 2018-2025 MyCometG3. All rights reserved.
+ * @copyright Copyright © 2018-2026 MyCometG3. All rights reserved.
  * @license GPL v2 or later
  */
 

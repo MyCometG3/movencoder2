@@ -3,7 +3,7 @@
 //  movencoder2
 //
 //  Created by Refactoring on 2024/09/06.
-//  Copyright © 2019-2025 MyCometG3. All rights reserved.
+//  Copyright © 2019-2026 MyCometG3. All rights reserved.
 //
 
 /*

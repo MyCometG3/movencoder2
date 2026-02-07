@@ -4,7 +4,7 @@
 //
 //  Utility extracted from METranscoder for progress calculation.
 //
-//  Copyright © 2025.
+//  Copyright © 2025-2026 MyCometG3. All rights reserved.
 //
 
 /**
