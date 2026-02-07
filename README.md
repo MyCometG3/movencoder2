@@ -82,8 +82,8 @@ For detailed API documentation, see [docs/API_GUIDELINES.md](docs/API_GUIDELINES
 ```
 ## Development environment
 ```
-macOS 26.0.1 Tahoe
-Xcode 26.0.1
+macOS 26.2 Tahoe
+Xcode 26.2
 ```
 ## License
 ```
