@@ -33,6 +33,73 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+static BOOL MENalTypeIsSync(uint8_t nalType, enum AVCodecID codecId)
+{
+    if (codecId == AV_CODEC_ID_H264) {
+        return (nalType == 5);
+    }
+    if (codecId == AV_CODEC_ID_HEVC) {
+        return (nalType >= 16 && nalType <= 21);
+    }
+    return NO;
+}
+
+static uint8_t MENalTypeForCodec(uint8_t header, enum AVCodecID codecId)
+{
+    if (codecId == AV_CODEC_ID_H264) {
+        return header & 0x1F;
+    }
+    if (codecId == AV_CODEC_ID_HEVC) {
+        return (header >> 1) & 0x3F;
+    }
+    return 0;
+}
+
+static BOOL MENalContainsSyncSample(const uint8_t *data, size_t size, enum AVCodecID codecId)
+{
+    if (!data || size < 1) {
+        return NO;
+    }
+    if (codecId != AV_CODEC_ID_H264 && codecId != AV_CODEC_ID_HEVC) {
+        return NO;
+    }
+    
+    
+    const uint8_t *p = data;
+    const uint8_t *end = data + size;
+    const uint8_t *nal_start = avc_find_startcode(p, end);
+    while (nal_start < end) {
+        while (nal_start < end && !*(nal_start++)) {
+        }
+        if (nal_start >= end) {
+            break;
+        }
+        uint8_t nalType = MENalTypeForCodec(*nal_start, codecId);
+        if (MENalTypeIsSync(nalType, codecId)) {
+            return YES;
+        }
+        nal_start = avc_find_startcode(nal_start, end);
+    }
+    return NO;
+}
+
+static BOOL MEPacketIsSyncSample(const AVPacket *packet, enum AVCodecID codecId)
+{
+    if (!packet) {
+        return NO;
+    }
+    if (packet->flags & AV_PKT_FLAG_KEY) {
+        return YES;
+    }
+    if (codecId != AV_CODEC_ID_H264 && codecId != AV_CODEC_ID_HEVC) {
+        return NO;
+    }
+    if (!packet->data || packet->size <= 0) {
+        return NO;
+    }
+    return MENalContainsSyncSample(packet->data, (size_t)packet->size, codecId);
+}
+
 @implementation MESampleBufferFactory
 
 @synthesize timeBase = _timeBase;
@@ -236,6 +303,8 @@ end:
     
     // From AVPacket to CMSampleBuffer(CMBLockBuffer); Compressed
     if (_formatDescription && _timeBase) {
+        enum AVCodecID codecId = avctx ? avctx->codec_id : AV_CODEC_ID_NONE;
+        BOOL isSyncSample = MEPacketIsSyncSample(packet, codecId);
         // Get temp NAL buffer
         int tempSize = packet->size;
         UInt8* tempPtr = av_malloc(tempSize);
@@ -310,6 +379,16 @@ end:
         if (err) {
             SecureErrorLogf(@"[MESampleBufferFactory] ERROR: Cannot setup compressed CMSampleBuffer.");
             goto end;
+        }
+        
+        CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sb, true);
+        if (attachments && CFArrayGetCount(attachments) > 0) {
+            CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+            if (dict) {
+                CFDictionarySetValue(dict,
+                                     kCMSampleAttachmentKey_NotSync,
+                                     isSyncSample ? kCFBooleanFalse : kCFBooleanTrue);
+            }
         }
         
         return sb;

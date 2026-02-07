@@ -149,6 +149,7 @@ _Nullable CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
 _Nullable CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDesc, NSValue* cleanApertureValue);
 
 void avc_parse_nal_units(uint8_t *_Nonnull* _Nonnull buf, int *size);
+const uint8_t *_Nonnull avc_find_startcode(const uint8_t *_Nonnull p, const uint8_t *_Nonnull end);
 
 NS_ASSUME_NONNULL_END
 
