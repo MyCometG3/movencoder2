@@ -39,7 +39,7 @@ static BOOL MENalTypeIsSync(uint8_t nalType, enum AVCodecID codecId)
         return (nalType == 5);
     }
     if (codecId == AV_CODEC_ID_HEVC) {
-        return (nalType == 19 || nalType == 20 || nalType == 21);
+        return (nalType >= 16 && nalType <= 21);
     }
     return NO;
 }
