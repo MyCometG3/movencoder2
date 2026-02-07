@@ -33,8 +33,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-const uint8_t *avc_find_startcode(const uint8_t *p, const uint8_t *end);
-
 static BOOL MENalTypeIsSync(uint8_t nalType, enum AVCodecID codecId)
 {
     if (codecId == AV_CODEC_ID_H264) {
