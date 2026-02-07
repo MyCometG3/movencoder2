@@ -33,6 +33,54 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+static BOOL MENalContainsIDR(const uint8_t *data, size_t size)
+{
+    if (!data || size < 1) {
+        return NO;
+    }
+    
+    BOOL foundStartCode = NO;
+    size_t i = 0;
+    while (i + 3 < size) {
+        if (data[i] == 0 && data[i + 1] == 0 &&
+            (data[i + 2] == 1 || (data[i + 2] == 0 && i + 3 < size && data[i + 3] == 1))) {
+            size_t start = (data[i + 2] == 1) ? i + 3 : i + 4;
+            if (start < size) {
+                foundStartCode = YES;
+                uint8_t nalType = data[start] & 0x1F;
+                if (nalType == 5) {
+                    return YES;
+                }
+            }
+            i = start;
+            continue;
+        }
+        i++;
+    }
+    
+    if (foundStartCode) {
+        return NO;
+    }
+    return NO;
+}
+
+static BOOL MEPacketIsSyncSample(const AVPacket *packet, enum AVCodecID codecId)
+{
+    if (!packet) {
+        return NO;
+    }
+    if (packet->flags & AV_PKT_FLAG_KEY) {
+        return YES;
+    }
+    if (codecId != AV_CODEC_ID_H264) {
+        return NO;
+    }
+    if (!packet->data || packet->size <= 0) {
+        return NO;
+    }
+    return MENalContainsIDR(packet->data, (size_t)packet->size);
+}
+
 @implementation MESampleBufferFactory
 
 @synthesize timeBase = _timeBase;
@@ -236,6 +284,8 @@ end:
     
     // From AVPacket to CMSampleBuffer(CMBLockBuffer); Compressed
     if (_formatDescription && _timeBase) {
+        enum AVCodecID codecId = avctx ? avctx->codec_id : AV_CODEC_ID_NONE;
+        BOOL isSyncSample = MEPacketIsSyncSample(packet, codecId);
         // Get temp NAL buffer
         int tempSize = packet->size;
         UInt8* tempPtr = av_malloc(tempSize);
@@ -310,6 +360,16 @@ end:
         if (err) {
             SecureErrorLogf(@"[MESampleBufferFactory] ERROR: Cannot setup compressed CMSampleBuffer.");
             goto end;
+        }
+        
+        CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sb, true);
+        if (attachments && CFArrayGetCount(attachments) > 0) {
+            CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+            if (dict) {
+                CFDictionarySetValue(dict,
+                                     kCMSampleAttachmentKey_NotSync,
+                                     isSyncSample ? kCFBooleanFalse : kCFBooleanTrue);
+            }
         }
         
         return sb;
