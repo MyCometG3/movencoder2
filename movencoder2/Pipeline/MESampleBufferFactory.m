@@ -33,22 +33,45 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static BOOL MENalContainsIDR(const uint8_t *data, size_t size)
+static BOOL MENalTypeIsSync(uint8_t nalType, enum AVCodecID codecId)
+{
+    if (codecId == AV_CODEC_ID_H264) {
+        return (nalType == 5);
+    }
+    if (codecId == AV_CODEC_ID_HEVC) {
+        return (nalType == 19 || nalType == 20 || nalType == 21);
+    }
+    return NO;
+}
+
+static uint8_t MENalTypeForCodec(uint8_t header, enum AVCodecID codecId)
+{
+    if (codecId == AV_CODEC_ID_H264) {
+        return header & 0x1F;
+    }
+    if (codecId == AV_CODEC_ID_HEVC) {
+        return (header >> 1) & 0x3F;
+    }
+    return 0;
+}
+
+static BOOL MENalContainsSyncSample(const uint8_t *data, size_t size, enum AVCodecID codecId)
 {
     if (!data || size < 1) {
         return NO;
     }
+    if (codecId != AV_CODEC_ID_H264 && codecId != AV_CODEC_ID_HEVC) {
+        return NO;
+    }
     
-    BOOL foundStartCode = NO;
     size_t i = 0;
     while (i + 3 < size) {
         if (data[i] == 0 && data[i + 1] == 0 &&
             (data[i + 2] == 1 || (data[i + 2] == 0 && i + 3 < size && data[i + 3] == 1))) {
             size_t start = (data[i + 2] == 1) ? i + 3 : i + 4;
             if (start < size) {
-                foundStartCode = YES;
-                uint8_t nalType = data[start] & 0x1F;
-                if (nalType == 5) {
+                uint8_t nalType = MENalTypeForCodec(data[start], codecId);
+                if (MENalTypeIsSync(nalType, codecId)) {
                     return YES;
                 }
             }
@@ -56,10 +79,6 @@ static BOOL MENalContainsIDR(const uint8_t *data, size_t size)
             continue;
         }
         i++;
-    }
-    
-    if (foundStartCode) {
-        return NO;
     }
     return NO;
 }
@@ -72,13 +91,13 @@ static BOOL MEPacketIsSyncSample(const AVPacket *packet, enum AVCodecID codecId)
     if (packet->flags & AV_PKT_FLAG_KEY) {
         return YES;
     }
-    if (codecId != AV_CODEC_ID_H264) {
+    if (codecId != AV_CODEC_ID_H264 && codecId != AV_CODEC_ID_HEVC) {
         return NO;
     }
     if (!packet->data || packet->size <= 0) {
         return NO;
     }
-    return MENalContainsIDR(packet->data, (size_t)packet->size);
+    return MENalContainsSyncSample(packet->data, (size_t)packet->size, codecId);
 }
 
 @implementation MESampleBufferFactory
