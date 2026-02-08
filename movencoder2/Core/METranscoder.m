@@ -236,6 +236,12 @@ NS_ASSUME_NONNULL_BEGIN
     self.transcodeConfig.verbose = v;
 }
 
+- (void)setParam:(NSMutableDictionary *)paramIn
+{
+    param = paramIn;
+    self.transcodeConfig.encodingParams = paramIn ?: [NSMutableDictionary dictionary];
+}
+
 - (void)setCallbackQueue:(dispatch_queue_t _Nullable)queue
 {
     _callbackQueue = queue;
@@ -443,7 +449,7 @@ finalize:
         CMTime duration = CMTimeSubtract(self.endTime, self.startTime);
         tr = CMTimeRangeMake(self.startTime, duration);
     } else {
-        tr = CMTimeRangeMake(kCMTimeInvalid, kCMTimeInvalid);
+        tr = kCMTimeRangeInvalid;
     }
     self.transcodeConfig.timeRange = tr;
     return YES;

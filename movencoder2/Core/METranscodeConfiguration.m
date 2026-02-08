@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 {
     if (self = [super init]) {
         _encodingParams = [NSMutableDictionary dictionary];
-        _timeRange = CMTimeRangeMake(kCMTimeInvalid, kCMTimeInvalid);
+        _timeRange = kCMTimeRangeInvalid;
         _verbose = NO;
         _logLevel = MELogLevelInfo;
         _callbackQueue = nil;

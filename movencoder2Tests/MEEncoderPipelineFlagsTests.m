@@ -10,6 +10,7 @@
 #include <libavcodec/avcodec.h>
 
 #import "MEEncoderPipeline.h"
+#import "MEManager.h"
 
 @interface MEEncoderPipelineFlagsTests : XCTestCase
 @end
@@ -27,7 +28,7 @@
 
     // Prepare via filtered-frame path with a minimal AVFrame
     AVFrame *frame = av_frame_alloc();
-    XCTAssertNotNil(frame);
+    XCTAssertTrue(frame != NULL);
     frame->format = AV_PIX_FMT_YUV420P;
     frame->width = 16;
     frame->height = 16;

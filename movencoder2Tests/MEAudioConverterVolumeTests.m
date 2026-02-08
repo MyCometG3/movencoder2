@@ -9,6 +9,8 @@
 @import AVFoundation;
 @import CoreMedia;
 
+#import <math.h>
+
 #import "MEAudioConverter.h"
 
 @interface MEAudioConverterVolumeTests : XCTestCase
@@ -34,7 +36,11 @@
     AVAudioPCMBuffer *buf = [[AVAudioPCMBuffer alloc] initWithPCMFormat:fmt frameCapacity:frames];
     buf.frameLength = frames;
     // Generate simple int16 sine in interleaved layout
-    SInt16 *data = buf.int16ChannelData[0];
+    const AudioBufferList *abl = buf.audioBufferList;
+    SInt16 *data = (SInt16 *)(abl && abl->mNumberBuffers > 0 ? abl->mBuffers[0].mData : NULL);
+    if (!data) {
+        return buf;
+    }
     UInt32 ch = fmt.channelCount;
     double freq = 440.0, sr = fmt.sampleRate;
     for (AVAudioFrameCount i = 0; i < frames; i++) {

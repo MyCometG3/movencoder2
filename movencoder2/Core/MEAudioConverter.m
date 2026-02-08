@@ -379,11 +379,6 @@ cleanup:
     
     __block BOOL success = YES;
     dispatch_sync(_inputQueue, ^{
-        // Store the sample buffer for processing
-        CFRetain(sb);
-        NSValue* value = [NSValue valueWithPointer:sb];
-        [self->_inputBufferQueue addObject:value];
-        
         // Ensure converter is available when formats are set
         if (!self->_audioConverter && self.sourceFormat && self.destinationFormat) {
             self->_audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
@@ -392,9 +387,15 @@ cleanup:
                 if (self.verbose) {
                     SecureErrorLog(@"Failed to create AVAudioConverter");
                 }
+                success = NO;
                 return;
             }
         }
+
+        // Store the sample buffer for processing
+        CFRetain(sb);
+        NSValue* value = [NSValue valueWithPointer:sb];
+        [self->_inputBufferQueue addObject:value];
 
         // Trigger processing if converter is available
         if (self->_audioConverter && self.sourceFormat && self.destinationFormat) {
