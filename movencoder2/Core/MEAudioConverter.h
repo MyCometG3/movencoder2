@@ -148,19 +148,6 @@ NS_ASSUME_NONNULL_BEGIN
 /** Internal alias for mediaType */
 - (AVMediaType)mediaTypeInternal;
 
-/* =================================================================================== */
-// MARK: - Internal helpers for tests
-/* =================================================================================== */
-
-/** Create AVAudioPCMBuffer from CMSampleBuffer using the specified audio format. */
-- (nullable AVAudioPCMBuffer*)createPCMBufferFromSampleBuffer:(CMSampleBufferRef)sampleBuffer
-                                                    withFormat:(AVAudioFormat*)format;
-
-/** Create CMSampleBuffer from AVAudioPCMBuffer with given PTS and format. */
-- (nullable CMSampleBufferRef)createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer
-                                  withPresentationTimeStamp:(CMTime)pts
-                                                     format:(AVAudioFormat*)format CF_RETURNS_RETAINED;
-
 @end
 
 NS_ASSUME_NONNULL_END
