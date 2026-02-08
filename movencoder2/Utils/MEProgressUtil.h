@@ -4,7 +4,8 @@
 //
 //  Utility extracted from METranscoder for progress calculation.
 //
-//  Copyright © 2025-2026 MyCometG3. All rights reserved.
+//  Copyright (C) 2025-2026 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
 //
 
 /**

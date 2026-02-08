@@ -4,6 +4,9 @@
 //
 //  Created by Security Enhancement
 //
+//  Copyright (C) 2025 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
+//
 
 /**
  * @header MESecureLogging.h

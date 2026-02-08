@@ -4,7 +4,8 @@
 //
 //  Type-safe view over legacy videoEncoderSetting dictionary.
 //
-//  This file is part of movencoder2 (GPLv2 or later).
+//  Copyright (C) 2025 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
 //
 
 #ifndef MEVideoEncoderConfig_h

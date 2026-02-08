@@ -2,9 +2,12 @@
 //  movencoder2Tests
 //
 //  Basic unit tests for MEVideoEncoderConfig parsing & normalization.
-//
 //  NOTE: These tests focus on pure dictionary -> config transformation logic.
 //
+//  Copyright (C) 2025 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
+//
+
 #import <XCTest/XCTest.h>
 #import "MEVideoEncoderConfig.h"
 #import "MEManager.h"

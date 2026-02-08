@@ -5,7 +5,8 @@
 //  Lightweight adapter without changing existing behavior.
 //  TS-3: Collect simple validation issues for verbose logging.
 //
-//  This file is part of movencoder2 (GPLv2 or later).
+//  Copyright (C) 2025 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
 //
 
 #import "MEVideoEncoderConfig.h"

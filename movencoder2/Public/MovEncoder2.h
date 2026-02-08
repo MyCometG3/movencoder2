@@ -4,7 +4,8 @@
 //
 //  Public API umbrella header for movencoder2 framework
 //
-//  This file is part of movencoder2 (GPLv2 or later).
+//  Copyright (C) 2018-2026 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
 //
 
 #ifndef MovEncoder2_h
@@ -48,8 +49,7 @@
  * [transcoder startAsync];
  * @endcode
  *
- * @copyright Copyright © 2018-2026 MyCometG3. All rights reserved.
- * @license GPL v2 or later
+ * @copyright Copyright (C) 2018-2026 MyCometG3
  */
 
 // MARK: - Public API Headers

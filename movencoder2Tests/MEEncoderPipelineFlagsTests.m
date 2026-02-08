@@ -3,6 +3,10 @@
 //
 //  Validates MEEncoderPipeline state flags transitions under flush-only path.
 //
+//  Copyright (C) 2026 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
+//
+
 @import XCTest;
 @import Foundation;
 @import CoreMedia;

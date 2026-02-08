@@ -3,7 +3,9 @@
 //  movencoder2Tests
 //
 //  Created by Copilot on 2025-09-29.
-//  Copyright © 2018-2025 MyCometG3. All rights reserved.
+//
+//  Copyright (C) 2018-2025 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
 //
 
 @import XCTest;

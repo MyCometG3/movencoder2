@@ -2,9 +2,12 @@
 //  movencoder2Tests
 //
 //  Tests for MEAudioConverter volumeDb boundaries and behavior.
-//
 //  Focus: ensure gain application respects -10..+10 dB and 0 dB no-op.
 //
+//  Copyright (C) 2026 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
+//
+
 @import XCTest;
 @import AVFoundation;
 @import CoreMedia;
