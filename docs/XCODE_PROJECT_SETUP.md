@@ -279,7 +279,7 @@ Pod::Spec.new do |s|
   s.version      = "1.0.0"
   s.summary      = "QuickTime movie transcoding library"
   s.homepage     = "https://github.com/MyCometG3/movencoder2"
-  s.license      = { :type => "GPL-2.0", :file => "COPYING.txt" }
+  s.license      = { :type => "GPL-2.0-or-later", :file => "COPYING.txt" }
   s.author       = "MyCometG3"
   
   s.platform     = :osx, "12.0"

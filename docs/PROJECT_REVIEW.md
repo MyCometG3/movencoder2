@@ -3,7 +3,7 @@
 **Review Date:** December 2025  
 **Repository:** MyCometG3/movencoder2  
 **Primary Language:** Objective-C  
-**License:** GPL v2  
+**License:** GPL-2.0-or-later  
 
 ---
 
@@ -187,8 +187,8 @@ NSError *error = [MEErrorFormatter errorWithFFmpegCode:ret
 ### Code Consistency: 🟢 EXCELLENT
 
 **Strengths:**
-- Consistent GPL v2 license headers in all source files
-- Uniform copyright notices (© 2018-2025 MyCometG3)
+- Consistent SPDX GPL-2.0-or-later headers in all source files
+- Uniform copyright notices (Copyright (C) 2018-2026 MyCometG3)
 - Consistent coding style and formatting
 - Clear module prefixing (ME for MovEncoder)
 - Descriptive method and variable names
@@ -348,7 +348,7 @@ NSString* sanitizeLogString(NSString* input);
 - Dependency verification steps
 
 **In-Code Documentation:**
-- GPL v2 license headers in all files
+- SPDX GPL-2.0-or-later headers in all files
 - Basic interface documentation in headers
 - Public API method documentation
 - Some implementation comments where needed

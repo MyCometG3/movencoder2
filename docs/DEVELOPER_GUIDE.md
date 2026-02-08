@@ -594,13 +594,9 @@ typedef NS_ENUM(NSUInteger, MEVideoCodecKind) {
 //  movencoder2
 //
 //  Created by [Author] on [Date].
-//  Copyright © 2018-2025 MyCometG3. All rights reserved.
+//  Copyright (C) 2018-2026 MyCometG3
+//  SPDX-License-Identifier: GPL-2.0-or-later
 //
-
-/*
- * This file is part of movencoder2.
- * [GPL v2 license text]
- */
 
 #ifndef MEModuleName_h
 #define MEModuleName_h

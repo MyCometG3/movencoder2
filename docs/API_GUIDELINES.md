@@ -312,7 +312,7 @@ transcoder.progressCallback = ^(NSDictionary *info) {
 
 - **Issues:** Report bugs and feature requests via GitHub Issues
 - **Documentation:** See README.md and inline header documentation
-- **License:** GPL v2 or later (see COPYING.txt)
+- **License:** GPL-2.0-or-later (see COPYING.txt)
 
 ---
 

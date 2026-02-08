@@ -87,7 +87,7 @@ Xcode 26.2
 ```
 ## License
 ```
-GPL v2
+GPL-2.0-or-later
 ```
 
 ---
