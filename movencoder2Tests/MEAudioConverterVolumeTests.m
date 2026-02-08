@@ -86,9 +86,25 @@
     CFRelease(out);
     XCTAssertNotNil(outPCM);
 
-    SInt16 *inData = pcm.int16ChannelData[0];
-    SInt16 *outData = outPCM.int16ChannelData[0];
-    for (int i = 0; i < 16; i++) {
+    const AudioBufferList *inABL = pcm.audioBufferList;
+    const AudioBufferList *outABL = outPCM.audioBufferList;
+    if (!inABL || inABL->mNumberBuffers == 0 || !inABL->mBuffers[0].mData ||
+        !outABL || outABL->mNumberBuffers == 0 || !outABL->mBuffers[0].mData) {
+        XCTFail(@"PCM buffers lack interleaved data for verification");
+        return;
+    }
+
+    const SInt16 *inData = (const SInt16 *)inABL->mBuffers[0].mData;
+    const SInt16 *outData = (const SInt16 *)outABL->mBuffers[0].mData;
+    UInt32 inSampleCount = (UInt32)(inABL->mBuffers[0].mDataByteSize / sizeof(SInt16));
+    UInt32 outSampleCount = (UInt32)(outABL->mBuffers[0].mDataByteSize / sizeof(SInt16));
+    UInt32 samplesToCheck = (UInt32)MIN(16, MIN(inSampleCount, outSampleCount));
+    if (samplesToCheck < 16) {
+        XCTFail(@"Not enough samples available to verify 0 dB volume behavior");
+        return;
+    }
+
+    for (UInt32 i = 0; i < samplesToCheck; i++) {
         XCTAssertEqual(outData[i], inData[i], @"0 dB should not change samples");
     }
 }

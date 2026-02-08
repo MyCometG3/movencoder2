@@ -27,7 +27,6 @@
 #import "METranscoder+Internal.h"
 #import "MESecureLogging.h"
 #import "MEProgressUtil.h"
-#import "METranscodeConfiguration.h"
 
 /* =================================================================================== */
 // MARK: -

@@ -25,7 +25,6 @@
  */
 
 #import "METranscoder+Internal.h"
-#import "METranscodeConfiguration.h"
 
 /* =================================================================================== */
 // MARK: -
