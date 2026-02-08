@@ -69,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)appendSampleBuffer:(CMSampleBufferRef)sampleBuffer
 {
     if (_meManager)
-        return [_meManager appendSampleBuffer:sampleBuffer];
+        return [_meManager appendSampleBufferInternal:sampleBuffer];
     else if (_awInput)
         return [_awInput appendSampleBuffer:sampleBuffer];
     else
@@ -79,7 +79,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isReadyForMoreMediaData
 {
     if (_meManager)
-        return [_meManager isReadyForMoreMediaData];
+        return [_meManager isReadyForMoreMediaDataInternal];
     else if (_awInput)
         return [_awInput isReadyForMoreMediaData];
     else
@@ -89,7 +89,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)markAsFinished
 {
     if (_meManager)
-        [_meManager markAsFinished];
+        [_meManager markAsFinishedInternal];
     else if (_awInput)
         [_awInput markAsFinished];
     else
@@ -99,7 +99,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)requestMediaDataWhenReadyOnQueue:(dispatch_queue_t)queue usingBlock:(RequestHandler)block
 {
     if (_meManager)
-        [_meManager requestMediaDataWhenReadyOnQueue:queue usingBlock:block];
+        [_meManager requestMediaDataWhenReadyOnQueueInternal:queue usingBlock:block];
     else if (_awInput)
         [_awInput requestMediaDataWhenReadyOnQueue:queue usingBlock:block];
     else
@@ -109,7 +109,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (AVMediaType) mediaType
 {
     if (_meManager)
-        return [_meManager mediaType];
+        return [_meManager mediaTypeInternal];
     else if (_awInput)
         return [_awInput mediaType];
     else
@@ -119,7 +119,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (CMTimeScale) mediaTimeScale
 {
     if (_meManager)
-        return [_meManager mediaTimeScale];
+        return [_meManager mediaTimeScaleInternal];
     else if (_awInput)
         return [_awInput mediaTimeScale];
     else
@@ -129,7 +129,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) setMediaTimeScale:(CMTimeScale)mediaTimeScale
 {
     if (_meManager)
-        [_meManager setMediaTimeScale:mediaTimeScale];
+        [_meManager setMediaTimeScaleInternal:mediaTimeScale];
     else if (_awInput)
         [_awInput setMediaTimeScale:mediaTimeScale];
     else
@@ -139,7 +139,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (CGSize) naturalSize
 {
     if (_meManager)
-        return [_meManager naturalSize];
+        return [_meManager naturalSizeInternal];
     else if (_awInput)
         return [_awInput naturalSize];
     else
@@ -149,7 +149,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) setNaturalSize:(CGSize)naturalSize
 {
     if (_meManager)
-        [_meManager setNaturalSize:naturalSize];
+        [_meManager setNaturalSizeInternal:naturalSize];
     else if (_awInput)
         [_awInput setNaturalSize:naturalSize];
     else

@@ -63,7 +63,7 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
                                          int requestedBitrate)
 {
     NSNumber* bitrateNum = awInputSetting[AVEncoderBitRateKey];
-    if (!bitrateNum) return; // No bitrate key -> nothing to adjust (e.g. LPCM)
+    if (bitrateNum == nil) return; // No bitrate key -> nothing to adjust (e.g. LPCM)
 
     AVAudioFormat* inFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
                                                                          channelLayout:avacSrcLayout];
@@ -83,7 +83,7 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
             prev = item;
         }
     }
-    if (prev) {
+    if (prev != nil) {
         awInputSetting[AVEncoderBitRateKey] = prev;
         SecureLogf(@"Bitrate adjustment to %@ from %@", prev, @(requestedBitrate));
     }

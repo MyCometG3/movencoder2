@@ -29,7 +29,7 @@ $ open movencoder2.xcodeproj
 # In Xcode: ⌘U (Product > Test)
 
 # Or via xcodebuild:
-$ xcodebuild test -scheme movencoder2 -destination 'platform=macOS'
+$ xcodebuild test -scheme movencoder2Tests -destination 'platform=macOS'
 ```
 
 ### Basic Usage

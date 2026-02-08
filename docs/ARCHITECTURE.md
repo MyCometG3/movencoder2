@@ -1,7 +1,7 @@
 # Architecture Overview
 
 **Document Version:** 1.0  
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -91,6 +91,9 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Configuration management
 - Temporary file cleanup
 
+**Internal Configuration:**
+- `METranscodeConfiguration` consolidates encoding params, time range, logging, and callbacks.
+
 **Key Methods:**
 ```objective-c
 - (instancetype)initWithInput:(NSURL*)input output:(NSURL*)output;
@@ -115,6 +118,9 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Sample buffer transformation
 - Progress reporting
 
+**Internal Bridge APIs:**
+- IO adapters call `*Internal` aliases (appendSampleBufferInternal, isReadyForMoreMediaDataInternal, markAsFinishedInternal).
+
 **Key Properties:**
 ```objective-c
 @property (readonly) BOOL failed;
@@ -138,6 +144,9 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - AAC encoding
 - Audio sample processing
 - Buffer pool management
+
+**Internal Bridge APIs:**
+- IO adapters call `*Internal` aliases for sample buffer flow and readiness.
 
 **Optimization Techniques:**
 - Buffer pooling for memory efficiency
@@ -205,6 +214,9 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Sample buffer reading
 - Reader status monitoring
 
+**Bridge Interaction:**
+- Delivers sample buffers through SBChannel to Core via internal bridge aliases.
+
 **Features:**
 - Support for multiple tracks (video, audio, other)
 - Automatic format handling
@@ -220,6 +232,9 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Sample buffer writing
 - Writer status monitoring
 
+**Bridge Interaction:**
+- Accepts processed buffers from Core via internal bridge aliases.
+
 **Features:**
 - Multiple track writing
 - Metadata preservation
@@ -234,6 +249,9 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Sample buffer flow control
 - Channel lifecycle management
 - Progress monitoring
+
+**Bridge Interaction:**
+- Interacts directly with MEManager/MEAudioConverter (including audio paths that bypass MEInput/MEOutput wrappers); `Internal` aliases are available for migration.
 
 **Optimization:**
 - Autoreleasepool for memory pressure reduction

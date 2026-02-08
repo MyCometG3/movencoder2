@@ -41,6 +41,9 @@
 		16C1DB092E87F32D00DD415F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 16B81254218D701000E24173 /* main.m */; };
 		16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DAE52E87D32700DD415F /* MEVideoEncoderConfig.m */; };
 		16C1DB282E8AAC4400DD415F /* MEPipelineIntegrationTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB272E8AAC4400DD415F /* MEPipelineIntegrationTests.m */; };
+        16C1DB3A2E9ABC0000DD415F /* MEAudioConverterVolumeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB392E9ABBFF00DD415F /* MEAudioConverterVolumeTests.m */; };
+        16C1DB3C2E9ABC0100DD415F /* SBChannelFlowTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 16C1DB3B2E9ABC0000DD415F /* SBChannelFlowTests.m */; };
+		F0A1B2C53D4E5F60718293A6 /* MEEncoderPipelineFlagsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F0A1B2C33D4E5F60718293A4 /* MEEncoderPipelineFlagsTests.m */; };
 		16DF462F2E8C1A2B006AF79A /* parseUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462D2E8C1A2B006AF79A /* parseUtil.m */; };
 		16DF46302E8C1A2B006AF79A /* monitorUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF462B2E8C1A2B006AF79A /* monitorUtil.m */; };
 		16DF46312E8C1A2B006AF79A /* METranscoder+paramParser.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF460F2E8C1A2B006AF79A /* METranscoder+paramParser.m */; };
@@ -113,6 +116,9 @@
 		E4F9A06F257156BF211086FE /* libavutil.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1654A0D526DC768F00E7DBB8 /* libavutil.dylib */; };
 		EB9606AA77EBCAF3114F4AFA /* MEInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 16DF46132E8C1A2B006AF79A /* MEInput.m */; };
 		F9E76642A4DF3EEC2DD8EDD6 /* METranscoder.h in Headers */ = {isa = PBXBuildFile; fileRef = 88EB2448986096AB744FA246 /* METranscoder.h */; settings = {ATTRIBUTES = (Public, ); }; };
+        F1A2B3C44D5E6F708192A3B4 /* METranscodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */; };
+        F1A2B3C64D5E6F708192A3B5 /* METranscodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */; };
+        F1A2B3C74D5E6F708192A3B6 /* METranscodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -156,6 +162,9 @@
 		16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = movencoder2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		16C1DB192E87F36800DD415F /* movencoder2Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = movencoder2Tests.xctestplan; sourceTree = "<group>"; };
 		16C1DB272E8AAC4400DD415F /* MEPipelineIntegrationTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEPipelineIntegrationTests.m; sourceTree = "<group>"; };
+        16C1DB392E9ABBFF00DD415F /* MEAudioConverterVolumeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = movencoder2Tests/MEAudioConverterVolumeTests.m; sourceTree = SOURCE_ROOT; };
+        16C1DB3B2E9ABC0000DD415F /* SBChannelFlowTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = movencoder2Tests/SBChannelFlowTests.m; sourceTree = SOURCE_ROOT; };
+        F0A1B2C33D4E5F60718293A4 /* MEEncoderPipelineFlagsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = movencoder2Tests/MEEncoderPipelineFlagsTests.m; sourceTree = SOURCE_ROOT; };
 		16DF46082E8C1A2B006AF79A /* MEAudioConverter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEAudioConverter.h; sourceTree = "<group>"; };
 		16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEAudioConverter.m; sourceTree = "<group>"; };
 		16DF460A2E8C1A2B006AF79A /* MEManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEManager.h; sourceTree = "<group>"; };
@@ -197,6 +206,8 @@
 		88E4924A5F224FEBC6F487C6 /* MovEncoder2.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = MovEncoder2.h; path = MovEncoder2.h; sourceTree = "<group>"; };
 		88EB2448986096AB744FA246 /* METranscoder.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; name = METranscoder.h; path = METranscoder.h; sourceTree = "<group>"; };
 		96C92E42B9EE5C37768656ED /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+        F1A2B3C24D5E6F708192A3B3 /* METranscodeConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METranscodeConfiguration.h; sourceTree = "<group>"; };
+        F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscodeConfiguration.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -357,6 +368,9 @@
 			children = (
 				16C1DB272E8AAC4400DD415F /* MEPipelineIntegrationTests.m */,
 				16C1DAEB2E87EF1F00DD415F /* MEVideoEncoderConfigTests.m */,
+                16C1DB392E9ABBFF00DD415F /* MEAudioConverterVolumeTests.m */,
+                16C1DB3B2E9ABC0000DD415F /* SBChannelFlowTests.m */,
+                F0A1B2C33D4E5F60718293A4 /* MEEncoderPipelineFlagsTests.m */,
 				16C1DB192E87F36800DD415F /* movencoder2Tests.xctestplan */,
 			);
 			path = movencoder2Tests;
@@ -382,6 +396,8 @@
 				16DF460E2E8C1A2B006AF79A /* METranscoder+Internal.h */,
 				16DF460F2E8C1A2B006AF79A /* METranscoder+paramParser.m */,
 				16DF46102E8C1A2B006AF79A /* METranscoder+prepareChannels.m */,
+                F1A2B3C24D5E6F708192A3B3 /* METranscodeConfiguration.h */,
+                F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -601,6 +617,7 @@
 				16DF46502E8C1A2B006AF79A /* MEInput.m in Sources */,
 				16DF46512E8C1A2B006AF79A /* MEAudioConverter.m in Sources */,
 				16DF46522E8C1A2B006AF79A /* METranscoder.m in Sources */,
+                F1A2B3C44D5E6F708192A3B4 /* METranscodeConfiguration.m in Sources */,
 				16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */,
 				16B81255218D701000E24173 /* main.m in Sources */,
 			);
@@ -632,6 +649,10 @@
 				16C1DB282E8AAC4400DD415F /* MEPipelineIntegrationTests.m in Sources */,
 				16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */,
 				16C1DAEF2E87F02000DD415F /* MEVideoEncoderConfigTests.m in Sources */,
+                16C1DB3A2E9ABC0000DD415F /* MEAudioConverterVolumeTests.m in Sources */,
+                16C1DB3C2E9ABC0100DD415F /* SBChannelFlowTests.m in Sources */,
+                F0A1B2C53D4E5F60718293A6 /* MEEncoderPipelineFlagsTests.m in Sources */,
+                F1A2B3C74D5E6F708192A3B6 /* METranscodeConfiguration.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -643,6 +664,7 @@
 				CD3BC7B3F5E872CCC5452357 /* MEAudioConverter.m in Sources */,
 				1BFF3EE565AB8FB4711ED5EE /* MEManager.m in Sources */,
 				35847512A10982B9DDE114BF /* METranscoder.m in Sources */,
+                F1A2B3C64D5E6F708192A3B5 /* METranscodeConfiguration.m in Sources */,
 				5AC7ED271DDDA1FCECCCE5E8 /* METranscoder+paramParser.m in Sources */,
 				5702919591D781D32A32010B /* METranscoder+prepareChannels.m in Sources */,
 				410B07B6C391F9C0C09C176D /* MEEncoderPipeline.m in Sources */,

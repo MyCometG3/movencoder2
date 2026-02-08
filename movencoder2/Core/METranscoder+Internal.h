@@ -29,6 +29,7 @@
 
 #import "MECommon.h"
 #import "METranscoder.h"
+#import "METranscodeConfiguration.h"
 #import "MEManager.h"
 #import "MEInput.h"
 #import "MEOutput.h"
@@ -57,6 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (strong, nonatomic) NSMutableArray<SBChannel*>* sbChannels;
 @property (strong, nonatomic, nullable) NSMutableDictionary* managers;
+
+// Centralized, type-safe configuration used internally
+@property (strong, nonatomic) METranscodeConfiguration* transcodeConfig;
 
 @property (nonatomic, assign) CFAbsoluteTime timeStamp0;
 @property (nonatomic, assign) CFAbsoluteTime timeStamp1;
@@ -105,7 +109,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)me_prepareExportSession:(NSError * _Nullable * _Nullable)error useME:(BOOL*)useME useAC:(BOOL*)useAC;
 - (BOOL)me_configureWriterAndPrepareChannelsWithMovie:(AVMutableMovie*)mov useME:(BOOL)useME useAC:(BOOL)useAC error:(NSError * _Nullable * _Nullable)error;
 - (BOOL)me_startIOAndWaitWithReader:(AVAssetReader*)ar writer:(AVAssetWriter*)aw finish:(BOOL*)finish error:(NSError * _Nullable * _Nullable)error;
-- (void)me_finalizeSessionWithFinish:(BOOL)finish error:(NSError * _Nullable * _Nullable)error;
+- (BOOL)me_finalizeSessionWithFinish:(BOOL)finish error:(NSError * _Nullable * _Nullable)error;
 
 @end
 
