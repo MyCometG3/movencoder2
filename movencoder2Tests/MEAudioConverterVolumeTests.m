@@ -93,7 +93,7 @@
     }
 }
 
-- (void)testVolumeDbClampAtPlus10dBInt16 {
+- (void)testVolumeDbAtPlus10dBInt16 {
     MEAudioConverter *conv = [[MEAudioConverter alloc] init];
     conv.verbose = NO;
     conv.sourceFormat = [self pcmFormatInt16Stereo48k];
@@ -139,7 +139,7 @@
     XCTAssertTrue(sawIncrease || sawSaturation, @"Expected gain or saturation after +10 dB");
 }
 
-- (void)testVolumeDbClampAtMinus10dBInt16 {
+- (void)testVolumeDbAtMinus10dBInt16 {
     MEAudioConverter *conv = [[MEAudioConverter alloc] init];
     conv.verbose = NO;
     conv.sourceFormat = [self pcmFormatInt16Stereo48k];

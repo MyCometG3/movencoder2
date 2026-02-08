@@ -37,7 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL) copyOtherMedia
 {
-    NSNumber* numCopyOtherMedia = self.param[kCopyOtherMediaKey];
+    NSNumber* numCopyOtherMedia = self.transcodeConfig.encodingParams[kCopyOtherMediaKey];
     BOOL copyOtherMedia = (numCopyOtherMedia != nil) ? numCopyOtherMedia.boolValue : FALSE;
     return copyOtherMedia;
 }
