@@ -47,11 +47,11 @@ Objective: Reduce ambiguity by suffixing internal bridge methods with `Internal`
 
 Actions:
 - In `Core/MEManager.h` and `Core/MEAudioConverter.h`, add alternate method aliases with `Internal` suffix (e.g., `appendSampleBufferInternal`) that forward to existing implementations.
-- Update `IO/SBChannel.m` to call the `Internal` aliases. Keep original methods for compatibility.
+- Prepare `IO/SBChannel.m` for a future update to call the `Internal` aliases; keep original methods for compatibility for now.
 
-Deliverables: ✅ Completed
+Deliverables: ✅ Partially Completed
 - Method aliases in MEManager/MEAudioConverter.
-- SBChannel updated to use `Internal` aliases.
+- SBChannel currently continues to use the original bridge methods; migration to `Internal` aliases will be tracked as a follow-up.
 - Existing external callers remain functional.
 
 ---

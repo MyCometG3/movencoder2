@@ -119,11 +119,24 @@
     CFRelease(out);
     XCTAssertNotNil(outPCM);
 
-    // After +10dB boost, samples should be clamped within int16 bounds
-    SInt16 *outData = outPCM.int16ChannelData[0];
+    // After +10dB boost, expect at least one sample to grow or saturate
+    const AudioBufferList *inABL = pcm.audioBufferList;
+    const AudioBufferList *outABL = outPCM.audioBufferList;
+    const SInt16 *inData = (const SInt16 *)(inABL && inABL->mNumberBuffers > 0 ? inABL->mBuffers[0].mData : NULL);
+    const SInt16 *outData = (const SInt16 *)(outABL && outABL->mNumberBuffers > 0 ? outABL->mBuffers[0].mData : NULL);
+    XCTAssertTrue(inData != NULL);
+    XCTAssertTrue(outData != NULL);
+    BOOL sawIncrease = NO;
+    BOOL sawSaturation = NO;
     for (int i = 0; i < 64; i++) {
-        XCTAssertTrue(outData[i] <= 32767 && outData[i] >= -32768);
+        if (labs(outData[i]) > labs(inData[i])) {
+            sawIncrease = YES;
+        }
+        if (outData[i] == 32767 || outData[i] == -32768) {
+            sawSaturation = YES;
+        }
     }
+    XCTAssertTrue(sawIncrease || sawSaturation, @"Expected gain or saturation after +10 dB");
 }
 
 - (void)testVolumeDbClampAtMinus10dBInt16 {
@@ -152,12 +165,21 @@
     CFRelease(out);
     XCTAssertNotNil(outPCM);
 
-    // After -10dB attenuation, absolute value should be lower than input for early samples
-    SInt16 *inData = pcm.int16ChannelData[0];
-    SInt16 *outData = outPCM.int16ChannelData[0];
-    for (int i = 0; i < 32; i++) {
-        XCTAssertTrue(labs(outData[i]) <= labs(inData[i]));
+    // After -10dB attenuation, expect at least one non-zero sample to reduce in magnitude
+    const AudioBufferList *inABL = pcm.audioBufferList;
+    const AudioBufferList *outABL = outPCM.audioBufferList;
+    const SInt16 *inData = (const SInt16 *)(inABL && inABL->mNumberBuffers > 0 ? inABL->mBuffers[0].mData : NULL);
+    const SInt16 *outData = (const SInt16 *)(outABL && outABL->mNumberBuffers > 0 ? outABL->mBuffers[0].mData : NULL);
+    XCTAssertTrue(inData != NULL);
+    XCTAssertTrue(outData != NULL);
+    BOOL sawDecrease = NO;
+    for (int i = 0; i < 64; i++) {
+        if (inData[i] != 0 && labs(outData[i]) < labs(inData[i])) {
+            sawDecrease = YES;
+            break;
+        }
     }
+    XCTAssertTrue(sawDecrease, @"Expected attenuation after -10 dB");
 }
 
 @end

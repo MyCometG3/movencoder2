@@ -251,7 +251,7 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Progress monitoring
 
 **Bridge Interaction:**
-- Uses `Internal` aliases on MEManager/MEAudioConverter to avoid public API changes.
+- Interacts directly with MEManager/MEAudioConverter (including audio paths that bypass MEInput/MEOutput wrappers); `Internal` aliases are available for migration.
 
 **Optimization:**
 - Autoreleasepool for memory pressure reduction
