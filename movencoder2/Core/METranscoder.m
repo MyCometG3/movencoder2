@@ -27,6 +27,7 @@
 #import "METranscoder+Internal.h"
 #import "MESecureLogging.h"
 #import "MEProgressUtil.h"
+#import "METranscodeConfiguration.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -78,7 +79,9 @@ NS_ASSUME_NONNULL_BEGIN
         outputURL = output;
         
         if ([self validate]) {
-            param = [NSMutableDictionary dictionary];
+            // Initialize centralized configuration and keep legacy param proxy
+            self.transcodeConfig = [[METranscodeConfiguration alloc] init];
+            param = self.transcodeConfig.encodingParams;
             sbChannels = [NSMutableArray array];
             startTime = kCMTimeInvalid;
             endTime = kCMTimeInvalid;
@@ -225,6 +228,37 @@ NS_ASSUME_NONNULL_BEGIN
         if (self.cancelled) return;
         [self cancelExportCustom];
     }
+}
+
+- (void)setVerbose:(BOOL)v
+{
+    verbose = v; // keep property ivar in sync
+    self.transcodeConfig.verbose = v;
+}
+
+- (void)setCallbackQueue:(dispatch_queue_t _Nullable)queue
+{
+    _callbackQueue = queue;
+    self.transcodeConfig.callbackQueue = queue;
+}
+
+- (void)setStartCallback:(dispatch_block_t _Nullable)block
+{
+    _startCallback = block;
+    self.transcodeConfig.startCallback = block;
+}
+
+- (void)setProgressCallback:(progress_block_t _Nullable)block
+{
+    _progressCallback = block;
+    // Bridge to internal configuration type
+    self.transcodeConfig.progressCallback = (MEProgressBlock)block;
+}
+
+- (void)setCompletionCallback:(dispatch_block_t _Nullable)block
+{
+    _completionCallback = block;
+    self.transcodeConfig.completionCallback = block;
 }
 
 @end
@@ -403,6 +437,15 @@ finalize:
     }
 
     SecureLog(@"[METranscoder] Export session started.");
+    // Update consolidated time range in configuration (non-breaking)
+    CMTimeRange tr;
+    if (CMTIME_IS_VALID(self.startTime) && CMTIME_IS_VALID(self.endTime)) {
+        CMTime duration = CMTimeSubtract(self.endTime, self.startTime);
+        tr = CMTimeRangeMake(self.startTime, duration);
+    } else {
+        tr = CMTimeRangeMake(kCMTimeInvalid, kCMTimeInvalid);
+    }
+    self.transcodeConfig.timeRange = tr;
     return YES;
 }
 

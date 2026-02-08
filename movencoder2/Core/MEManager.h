@@ -26,10 +26,12 @@
 
 /**
  * @header MEManager.h
- * @abstract Internal API - Video encoding pipeline manager
+ * @abstract Internal API - Video processing coordinator for filter/encoder pipelines
  * @discussion
- * This header is part of the internal implementation of movencoder2.
- * It is not intended for public use and its interface may change without notice.
+ * MEManager coordinates the video filter and encoder pipelines (Processing Layer).
+ * IO responsibilities are handled by IO layer classes (MEInput/MEOutput/SBChannel).
+ * Methods that mimic AVAssetReader/Writer are provided as internal bridge APIs
+ * to interact with IO adapters; they are not intended for direct external use.
  * Use METranscoder for public transcoding operations.
  *
  * @internal This is an internal API. Do not use directly.
@@ -125,7 +127,12 @@ NS_ASSUME_NONNULL_BEGIN
 // MARK: - for MEInput; queue SB from previous AVAssetReaderOutput to MEInput
 /* =================================================================================== */
 
-/* MEInput - Mimic AVAssetWriterInput */
+/*
+ * Internal bridge API (consumer side)
+ * MEInput - Mimic AVAssetWriterInput
+ * Purpose: allow SBChannel/IO adapters to feed sample buffers into the
+ * processing pipeline without exposing pipeline internals.
+ */
 
 - (BOOL)appendSampleBuffer:(CMSampleBufferRef)sb;
 @property(nonatomic, readonly, getter=isReadyForMoreMediaData) BOOL readyForMoreMediaData;
@@ -134,14 +141,33 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic) CMTimeScale mediaTimeScale;
 @property(nonatomic) CGSize naturalSize;
 
+// Internal alias methods (non-breaking, for IO adapters clarity)
+- (BOOL)appendSampleBufferInternal:(CMSampleBufferRef)sb;
+- (BOOL)isReadyForMoreMediaDataInternal;
+- (void)markAsFinishedInternal;
+- (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue usingBlock:(RequestHandler)block;
+- (CMTimeScale)mediaTimeScaleInternal;
+- (void)setMediaTimeScaleInternal:(CMTimeScale)mediaTimeScale;
+- (CGSize)naturalSizeInternal;
+- (void)setNaturalSizeInternal:(CGSize)naturalSize;
+
 /* =================================================================================== */
 // MARK: - for MEOutput; queue SB from MEOutput to next AVAssetWriterInput
 /* =================================================================================== */
 
-/* MEOutput - Mimic AVAssetReaderOutput */
+/*
+ * Internal bridge API (producer side)
+ * MEOutput - Mimic AVAssetReaderOutput
+ * Purpose: allow SBChannel/IO adapters to pull processed sample buffers
+ * from the pipeline in an AVAssetReader-like fashion.
+ */
 
 - (nullable CMSampleBufferRef)copyNextSampleBuffer CF_RETURNS_RETAINED;
 @property(nonatomic, readonly) AVMediaType mediaType;
+
+// Internal alias methods (non-breaking, for IO adapters clarity)
+- (nullable CMSampleBufferRef)copyNextSampleBufferInternal CF_RETURNS_RETAINED;
+- (AVMediaType)mediaTypeInternal;
 
 @end
 

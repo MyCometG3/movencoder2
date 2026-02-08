@@ -26,10 +26,12 @@
 
 /**
  * @header MEAudioConverter.h
- * @abstract Internal API - Audio processing coordinator
+ * @abstract Internal API - Audio processing coordinator (conversion and AAC encoding)
  * @discussion
- * This header is part of the internal implementation of movencoder2.
- * It is not intended for public use and its interface may change without notice.
+ * MEAudioConverter coordinates audio format/layout/bit-depth conversion and AAC encoding.
+ * IO responsibilities are handled by IO layer classes (MEInput/MEOutput/SBChannel).
+ * Methods that mimic AVAssetReader/Writer are provided as internal bridge APIs to
+ * interact with IO adapters; they are not intended for direct external use.
  * Use METranscoder for public transcoding operations.
  *
  * @internal This is an internal API. Do not use directly.
@@ -109,13 +111,29 @@ NS_ASSUME_NONNULL_BEGIN
 // MARK: - for MEInput; queue SB from previous AVAssetReaderOutput to MEAudioConverter
 /* =================================================================================== */
 
-/* MEInput - Mimic AVAssetWriterInput */
+/*
+ * Internal bridge API (consumer side)
+ * MEInput - Mimic AVAssetWriterInput
+ * Purpose: allow SBChannel/IO adapters to feed sample buffers into the
+ * audio processing pipeline without exposing converter internals.
+ */
 
 - (BOOL)appendSampleBuffer:(CMSampleBufferRef)sb;
+/** Internal alias forwarding to appendSampleBuffer: */
+- (BOOL)appendSampleBufferInternal:(CMSampleBufferRef)sb;
 @property(nonatomic, readonly, getter=isReadyForMoreMediaData) BOOL readyForMoreMediaData;
+/** Internal alias for readiness check */
+- (BOOL)isReadyForMoreMediaDataInternal;
 - (void)markAsFinished;
+/** Internal alias forwarding to markAsFinished */
+- (void)markAsFinishedInternal;
 - (void)requestMediaDataWhenReadyOnQueue:(dispatch_queue_t)queue usingBlock:(RequestHandler)block;
+/** Internal alias forwarding to requestMediaDataWhenReadyOnQueue:usingBlock: */
+- (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue usingBlock:(RequestHandler)block;
 @property(nonatomic) CMTimeScale mediaTimeScale;
+/** Internal aliases for mediaTimeScale */
+- (CMTimeScale)mediaTimeScaleInternal;
+- (void)setMediaTimeScaleInternal:(CMTimeScale)mediaTimeScale;
 
 /* =================================================================================== */
 // MARK: - for MEOutput; queue SB from MEAudioConverter to next AVAssetWriterInput
@@ -124,7 +142,24 @@ NS_ASSUME_NONNULL_BEGIN
 /* MEOutput - Mimic AVAssetReaderOutput */
 
 - (nullable CMSampleBufferRef)copyNextSampleBuffer CF_RETURNS_RETAINED;
+/** Internal alias forwarding to copyNextSampleBuffer */
+- (nullable CMSampleBufferRef)copyNextSampleBufferInternal CF_RETURNS_RETAINED;
 @property(nonatomic, readonly) AVMediaType mediaType;
+/** Internal alias for mediaType */
+- (AVMediaType)mediaTypeInternal;
+
+/* =================================================================================== */
+// MARK: - Internal helpers for tests
+/* =================================================================================== */
+
+/** Create AVAudioPCMBuffer from CMSampleBuffer using the specified audio format. */
+- (nullable AVAudioPCMBuffer*)createPCMBufferFromSampleBuffer:(CMSampleBufferRef)sampleBuffer
+                                                    withFormat:(AVAudioFormat*)format;
+
+/** Create CMSampleBuffer from AVAudioPCMBuffer with given PTS and format. */
+- (nullable CMSampleBufferRef)createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer
+                                  withPresentationTimeStamp:(CMTime)pts
+                                                     format:(AVAudioFormat*)format CF_RETURNS_RETAINED;
 
 @end
 

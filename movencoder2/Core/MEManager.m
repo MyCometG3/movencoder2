@@ -201,6 +201,21 @@ NS_ASSUME_NONNULL_BEGIN
     self.sampleBufferFactory.videoEncoderSetting = setting;
 }
 
+/* =================================================================================== */
+// MARK: - Internal alias forwarding (IO bridge clarity)
+/* =================================================================================== */
+
+- (BOOL)appendSampleBufferInternal:(CMSampleBufferRef)sb { return [self appendSampleBuffer:sb]; }
+- (BOOL)isReadyForMoreMediaDataInternal { return [self isReadyForMoreMediaData]; }
+- (void)markAsFinishedInternal { [self markAsFinished]; }
+- (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue usingBlock:(RequestHandler)block { [self requestMediaDataWhenReadyOnQueue:queue usingBlock:block]; }
+- (CMTimeScale)mediaTimeScaleInternal { return self.mediaTimeScale; }
+- (void)setMediaTimeScaleInternal:(CMTimeScale)mediaTimeScale { self.mediaTimeScale = mediaTimeScale; }
+- (CGSize)naturalSizeInternal { return self.naturalSize; }
+- (void)setNaturalSizeInternal:(CGSize)naturalSize { self.naturalSize = naturalSize; }
+- (nullable CMSampleBufferRef)copyNextSampleBufferInternal { return [self copyNextSampleBuffer]; }
+- (AVMediaType)mediaTypeInternal { return self.mediaType; }
+
 - (void)setVideoFilterString:(NSString * _Nullable)filterString
 {
     videoFilterString = filterString;

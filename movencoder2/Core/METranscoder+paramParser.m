@@ -25,6 +25,7 @@
  */
 
 #import "METranscoder+Internal.h"
+#import "METranscodeConfiguration.h"
 
 /* =================================================================================== */
 // MARK: -
@@ -43,20 +44,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL) audioEncode
 {
-    NSNumber* numAudioEncode = self.param[kAudioEncodeKey];
+    NSNumber* numAudioEncode = self.transcodeConfig.encodingParams[kAudioEncodeKey];
     BOOL audioEncode = (numAudioEncode != nil) ? numAudioEncode.boolValue : FALSE;
     return audioEncode;
 }
 
 - (NSString*) audioFourcc
 {
-    NSString* fourcc = self.param[kAudioCodecKey];
+    NSString* fourcc = self.transcodeConfig.encodingParams[kAudioCodecKey];
     return fourcc;
 }
 
 - (int) audioBitRate
 {
-    NSNumber* numAudioKbps = self.param[kAudioKbpsKey];
+    NSNumber* numAudioKbps = self.transcodeConfig.encodingParams[kAudioKbpsKey];
     float targetKbps = (numAudioKbps != nil) ? numAudioKbps.floatValue : 128;
     int targetBitrate = (int)(targetKbps * 1000);
     return targetBitrate;
@@ -64,32 +65,32 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (int) lpcmDepth
 {
-    NSNumber* numPCMDepth = self.param[kLPCMDepthKey];
+    NSNumber* numPCMDepth = self.transcodeConfig.encodingParams[kLPCMDepthKey];
     int lpcmDepth = (numPCMDepth != nil) ? numPCMDepth.intValue : 16;
     return lpcmDepth;
 }
 
 - (uint32_t) audioChannelLayoutTag {
-    NSNumber* numTag = self.param[kAudioChannelLayoutTagKey];
+    NSNumber* numTag = self.transcodeConfig.encodingParams[kAudioChannelLayoutTagKey];
     return (numTag != nil) ? numTag.unsignedIntValue : 0;
 }
 
 - (BOOL) videoEncode
 {
-    NSNumber* numVideoEncode = self.param[kVideoEncodeKey];
+    NSNumber* numVideoEncode = self.transcodeConfig.encodingParams[kVideoEncodeKey];
     BOOL videoEncode = (numVideoEncode != nil) ? numVideoEncode.boolValue : FALSE;
     return videoEncode;
 }
 
 - (NSString*) videoFourcc
 {
-    NSString* fourcc = self.param[kVideoCodecKey];
+    NSString* fourcc = self.transcodeConfig.encodingParams[kVideoCodecKey];
     return fourcc;
 }
 
 - (int) videoBitRate
 {
-    NSNumber* numVideoKbps = self.param[kVideoKbpsKey];
+    NSNumber* numVideoKbps = self.transcodeConfig.encodingParams[kVideoKbpsKey];
     float targetKbps = (numVideoKbps != nil) ? numVideoKbps.floatValue : 2500;
     int targetBitRate = (int)(targetKbps * 1000);
     return targetBitRate;
@@ -97,14 +98,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL) copyField
 {
-    NSNumber* numCopyField = self.param[kCopyFieldKey];
+    NSNumber* numCopyField = self.transcodeConfig.encodingParams[kCopyFieldKey];
     BOOL copyField = (numCopyField != nil) ? numCopyField.boolValue : FALSE;
     return copyField;
 }
 
 - (BOOL) copyNCLC
 {
-    NSNumber* numCopyNCLC = self.param[kCopyNCLCKey];
+    NSNumber* numCopyNCLC = self.transcodeConfig.encodingParams[kCopyNCLCKey];
     BOOL copyNCLC = (numCopyNCLC != nil) ? numCopyNCLC.boolValue : FALSE;
     return copyNCLC;
 }

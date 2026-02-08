@@ -70,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
 {
     // This is synchronous call
     if (_meManager)
-        return [_meManager copyNextSampleBuffer];
+        return [_meManager copyNextSampleBufferInternal];
     else if (_arOutput)
         return [_arOutput copyNextSampleBuffer];
     else
@@ -100,7 +100,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable AVMediaType) mediaType
 {
     if (_meManager)
-        return _meManager.mediaType;
+        return _meManager.mediaTypeInternal;
     else if (_arOutput)
         return _arOutput.mediaType;
     else
