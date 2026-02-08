@@ -648,7 +648,7 @@ end:
 
  @return CMSampleBuffer
  */
--(nullable CMSampleBufferRef)createUncompressedSampleBuffer
+-(nullable CMSampleBufferRef)createUncompressedSampleBuffer CF_RETURNS_RETAINED
 {
     // Delegate to sample buffer factory with filtered frame from filter pipeline
     void *filteredFrame = [self.filterPipeline filteredFrame];
@@ -665,7 +665,7 @@ end:
 
  @return CMSampleBuffer
  */
--(nullable CMSampleBufferRef)createCompressedSampleBuffer
+-(nullable CMSampleBufferRef)createCompressedSampleBuffer CF_RETURNS_RETAINED
 {
     // Delegate to sample buffer factory with encoded packet from encoder pipeline
     void *encodedPacket = [self.encoderPipeline encodedPacket];

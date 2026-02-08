@@ -169,6 +169,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable CMSampleBufferRef)copyNextSampleBufferInternal CF_RETURNS_RETAINED;
 - (AVMediaType)mediaTypeInternal;
 
+// Internal sample buffer creation (retained return)
+- (nullable CMSampleBufferRef)createUncompressedSampleBuffer CF_RETURNS_RETAINED;
+- (nullable CMSampleBufferRef)createCompressedSampleBuffer CF_RETURNS_RETAINED;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -560,9 +560,10 @@ finalize:
     return YES;
 }
 
-- (void)me_finalizeSessionWithFinish:(BOOL)finish error:(NSError * _Nullable * _Nullable)error
+- (BOOL)me_finalizeSessionWithFinish:(BOOL)finish error:(NSError * _Nullable * _Nullable)error
 {
     [self rwDidFinished];
+    return (error == NULL || *error == nil);
 }
 
 
