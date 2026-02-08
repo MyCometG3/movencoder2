@@ -1,7 +1,7 @@
 # Internal API Reference
 
 **Version:** 1.0  
-**Last Updated:** December 2025  
+**Last Updated:** February 2026  
 **Audience:** Library maintainers and contributors
 
 ---
@@ -53,6 +53,15 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
                      size:(NSSize)size;
 ```
 
+**Internal Bridge Aliases (IO Adapters):**
+```objective-c
+- (BOOL)appendSampleBufferInternal:(CMSampleBufferRef)sb;
+- (BOOL)isReadyForMoreMediaDataInternal;
+- (void)markAsFinishedInternal;
+- (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue
+                                     usingBlock:(RequestHandler)block;
+```
+
 #### MEAudioConverter
 **Location:** `Core/MEAudioConverter.h`
 
@@ -69,6 +78,27 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 ```objective-c
 - (instancetype)initWith:(AVAssetReaderTrackOutput*)readerOutput 
                       to:(AVAssetWriterInput*)writerInput;
+```
+
+**Internal Bridge Aliases (IO Adapters):**
+```objective-c
+- (BOOL)appendSampleBufferInternal:(CMSampleBufferRef)sb;
+- (BOOL)isReadyForMoreMediaDataInternal;
+- (void)markAsFinishedInternal;
+- (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue
+                                     usingBlock:(RequestHandler)block;
+- (CMTimeScale)mediaTimeScaleInternal;
+- (void)setMediaTimeScaleInternal:(CMTimeScale)mediaTimeScale;
+- (nullable CMSampleBufferRef)copyNextSampleBufferInternal CF_RETURNS_RETAINED;
+```
+
+**Test Helper Methods (Internal):**
+```objective-c
+- (nullable AVAudioPCMBuffer*)createPCMBufferFromSampleBuffer:(CMSampleBufferRef)sampleBuffer
+                                                    withFormat:(AVAudioFormat*)format;
+- (nullable CMSampleBufferRef)createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer
+                                  withPresentationTimeStamp:(CMTime)pts
+                                                     format:(AVAudioFormat*)format CF_RETURNS_RETAINED;
 ```
 
 #### METranscoder Internal Extensions
@@ -90,6 +120,16 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 @property (strong, nonatomic) NSMutableArray<SBChannel*>* sbChannels;
 @property (strong, nonatomic, nullable) NSMutableDictionary* managers;
 ```
+
+#### METranscodeConfiguration
+**Location:** `Core/METranscodeConfiguration.h`
+
+**Purpose:** Consolidated internal configuration for METranscoder
+
+**Key Responsibilities:**
+- Holds legacy-compatible `encodingParams`
+- Stores time range and logging/callbacks
+- Bridges CLI/paramParser settings to internal usage
 
 ---
 

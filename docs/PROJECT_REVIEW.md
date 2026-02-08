@@ -290,6 +290,9 @@ NSString* sanitizeLogString(NSString* input);
 - `movencoder2Tests/` directory with XCTest infrastructure
 - `MEVideoEncoderConfigTests.m` - Configuration validation tests
 - `MEPipelineIntegrationTests.m` - Pipeline integration tests
+- `MEAudioConverterVolumeTests.m` - Audio conversion volume boundary tests
+- `MEEncoderPipelineFlagsTests.m` - Pipeline state flag transition tests
+- `SBChannelFlowTests.m` - SBChannel producer/consumer flow tests
 - Test plan defined (movencoder2Tests.xctestplan)
 
 **Test Coverage:**
@@ -297,6 +300,7 @@ NSString* sanitizeLogString(NSString* input);
 - Edge case testing (bitrate parsing, param trimming, overflow handling)
 - Integration tests for pipeline components
 - Tests for validation issue deduplication
+- Basic coverage for audio volume handling and SBChannel flow
 
 **Gaps:**
 - No automated test execution in CI/CD
