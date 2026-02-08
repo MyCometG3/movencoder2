@@ -238,8 +238,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setParam:(NSMutableDictionary *)paramIn
 {
-    param = paramIn;
-    self.transcodeConfig.encodingParams = paramIn ?: [NSMutableDictionary dictionary];
+    NSMutableDictionary *normalizedParams = paramIn ?: [NSMutableDictionary dictionary];
+    param = normalizedParams;
+    self.transcodeConfig.encodingParams = normalizedParams;
 }
 
 - (void)setCallbackQueue:(dispatch_queue_t _Nullable)queue

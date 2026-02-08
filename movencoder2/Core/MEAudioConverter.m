@@ -230,6 +230,7 @@ NS_ASSUME_NONNULL_BEGIN
         AudioBuffer dst = dstABL->mBuffers[0];
         size_t dstBytes = (size_t)sampleCount * ch * bytesPerSample;
         size_t copyBytes = MIN(dstBytes, (size_t)src.mDataByteSize);
+        copyBytes = MIN(copyBytes, (size_t)dst.mDataByteSize);
         if (dst.mData && src.mData && copyBytes) memcpy(dst.mData, src.mData, copyBytes);
     } else {
         UInt32 buffersToCopy = MIN(ch, abl->mNumberBuffers);
@@ -241,6 +242,7 @@ NS_ASSUME_NONNULL_BEGIN
             const AudioBuffer src = abl->mBuffers[i];
             AudioBuffer dst = dstABL->mBuffers[i];
             size_t copyBytes = MIN(bytesPerCh, (size_t)src.mDataByteSize);
+            copyBytes = MIN(copyBytes, (size_t)dst.mDataByteSize);
             if (dst.mData && src.mData && copyBytes) memcpy(dst.mData, src.mData, copyBytes);
         }
     }

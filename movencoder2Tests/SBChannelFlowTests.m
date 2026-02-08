@@ -18,6 +18,7 @@
 @property (nonatomic) BOOL produced;
 @property (nonatomic) int appendedCount;
 @property (nonatomic, copy) RequestHandler requestHandler;
+@property (nonatomic, strong) dispatch_queue_t requestQueue;
 @end
 
 @implementation DummyManager
@@ -25,7 +26,10 @@
 - (BOOL)appendSampleBufferInternal:(CMSampleBufferRef)sb { _appendedCount++; return YES; }
 - (BOOL)isReadyForMoreMediaDataInternal { return _ready; }
 - (void)markAsFinishedInternal { _ready = NO; }
-- (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue usingBlock:(RequestHandler)block { self.requestHandler = [block copy]; }
+- (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue usingBlock:(RequestHandler)block {
+    self.requestQueue = queue;
+    self.requestHandler = [block copy];
+}
 - (CMTimeScale)mediaTimeScaleInternal { return 30000; }
 - (void)setMediaTimeScaleInternal:(CMTimeScale)mediaTimeScale { /* no-op */ }
 - (AVMediaType)mediaTypeInternal { return AVMediaTypeAudio; }
@@ -84,7 +88,8 @@
     XCTestExpectation *done = [self expectationWithDescription:@"completion"];
     [ch startWithDelegate:self completionHandler:^{ [done fulfill]; }];
     if (manager.requestHandler) {
-        manager.requestHandler();
+        dispatch_queue_t queue = manager.requestQueue ?: dispatch_get_main_queue();
+        dispatch_async(queue, manager.requestHandler);
     }
     [self waitForExpectationsWithTimeout:1.0 handler:nil];
 
