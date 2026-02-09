@@ -149,7 +149,6 @@ CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx) {
         }
     }
     
-end:
     return desc;
 }
 
@@ -288,7 +287,6 @@ CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDe
         }
     }
     
-error:
     return NULL;
 }
 
