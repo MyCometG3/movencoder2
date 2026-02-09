@@ -35,6 +35,9 @@
 #include <libavutil/version.h>
 #include <libavcodec/videotoolbox.h>
 
+#import "MECodecUtils.h"
+#import "MEH26xNALUtils.h"
+
 /* =================================================================================== */
 // MARK: - AVFPixelFormatSpec definition
 /* =================================================================================== */
