@@ -90,7 +90,7 @@ NS_ASSUME_NONNULL_BEGIN
             SecureErrorLogf(@"[MEManager] ERROR: Cannot allocate a video frame.");
             goto end;
         }
-        [self setValue:[NSValue valueWithPointer:input] forKey:@"input"];
+        [self setInput:input];
     }
     
     // setup AVFrame for input

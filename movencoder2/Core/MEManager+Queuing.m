@@ -31,9 +31,9 @@ NS_ASSUME_NONNULL_BEGIN
 {
     if (!_inputQueue) {
         _inputQueue = dispatch_queue_create(kMEInputQueue, DISPATCH_QUEUE_SERIAL);
-        self.inputQueueKey = &_inputQueueKey;
-        void* unused = (__bridge void*)self;
-        dispatch_queue_set_specific(_inputQueue, self.inputQueueKey, unused, NULL);
+        void* keyPtr = (__bridge void*)self;
+        [self setInputQueueKeyPtr:keyPtr];
+        dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], keyPtr, NULL);
     }
     return _inputQueue;
 }
@@ -42,9 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 {
     if (!_outputQueue) {
         _outputQueue = dispatch_queue_create(kMEOutputQueue, DISPATCH_QUEUE_SERIAL);
-        self.outputQueueKey = &_outputQueueKey;
-        void* unused = (__bridge void*)self;
-        dispatch_queue_set_specific(_outputQueue, self.outputQueueKey, unused, NULL);
+        void* keyPtr = (__bridge void*)self;
+        [self setOutputQueueKeyPtr:keyPtr];
+        dispatch_queue_set_specific(_outputQueue, [self outputQueueKeyPtr], keyPtr, NULL);
     }
     return _outputQueue;
 }
@@ -52,7 +52,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) input_sync:(dispatch_block_t)block
 {
     dispatch_queue_t queue = self.inputQueue;
-    void * key = self.inputQueueKey;
+    void * key = [self inputQueueKeyPtr];
     assert (queue && key);
     if (dispatch_get_specific(key)) {
         block(); // do sync operation
@@ -64,7 +64,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) input_async:(dispatch_block_t)block
 {
     dispatch_queue_t queue = self.inputQueue;
-    void * key = self.inputQueueKey;
+    void * key = [self inputQueueKeyPtr];
     assert (queue && key);
     if (dispatch_get_specific(key)) {
         block(); // do sync operation
@@ -76,7 +76,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) output_sync:(dispatch_block_t)block
 {
     dispatch_queue_t queue = self.outputQueue;
-    void * key = self.outputQueueKey;
+    void * key = [self outputQueueKeyPtr];
     assert (queue && key);
     if (dispatch_get_specific(key)) {
         block(); // do sync operation
@@ -88,7 +88,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void) output_async:(dispatch_block_t)block
 {
     dispatch_queue_t queue = self.outputQueue;
-    void * key = self.outputQueueKey;
+    void * key = [self outputQueueKeyPtr];
     assert (queue && key);
     if (dispatch_get_specific(key)) {
         block(); // do sync operation
@@ -102,9 +102,9 @@ NS_ASSUME_NONNULL_BEGIN
     self.inputQueue = queue;
     self.inputBlock = block;
 
-    self.inputQueueKey = &_inputQueueKey;
-    void* unused = (__bridge void*)self;
-    dispatch_queue_set_specific(_inputQueue, self.inputQueueKey, unused, NULL);
+    void* keyPtr = (__bridge void*)self;
+    [self setInputQueueKeyPtr:keyPtr];
+    dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], keyPtr, NULL);
 }
 
 @end

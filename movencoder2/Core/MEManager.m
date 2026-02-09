@@ -200,6 +200,50 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable CMSampleBufferRef)copyNextSampleBufferInternal { return [self copyNextSampleBuffer]; }
 - (AVMediaType)mediaTypeInternal { return self.mediaType; }
 
+/* =================================================================================== */
+// MARK: - Internal frame accessors
+/* =================================================================================== */
+
+- (void *)input
+{
+    return input;
+}
+
+- (void)setInput:(void *)frame
+{
+    input = (AVFrame *)frame;
+}
+
+- (struct AVFrameColorMetadata *)cachedColorMetadata
+{
+    return &cachedColorMetadata;
+}
+
+- (struct AVFPixelFormatSpec *)pxl_fmt_filter
+{
+    return &pxl_fmt_filter;
+}
+
+- (void *)inputQueueKeyPtr
+{
+    return inputQueueKey;
+}
+
+- (void)setInputQueueKeyPtr:(void *)ptr
+{
+    inputQueueKey = ptr;
+}
+
+- (void *)outputQueueKeyPtr
+{
+    return outputQueueKey;
+}
+
+- (void)setOutputQueueKeyPtr:(void *)ptr
+{
+    outputQueueKey = ptr;
+}
+
 - (void)setVideoFilterString:(NSString * _Nullable)filterString
 {
     videoFilterString = filterString;

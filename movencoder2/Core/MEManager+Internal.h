@@ -51,8 +51,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) dispatch_queue_t inputQueue;
 @property (nonatomic, strong) dispatch_block_t inputBlock;
 @property (nonatomic, strong) dispatch_queue_t outputQueue;
-@property (nonatomic) void* inputQueueKey;
-@property (nonatomic) void* outputQueueKey;
+- (void *)inputQueueKeyPtr;
+- (void *)outputQueueKeyPtr;
+- (void)setInputQueueKeyPtr:(void *)ptr;
+- (void)setOutputQueueKeyPtr:(void *)ptr;
 
 // State management
 @property (atomic) BOOL queueing;
@@ -74,6 +76,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 // Internal frame access
 - (void *)input; // AVFrame*
+- (void)setInput:(void *)frame; // AVFrame*
 - (struct AVFrameColorMetadata *)cachedColorMetadata;
 - (struct AVFPixelFormatSpec *)pxl_fmt_filter;
 
