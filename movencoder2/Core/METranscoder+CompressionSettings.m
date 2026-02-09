@@ -1,5 +1,5 @@
 //
-//  METranscoder.m
+//  METranscoder+CompressionSettings.m
 //  movencoder2
 //
 //  Created by Takashi Mochizuki on 2018/11/03.
