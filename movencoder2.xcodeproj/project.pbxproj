@@ -119,6 +119,18 @@
         F1A2B3C44D5E6F708192A3B4 /* METranscodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */; };
         F1A2B3C64D5E6F708192A3B5 /* METranscodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */; };
         F1A2B3C74D5E6F708192A3B6 /* METranscodeConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */; };
+		01G8W4WQ869G8W0LP1WG3VHS /* METranscoder+AudioChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = D2D85FYRU1H2XBAMZDRPMTQY /* METranscoder+AudioChannels.m */; };
+		CMNZIWBXEQB3YBEF9C2WYC86 /* METranscoder+AudioChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = D2D85FYRU1H2XBAMZDRPMTQY /* METranscoder+AudioChannels.m */; };
+		KY9B7DRVRYGNC5QAAOVR9KQX /* METranscoder+AudioChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = D2D85FYRU1H2XBAMZDRPMTQY /* METranscoder+AudioChannels.m */; };
+		Z7V4R9BPAZJ7AZW1EEBI7N6M /* METranscoder+VideoChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = QUM8PEEJ4J2853I8I1DCCTDJ /* METranscoder+VideoChannels.m */; };
+		CKJQ10CFKJQ0OJ89SQ80QBTB /* METranscoder+VideoChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = QUM8PEEJ4J2853I8I1DCCTDJ /* METranscoder+VideoChannels.m */; };
+		NSN54F2LNZR55FFOUIBGEAK0 /* METranscoder+VideoChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = QUM8PEEJ4J2853I8I1DCCTDJ /* METranscoder+VideoChannels.m */; };
+		A0VQTHINWI1LN5B6G1AZ8ZA5 /* METranscoder+CodecHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = C1HFFFNA8WOAMESUZCU5M3PQ /* METranscoder+CodecHelpers.m */; };
+		WXQZ2060JMMR2I4RYR2Q2JSK /* METranscoder+CodecHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = C1HFFFNA8WOAMESUZCU5M3PQ /* METranscoder+CodecHelpers.m */; };
+		857C3IQPAQTKM8GQC7VPXYW5 /* METranscoder+CodecHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = C1HFFFNA8WOAMESUZCU5M3PQ /* METranscoder+CodecHelpers.m */; };
+		93POY5YK9JMG5JCF2VULXIFA /* METranscoder+CompressionSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */; };
+		E543I8PB4OLYKSS4JBDWORBP /* METranscoder+CompressionSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */; };
+		ROVDFPC8IJPLPXOPSGO8YV74 /* METranscoder+CompressionSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -208,6 +220,14 @@
 		96C92E42B9EE5C37768656ED /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
         F1A2B3C24D5E6F708192A3B3 /* METranscodeConfiguration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METranscodeConfiguration.h; sourceTree = "<group>"; };
         F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscodeConfiguration.m; sourceTree = "<group>"; };
+		ZKYFBRNTPMW046V5KBFXBTH5 /* METranscoder+AudioChannels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "METranscoder+AudioChannels.h"; sourceTree = "<group>"; };
+		D2D85FYRU1H2XBAMZDRPMTQY /* METranscoder+AudioChannels.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+AudioChannels.m"; sourceTree = "<group>"; };
+		YIY77OG6O5EAFG2DZVAQUT38 /* METranscoder+VideoChannels.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "METranscoder+VideoChannels.h"; sourceTree = "<group>"; };
+		QUM8PEEJ4J2853I8I1DCCTDJ /* METranscoder+VideoChannels.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+VideoChannels.m"; sourceTree = "<group>"; };
+		NCJ9UM543BIGWI9Z7HR39X96 /* METranscoder+CodecHelpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "METranscoder+CodecHelpers.h"; sourceTree = "<group>"; };
+		C1HFFFNA8WOAMESUZCU5M3PQ /* METranscoder+CodecHelpers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+CodecHelpers.m"; sourceTree = "<group>"; };
+		VV0Z0LNPXVPB4MA0MVLOGSU1 /* METranscoder+CompressionSettings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "METranscoder+CompressionSettings.h"; sourceTree = "<group>"; };
+		10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "METranscoder+CompressionSettings.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -398,6 +418,14 @@
 				16DF46102E8C1A2B006AF79A /* METranscoder+prepareChannels.m */,
                 F1A2B3C24D5E6F708192A3B3 /* METranscodeConfiguration.h */,
                 F1A2B3C34D5E6F708192A3B4 /* METranscodeConfiguration.m */,
+				ZKYFBRNTPMW046V5KBFXBTH5 /* METranscoder+AudioChannels.h */,
+				D2D85FYRU1H2XBAMZDRPMTQY /* METranscoder+AudioChannels.m */,
+				YIY77OG6O5EAFG2DZVAQUT38 /* METranscoder+VideoChannels.h */,
+				QUM8PEEJ4J2853I8I1DCCTDJ /* METranscoder+VideoChannels.m */,
+				NCJ9UM543BIGWI9Z7HR39X96 /* METranscoder+CodecHelpers.h */,
+				C1HFFFNA8WOAMESUZCU5M3PQ /* METranscoder+CodecHelpers.m */,
+				VV0Z0LNPXVPB4MA0MVLOGSU1 /* METranscoder+CompressionSettings.h */,
+				10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -620,6 +648,10 @@
                 F1A2B3C44D5E6F708192A3B4 /* METranscodeConfiguration.m in Sources */,
 				16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */,
 				16B81255218D701000E24173 /* main.m in Sources */,
+				CMNZIWBXEQB3YBEF9C2WYC86 /* METranscoder+AudioChannels.m in Sources */,
+				CKJQ10CFKJQ0OJ89SQ80QBTB /* METranscoder+VideoChannels.m in Sources */,
+				WXQZ2060JMMR2I4RYR2Q2JSK /* METranscoder+CodecHelpers.m in Sources */,
+				E543I8PB4OLYKSS4JBDWORBP /* METranscoder+CompressionSettings.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -653,6 +685,10 @@
                 16C1DB3C2E9ABC0100DD415F /* SBChannelFlowTests.m in Sources */,
                 F0A1B2C53D4E5F60718293A6 /* MEEncoderPipelineFlagsTests.m in Sources */,
                 F1A2B3C74D5E6F708192A3B6 /* METranscodeConfiguration.m in Sources */,
+				01G8W4WQ869G8W0LP1WG3VHS /* METranscoder+AudioChannels.m in Sources */,
+				Z7V4R9BPAZJ7AZW1EEBI7N6M /* METranscoder+VideoChannels.m in Sources */,
+				A0VQTHINWI1LN5B6G1AZ8ZA5 /* METranscoder+CodecHelpers.m in Sources */,
+				93POY5YK9JMG5JCF2VULXIFA /* METranscoder+CompressionSettings.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -680,6 +716,10 @@
 				86B15BB2F731FBE26D2C6C9A /* MEUtils.m in Sources */,
 				561FE70C29F15BA9C9FEBE40 /* monitorUtil.m in Sources */,
 				CB8812B29C71ED6F82B4C510 /* parseUtil.m in Sources */,
+				KY9B7DRVRYGNC5QAAOVR9KQX /* METranscoder+AudioChannels.m in Sources */,
+				NSN54F2LNZR55FFOUIBGEAK0 /* METranscoder+VideoChannels.m in Sources */,
+				857C3IQPAQTKM8GQC7VPXYW5 /* METranscoder+CodecHelpers.m in Sources */,
+				ROVDFPC8IJPLPXOPSGO8YV74 /* METranscoder+CompressionSettings.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
