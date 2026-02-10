@@ -58,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
     dispatch_queue_t queue = self.inputQueue;
     void * key = [self inputQueueKeyPtr];
     assert (queue && key);
-    if (dispatch_get_specific(key)) {
+    if (dispatch_get_specific(key) == (__bridge void*)self) {
         block(); // do sync operation
     } else {
         dispatch_sync(queue, block);
@@ -70,7 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
     dispatch_queue_t queue = self.inputQueue;
     void * key = [self inputQueueKeyPtr];
     assert (queue && key);
-    if (dispatch_get_specific(key)) {
+    if (dispatch_get_specific(key) == (__bridge void*)self) {
         block(); // do sync operation
     } else {
         dispatch_async(queue, block);
@@ -82,7 +82,7 @@ NS_ASSUME_NONNULL_BEGIN
     dispatch_queue_t queue = self.outputQueue;
     void * key = [self outputQueueKeyPtr];
     assert (queue && key);
-    if (dispatch_get_specific(key)) {
+    if (dispatch_get_specific(key) == (__bridge void*)self) {
         block(); // do sync operation
     } else {
         dispatch_sync(queue, block);
@@ -94,7 +94,7 @@ NS_ASSUME_NONNULL_BEGIN
     dispatch_queue_t queue = self.outputQueue;
     void * key = [self outputQueueKeyPtr];
     assert (queue && key);
-    if (dispatch_get_specific(key)) {
+    if (dispatch_get_specific(key) == (__bridge void*)self) {
         block(); // do sync operation
     } else {
         dispatch_async(queue, block);
