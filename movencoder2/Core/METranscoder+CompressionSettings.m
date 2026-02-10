@@ -64,7 +64,7 @@ end:
     return result;
 }
 
-- (void) addDecommpressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting
+- (void) addDecompressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting
 {
     if ([self hasFieldModeSupportOf:track]) {
         NSDictionary* decompressionProperties = nil;

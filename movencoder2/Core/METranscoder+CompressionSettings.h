@@ -38,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @param track Video track
  * @param arOutputSetting Output settings to modify
  */
-- (void) addDecommpressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting;
+- (void) addDecompressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting;
 
 /**
  * @brief Build video compression settings for track

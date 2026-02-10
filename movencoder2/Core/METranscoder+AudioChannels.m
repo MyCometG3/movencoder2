@@ -567,7 +567,8 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
         // Prepare NSData* of destination layout
         UInt32 acDescCount = avacDstLayout.layout->mNumberChannelDescriptions;
         size_t acDescSize = sizeof(AudioChannelDescription);
-        size_t acLayoutSize = sizeof(AudioChannelLayout) + MIN(acDescCount - 1, 0) * acDescSize;
+        size_t acLayoutSize = sizeof(AudioChannelLayout)
+                            + (acDescCount > 1 ? (acDescCount - 1) * acDescSize : 0);
         aclData = [NSData dataWithBytes:avacDstLayout.layout length:acLayoutSize];
         
         // destination settings

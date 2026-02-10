@@ -18,6 +18,8 @@
 
 static const char* const kMEInputQueue = "MEManager.MEInputQueue";
 static const char* const kMEOutputQueue = "MEManager.MEOutputQueue";
+static char kMEInputQueueSpecificKey;
+static char kMEOutputQueueSpecificKey;
 
 /* =================================================================================== */
 // MARK: -
@@ -31,9 +33,10 @@ NS_ASSUME_NONNULL_BEGIN
 {
     if (!_inputQueue) {
         _inputQueue = dispatch_queue_create(kMEInputQueue, DISPATCH_QUEUE_SERIAL);
-        void* keyPtr = (__bridge void*)self;
+        void* keyPtr = &kMEInputQueueSpecificKey;
+        void* valuePtr = (__bridge void*)self;
         [self setInputQueueKeyPtr:keyPtr];
-        dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], keyPtr, NULL);
+        dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], valuePtr, NULL);
     }
     return _inputQueue;
 }
@@ -42,9 +45,10 @@ NS_ASSUME_NONNULL_BEGIN
 {
     if (!_outputQueue) {
         _outputQueue = dispatch_queue_create(kMEOutputQueue, DISPATCH_QUEUE_SERIAL);
-        void* keyPtr = (__bridge void*)self;
+        void* keyPtr = &kMEOutputQueueSpecificKey;
+        void* valuePtr = (__bridge void*)self;
         [self setOutputQueueKeyPtr:keyPtr];
-        dispatch_queue_set_specific(_outputQueue, [self outputQueueKeyPtr], keyPtr, NULL);
+        dispatch_queue_set_specific(_outputQueue, [self outputQueueKeyPtr], valuePtr, NULL);
     }
     return _outputQueue;
 }
@@ -102,9 +106,10 @@ NS_ASSUME_NONNULL_BEGIN
     self.inputQueue = queue;
     self.inputBlock = block;
 
-    void* keyPtr = (__bridge void*)self;
+    void* keyPtr = &kMEInputQueueSpecificKey;
+    void* valuePtr = (__bridge void*)self;
     [self setInputQueueKeyPtr:keyPtr];
-    dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], keyPtr, NULL);
+    dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], valuePtr, NULL);
 }
 
 @end

@@ -9,6 +9,7 @@
 //
 
 #import "MECommon.h"
+#import <math.h>
 #import "MEAudioConverter+BufferConversion.h"
 #import "MEAudioConverter+Internal.h"
 #import "MESecureLogging.h"

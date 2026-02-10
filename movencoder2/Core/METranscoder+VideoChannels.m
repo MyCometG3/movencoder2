@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
     for (AVMovieTrack* track in [movie tracksWithMediaType:AVMediaTypeVideo]) {
         // source
         NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
-        [self addDecommpressionPropertiesOf:track setting:arOutputSetting];
+        [self addDecompressionPropertiesOf:track setting:arOutputSetting];
         arOutputSetting[(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey] = @(kCVPixelFormatType_422YpCbCr8);
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
@@ -89,7 +89,7 @@ NS_ASSUME_NONNULL_BEGIN
         
         // source from
         NSMutableDictionary<NSString*,id>* arOutputSetting = [NSMutableDictionary dictionary];
-        [self addDecommpressionPropertiesOf:track setting:arOutputSetting];
+        [self addDecompressionPropertiesOf:track setting:arOutputSetting];
         arOutputSetting[(__bridge NSString*)kCVPixelBufferPixelFormatTypeKey] = @(kCVPixelFormatType_422YpCbCr8);
         AVAssetReaderOutput* arOutput = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track
                                                                                    outputSettings:arOutputSetting];
