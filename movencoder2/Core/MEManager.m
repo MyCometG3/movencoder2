@@ -140,6 +140,8 @@ NS_ASSUME_NONNULL_BEGIN
         readerStatus = AVAssetReaderStatusUnknown;
         writerStatus = AVAssetWriterStatusUnknown;
         initialDelayInSec = 1.0;
+        inputQueueKey = &inputQueueKey;
+        outputQueueKey = &outputQueueKey;
         
         log_level = AV_LOG_INFO;
         
