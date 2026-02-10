@@ -15,14 +15,8 @@
 #import <math.h>
 
 #import "MEAudioConverter.h"
-
-@interface MEAudioConverter (Testing)
-- (nullable AVAudioPCMBuffer*)createPCMBufferFromSampleBuffer:(CMSampleBufferRef)sampleBuffer
-                                                    withFormat:(AVAudioFormat*)format;
-- (nullable CMSampleBufferRef)createSampleBufferFromPCMBuffer:(AVAudioPCMBuffer*)pcmBuffer
-                                  withPresentationTimeStamp:(CMTime)pts
-                                                     format:(AVAudioFormat*)format CF_RETURNS_RETAINED;
-@end
+#import "MEAudioConverter+BufferConversion.h"
+#import "MEAudioConverter+VolumeControl.h"
 
 @interface MEAudioConverterVolumeTests : XCTestCase
 @end
