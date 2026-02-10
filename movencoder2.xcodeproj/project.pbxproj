@@ -131,6 +131,27 @@
 		93POY5YK9JMG5JCF2VULXIFA /* METranscoder+CompressionSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */; };
 		E543I8PB4OLYKSS4JBDWORBP /* METranscoder+CompressionSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */; };
 		ROVDFPC8IJPLPXOPSGO8YV74 /* METranscoder+CompressionSettings.m in Sources */ = {isa = PBXBuildFile; fileRef = 10AWDJRIO2WH0YXS09RQBR5J /* METranscoder+CompressionSettings.m */; };
+		D1E2F3A4B5C60718293D4E5F /* MECodecUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293B4C5E /* MECodecUtils.m */; };
+		D1E2F3A4B5C60718293D4E60 /* MECodecUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293B4C5E /* MECodecUtils.m */; };
+		D1E2F3A4B5C60718293D4E61 /* MECodecUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A60718293B4C5E /* MECodecUtils.m */; };
+		E1F2A3B4C5D60718293E4F60 /* MEH26xNALUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293C4D5F /* MEH26xNALUtils.m */; };
+		E1F2A3B4C5D60718293E4F61 /* MEH26xNALUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293C4D5F /* MEH26xNALUtils.m */; };
+		E1F2A3B4C5D60718293E4F62 /* MEH26xNALUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F4A5B60718293C4D5F /* MEH26xNALUtils.m */; };
+		E2F3A4B5C6D70819293E4F5A /* MEAudioConverter+BufferConversion.m in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C70819293D4E5B /* MEAudioConverter+BufferConversion.m */; };
+		E2F3A4B5C6D70819293E4F5B /* MEAudioConverter+BufferConversion.m in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C70819293D4E5B /* MEAudioConverter+BufferConversion.m */; };
+		E2F3A4B5C6D70819293E4F5C /* MEAudioConverter+BufferConversion.m in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C70819293D4E5B /* MEAudioConverter+BufferConversion.m */; };
+		F2A3B4C5D6E70819293F4A5A /* MEAudioConverter+VolumeControl.m in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C70819293D4E5D /* MEAudioConverter+VolumeControl.m */; };
+		F2A3B4C5D6E70819293F4A5B /* MEAudioConverter+VolumeControl.m in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C70819293D4E5D /* MEAudioConverter+VolumeControl.m */; };
+		F2A3B4C5D6E70819293F4A5C /* MEAudioConverter+VolumeControl.m in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C70819293D4E5D /* MEAudioConverter+VolumeControl.m */; };
+		B1C2D3E4F5061728394A5B01 /* MEManager+Queuing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5B7 /* MEManager+Queuing.m */; };
+		B1C2D3E4F5061728394A5B02 /* MEManager+SampleBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5B9 /* MEManager+SampleBuffer.m */; };
+		B1C2D3E4F5061728394A5B03 /* MEManager+Pipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5BB /* MEManager+Pipeline.m */; };
+		B1C2D3E4F5061728394A5B04 /* MEManager+Queuing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5B7 /* MEManager+Queuing.m */; };
+		B1C2D3E4F5061728394A5B05 /* MEManager+SampleBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5B9 /* MEManager+SampleBuffer.m */; };
+		B1C2D3E4F5061728394A5B06 /* MEManager+Pipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5BB /* MEManager+Pipeline.m */; };
+		B1C2D3E4F5061728394A5B07 /* MEManager+Queuing.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5B7 /* MEManager+Queuing.m */; };
+		B1C2D3E4F5061728394A5B08 /* MEManager+SampleBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5B9 /* MEManager+SampleBuffer.m */; };
+		B1C2D3E4F5061728394A5B09 /* MEManager+Pipeline.m in Sources */ = {isa = PBXBuildFile; fileRef = FB1C2D3E4F5061728394A5BB /* MEManager+Pipeline.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -179,8 +200,19 @@
         F0A1B2C33D4E5F60718293A4 /* MEEncoderPipelineFlagsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = movencoder2Tests/MEEncoderPipelineFlagsTests.m; sourceTree = SOURCE_ROOT; };
 		16DF46082E8C1A2B006AF79A /* MEAudioConverter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEAudioConverter.h; sourceTree = "<group>"; };
 		16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEAudioConverter.m; sourceTree = "<group>"; };
+		FA1B2C3D4E5F60718293A4B5 /* MEAudioConverter+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MEAudioConverter+Internal.h"; sourceTree = "<group>"; };
+		D2E3F4A5B6C70819293D4E5A /* MEAudioConverter+BufferConversion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MEAudioConverter+BufferConversion.h"; sourceTree = "<group>"; };
+		D2E3F4A5B6C70819293D4E5B /* MEAudioConverter+BufferConversion.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "MEAudioConverter+BufferConversion.m"; sourceTree = "<group>"; };
+		D2E3F4A5B6C70819293D4E5C /* MEAudioConverter+VolumeControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MEAudioConverter+VolumeControl.h"; sourceTree = "<group>"; };
+		D2E3F4A5B6C70819293D4E5D /* MEAudioConverter+VolumeControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "MEAudioConverter+VolumeControl.m"; sourceTree = "<group>"; };
 		16DF460A2E8C1A2B006AF79A /* MEManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEManager.h; sourceTree = "<group>"; };
 		16DF460B2E8C1A2B006AF79A /* MEManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEManager.m; sourceTree = "<group>"; };
+		FB1C2D3E4F5061728394A5B6 /* MEManager+Queuing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MEManager+Queuing.h"; sourceTree = "<group>"; };
+		FB1C2D3E4F5061728394A5B7 /* MEManager+Queuing.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "MEManager+Queuing.m"; sourceTree = "<group>"; };
+		FB1C2D3E4F5061728394A5B8 /* MEManager+SampleBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MEManager+SampleBuffer.h"; sourceTree = "<group>"; };
+		FB1C2D3E4F5061728394A5B9 /* MEManager+SampleBuffer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "MEManager+SampleBuffer.m"; sourceTree = "<group>"; };
+		FB1C2D3E4F5061728394A5BA /* MEManager+Pipeline.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MEManager+Pipeline.h"; sourceTree = "<group>"; };
+		FB1C2D3E4F5061728394A5BB /* MEManager+Pipeline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "MEManager+Pipeline.m"; sourceTree = "<group>"; };
 		16DF460C2E8C1A2B006AF79A /* METranscoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = METranscoder.h; sourceTree = "<group>"; };
 		16DF460D2E8C1A2B006AF79A /* METranscoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = METranscoder.m; sourceTree = "<group>"; };
 		16DF460E2E8C1A2B006AF79A /* METranscoder+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "METranscoder+Internal.h"; sourceTree = "<group>"; };
@@ -208,6 +240,10 @@
 		16DF46272E8C1A2B006AF79A /* MESecureLogging.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MESecureLogging.m; sourceTree = "<group>"; };
 		16DF46282E8C1A2B006AF79A /* MEUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEUtils.h; sourceTree = "<group>"; };
 		16DF46292E8C1A2B006AF79A /* MEUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEUtils.m; sourceTree = "<group>"; };
+		B1C2D3E4F5A60718293B4C5D /* MECodecUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MECodecUtils.h; sourceTree = "<group>"; };
+		B1C2D3E4F5A60718293B4C5E /* MECodecUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MECodecUtils.m; sourceTree = "<group>"; };
+		C1D2E3F4A5B60718293C4D5E /* MEH26xNALUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MEH26xNALUtils.h; sourceTree = "<group>"; };
+		C1D2E3F4A5B60718293C4D5F /* MEH26xNALUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MEH26xNALUtils.m; sourceTree = "<group>"; };
 		16DF462A2E8C1A2B006AF79A /* monitorUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = monitorUtil.h; sourceTree = "<group>"; };
 		16DF462B2E8C1A2B006AF79A /* monitorUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = monitorUtil.m; sourceTree = "<group>"; };
 		16DF462C2E8C1A2B006AF79A /* parseUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parseUtil.h; sourceTree = "<group>"; };
@@ -409,8 +445,19 @@
 			children = (
 				16DF46082E8C1A2B006AF79A /* MEAudioConverter.h */,
 				16DF46092E8C1A2B006AF79A /* MEAudioConverter.m */,
+				FA1B2C3D4E5F60718293A4B5 /* MEAudioConverter+Internal.h */,
+				D2E3F4A5B6C70819293D4E5A /* MEAudioConverter+BufferConversion.h */,
+				D2E3F4A5B6C70819293D4E5B /* MEAudioConverter+BufferConversion.m */,
+				D2E3F4A5B6C70819293D4E5C /* MEAudioConverter+VolumeControl.h */,
+				D2E3F4A5B6C70819293D4E5D /* MEAudioConverter+VolumeControl.m */,
 				16DF460A2E8C1A2B006AF79A /* MEManager.h */,
 				16DF460B2E8C1A2B006AF79A /* MEManager.m */,
+				FB1C2D3E4F5061728394A5B6 /* MEManager+Queuing.h */,
+				FB1C2D3E4F5061728394A5B7 /* MEManager+Queuing.m */,
+				FB1C2D3E4F5061728394A5B8 /* MEManager+SampleBuffer.h */,
+				FB1C2D3E4F5061728394A5B9 /* MEManager+SampleBuffer.m */,
+				FB1C2D3E4F5061728394A5BA /* MEManager+Pipeline.h */,
+				FB1C2D3E4F5061728394A5BB /* MEManager+Pipeline.m */,
 				16DF460C2E8C1A2B006AF79A /* METranscoder.h */,
 				16DF460D2E8C1A2B006AF79A /* METranscoder.m */,
 				16DF460E2E8C1A2B006AF79A /* METranscoder+Internal.h */,
@@ -469,6 +516,10 @@
 				16DF46272E8C1A2B006AF79A /* MESecureLogging.m */,
 				16DF46282E8C1A2B006AF79A /* MEUtils.h */,
 				16DF46292E8C1A2B006AF79A /* MEUtils.m */,
+				B1C2D3E4F5A60718293B4C5D /* MECodecUtils.h */,
+				B1C2D3E4F5A60718293B4C5E /* MECodecUtils.m */,
+				C1D2E3F4A5B60718293C4D5E /* MEH26xNALUtils.h */,
+				C1D2E3F4A5B60718293C4D5F /* MEH26xNALUtils.m */,
 				16DF462A2E8C1A2B006AF79A /* monitorUtil.h */,
 				16DF462B2E8C1A2B006AF79A /* monitorUtil.m */,
 				16DF462C2E8C1A2B006AF79A /* parseUtil.h */,
@@ -631,10 +682,15 @@
 				16DF46422E8C1A2B006AF79A /* monitorUtil.m in Sources */,
 				16DF46432E8C1A2B006AF79A /* METranscoder+paramParser.m in Sources */,
 				16DF46442E8C1A2B006AF79A /* MEManager.m in Sources */,
+				B1C2D3E4F5061728394A5B01 /* MEManager+Queuing.m in Sources */,
+				B1C2D3E4F5061728394A5B02 /* MEManager+SampleBuffer.m in Sources */,
+				B1C2D3E4F5061728394A5B03 /* MEManager+Pipeline.m in Sources */,
 				16DF46452E8C1A2B006AF79A /* MESecureLogging.m in Sources */,
 				16DF46462E8C1A2B006AF79A /* MEErrorFormatter.m in Sources */,
 				16DF46472E8C1A2B006AF79A /* SBChannel.m in Sources */,
 				16DF46482E8C1A2B006AF79A /* MEUtils.m in Sources */,
+				D1E2F3A4B5C60718293D4E5F /* MECodecUtils.m in Sources */,
+				E1F2A3B4C5D60718293E4F60 /* MEH26xNALUtils.m in Sources */,
 				16DF46492E8C1A2B006AF79A /* MEEncoderPipeline.m in Sources */,
 				16DF464A2E8C1A2B006AF79A /* MECommon.m in Sources */,
 				16DF464B2E8C1A2B006AF79A /* MEOutput.m in Sources */,
@@ -644,6 +700,8 @@
 				16DF464F2E8C1A2B006AF79A /* MESampleBufferFactory.m in Sources */,
 				16DF46502E8C1A2B006AF79A /* MEInput.m in Sources */,
 				16DF46512E8C1A2B006AF79A /* MEAudioConverter.m in Sources */,
+				E2F3A4B5C6D70819293E4F5A /* MEAudioConverter+BufferConversion.m in Sources */,
+				F2A3B4C5D6E70819293F4A5A /* MEAudioConverter+VolumeControl.m in Sources */,
 				16DF46522E8C1A2B006AF79A /* METranscoder.m in Sources */,
                 F1A2B3C44D5E6F708192A3B4 /* METranscodeConfiguration.m in Sources */,
 				16C1DAE72E87D32700DD415F /* MEVideoEncoderConfig.m in Sources */,
@@ -664,10 +722,15 @@
 				16DF46302E8C1A2B006AF79A /* monitorUtil.m in Sources */,
 				16DF46312E8C1A2B006AF79A /* METranscoder+paramParser.m in Sources */,
 				16DF46322E8C1A2B006AF79A /* MEManager.m in Sources */,
+				B1C2D3E4F5061728394A5B04 /* MEManager+Queuing.m in Sources */,
+				B1C2D3E4F5061728394A5B05 /* MEManager+SampleBuffer.m in Sources */,
+				B1C2D3E4F5061728394A5B06 /* MEManager+Pipeline.m in Sources */,
 				16DF46332E8C1A2B006AF79A /* MESecureLogging.m in Sources */,
 				16DF46342E8C1A2B006AF79A /* MEErrorFormatter.m in Sources */,
 				16DF46352E8C1A2B006AF79A /* SBChannel.m in Sources */,
 				16DF46362E8C1A2B006AF79A /* MEUtils.m in Sources */,
+				D1E2F3A4B5C60718293D4E60 /* MECodecUtils.m in Sources */,
+				E1F2A3B4C5D60718293E4F61 /* MEH26xNALUtils.m in Sources */,
 				16DF46372E8C1A2B006AF79A /* MEEncoderPipeline.m in Sources */,
 				16DF46382E8C1A2B006AF79A /* MECommon.m in Sources */,
 				16DF46392E8C1A2B006AF79A /* MEOutput.m in Sources */,
@@ -677,6 +740,8 @@
 				16DF463D2E8C1A2B006AF79A /* MESampleBufferFactory.m in Sources */,
 				16DF463E2E8C1A2B006AF79A /* MEInput.m in Sources */,
 				16DF463F2E8C1A2B006AF79A /* MEAudioConverter.m in Sources */,
+				E2F3A4B5C6D70819293E4F5B /* MEAudioConverter+BufferConversion.m in Sources */,
+				F2A3B4C5D6E70819293F4A5B /* MEAudioConverter+VolumeControl.m in Sources */,
 				16DF46402E8C1A2B006AF79A /* METranscoder.m in Sources */,
 				16C1DB282E8AAC4400DD415F /* MEPipelineIntegrationTests.m in Sources */,
 				16C1DB0F2E87F32D00DD415F /* MEVideoEncoderConfig.m in Sources */,
@@ -698,7 +763,12 @@
 			files = (
 				783B349165355E5050E83608 /* MEVideoEncoderConfig.m in Sources */,
 				CD3BC7B3F5E872CCC5452357 /* MEAudioConverter.m in Sources */,
+				E2F3A4B5C6D70819293E4F5C /* MEAudioConverter+BufferConversion.m in Sources */,
+				F2A3B4C5D6E70819293F4A5C /* MEAudioConverter+VolumeControl.m in Sources */,
 				1BFF3EE565AB8FB4711ED5EE /* MEManager.m in Sources */,
+				B1C2D3E4F5061728394A5B07 /* MEManager+Queuing.m in Sources */,
+				B1C2D3E4F5061728394A5B08 /* MEManager+SampleBuffer.m in Sources */,
+				B1C2D3E4F5061728394A5B09 /* MEManager+Pipeline.m in Sources */,
 				35847512A10982B9DDE114BF /* METranscoder.m in Sources */,
                 F1A2B3C64D5E6F708192A3B5 /* METranscodeConfiguration.m in Sources */,
 				5AC7ED271DDDA1FCECCCE5E8 /* METranscoder+paramParser.m in Sources */,
@@ -714,6 +784,8 @@
 				92EFEA24A48009B8A490BF69 /* MEProgressUtil.m in Sources */,
 				75E5BE24B73F1C9A77ED9515 /* MESecureLogging.m in Sources */,
 				86B15BB2F731FBE26D2C6C9A /* MEUtils.m in Sources */,
+				D1E2F3A4B5C60718293D4E61 /* MECodecUtils.m in Sources */,
+				E1F2A3B4C5D60718293E4F62 /* MEH26xNALUtils.m in Sources */,
 				561FE70C29F15BA9C9FEBE40 /* monitorUtil.m in Sources */,
 				CB8812B29C71ED6F82B4C510 /* parseUtil.m in Sources */,
 				KY9B7DRVRYGNC5QAAOVR9KQX /* METranscoder+AudioChannels.m in Sources */,

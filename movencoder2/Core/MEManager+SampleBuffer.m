@@ -324,8 +324,10 @@ error:
                                                           videoEncoderConfig:self.videoEncoderConfig];
 }
 
-- (BOOL)appendSampleBuffer:(CMSampleBufferRef)sb
+- (BOOL)appendSampleBuffer:(CMSampleBufferRef _Nullable)sb
 {
+    AVFrame *input = (AVFrame *)[self input];
+
     if (self.failed) goto error;
     AVAssetWriterStatus status = self.writerStatus;
     if (status != AVAssetWriterStatusWriting &&
@@ -402,7 +404,6 @@ error:
     }
 error:
     // Clean up input frame on error to prevent memory leaks
-    AVFrame *input = (AVFrame *)[self input];
     av_frame_unref(input);
     self.failed = TRUE;
     self.writerStatus = AVAssetWriterStatusFailed;

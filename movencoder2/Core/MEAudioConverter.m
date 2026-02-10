@@ -10,6 +10,7 @@
 
 #import "MECommon.h"
 #import "MEAudioConverter.h"
+#import "MEAudioConverter+Internal.h"
 #import "MEAudioConverter+BufferConversion.h"
 #import "MEAudioConverter+VolumeControl.h"
 #import "MESecureLogging.h"
@@ -44,7 +45,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (assign) BOOL failed;                       // atomic override
 @property (assign) AVAssetWriterStatus writerStatus;  // atomic override
 @property (assign) AVAssetReaderStatus readerStatus;  // atomic override
-@property (strong, nonatomic) NSMutableData *audioBufferListPool;
 
 @end
 

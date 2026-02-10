@@ -53,9 +53,6 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
 }
 
 
-@end
-
-NS_ASSUME_NONNULL_END
 - (void) prepareAudioMEChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw
 {
     if (self.audioEncode == FALSE) {
@@ -268,6 +265,7 @@ NS_ASSUME_NONNULL_END
         [self.sbChannels addObject:sbcMEOutput];
     }
 }
+
 - (void) prepareAudioMediaChannelWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw
 {
     if (self.audioEncode == FALSE) {
@@ -612,3 +610,6 @@ NS_ASSUME_NONNULL_END
     }
 }
 
+@end
+
+NS_ASSUME_NONNULL_END

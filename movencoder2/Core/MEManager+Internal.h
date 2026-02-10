@@ -34,6 +34,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface MEManager ()
+{
+    dispatch_queue_t _inputQueue;
+    dispatch_queue_t _outputQueue;
+}
+@end
+
 @interface MEManager (Internal)
 
 // Pipeline components
@@ -59,6 +66,10 @@ NS_ASSUME_NONNULL_BEGIN
 // State management
 @property (atomic) BOOL queueing;
 @property (atomic) CMTimeScale time_base;
+@property (nonatomic) CMTimeScale timeBase;
+@property (readwrite) BOOL failed;
+@property (readwrite) AVAssetWriterStatus writerStatus;
+@property (readwrite) AVAssetReaderStatus readerStatus;
 @property (atomic, readwrite) int64_t lastEnqueuedPTS;
 @property (atomic, readwrite) int64_t lastDequeuedPTS;
 @property (atomic, assign) BOOL colorMetadataCached;

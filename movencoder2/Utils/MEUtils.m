@@ -19,16 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 // MARK: -
 /* =================================================================================== */
 
-// Helper function to safely read 24-bit pattern from big-endian buffer
-static inline uint32_t read_be24_pattern(const uint8_t *p, const uint8_t *pEnd) {
-    // need at least 3 bytes to form a 24-bit pattern
-    if (p + 2 < pEnd) {
-        return ((uint32_t)p[0] << 16) | ((uint32_t)p[1] << 8) | (uint32_t)p[2];
-    } else {
-        return 0xFFFFFF; // return invalid pattern when insufficient data
-    }
-}
-
 static inline BOOL strEqual(CFStringRef a, CFStringRef b) {
     if (a && b) {
         CFComparisonResult result = CFStringCompare(a, b, 0);

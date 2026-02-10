@@ -67,9 +67,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly, nonatomic, strong) dispatch_semaphore_t encoderReadySemaphore;
 @property (readonly, nonatomic, strong) dispatch_semaphore_t eagainDelaySemaphore;
 
-// Input frame management (still needed for pipeline coordination)
-- (BOOL)prepareInputFrameWith:(CMSampleBufferRef)sb;
-
 // private
 @property (nonatomic, strong) dispatch_queue_t inputQueue;
 @property (nonatomic, strong) dispatch_block_t inputBlock;
@@ -382,35 +379,6 @@ NS_ASSUME_NONNULL_BEGIN
     [self.sampleBufferFactory cleanup];
     
     self.pbAttachments = nil;
-}
-
-/* =================================================================================== */
-// MARK: - Utility methods / inline functions
-/* =================================================================================== */
-
-static inline BOOL useVideoFilter(MEManager *obj) {
-    return (obj.videoFilterString != NULL);
-}
-
-static inline BOOL useVideoEncoder(MEManager *obj) {
-    return (obj.videoEncoderSetting != NULL);
-}
-
-static inline BOOL uselibx264(MEManager *obj) {
-    if (!useVideoEncoder(obj)) return FALSE;
-    MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
-    return (cfg && cfg.codecKind == MEVideoCodecKindX264);
-}
-
-static inline BOOL uselibx265(MEManager *obj) {
-    if (!useVideoEncoder(obj)) return FALSE;
-    MEVideoEncoderConfig *cfg = obj.videoEncoderConfig;
-    return (cfg && cfg.codecKind == MEVideoCodecKindX265);
-}
-
-static inline long waitOnSemaphore(dispatch_semaphore_t semaphore, uint64_t timeoutMilliseconds) {
-    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, timeoutMilliseconds * NSEC_PER_MSEC);
-    return dispatch_semaphore_wait(semaphore, timeout);
 }
 
 @end

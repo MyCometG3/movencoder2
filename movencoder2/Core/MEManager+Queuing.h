@@ -75,6 +75,15 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)output_async:(dispatch_block_t)block;
 
+/**
+ * @brief Request data processing when ready
+ * @discussion Input bridge API (mimics AVAssetWriterInput). Invokes the block when
+ * the pipeline is ready to accept more data.
+ * @param queue Dispatch queue to execute the block on
+ * @param block Block to execute when ready
+ */
+- (void)requestMediaDataWhenReadyOnQueue:(dispatch_queue_t)queue usingBlock:(RequestHandler)block;
+
 @end
 
 NS_ASSUME_NONNULL_END

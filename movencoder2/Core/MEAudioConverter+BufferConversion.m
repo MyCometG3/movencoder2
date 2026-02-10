@@ -10,6 +10,7 @@
 
 #import "MECommon.h"
 #import "MEAudioConverter+BufferConversion.h"
+#import "MEAudioConverter+Internal.h"
 #import "MESecureLogging.h"
 
 /* =================================================================================== */
@@ -28,7 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
     UInt32 bytesPerSample = 0;
 
     if (!sampleBuffer || !format) goto cleanup;
-    if (format.streamDescription->mFormatID != kAudioFormatLinearPCM) goto cleanup;
+    if (!format.streamDescription ||
+        format.streamDescription->mFormatID != kAudioFormatLinearPCM) {
+        goto cleanup;
+    }
 
     CMItemCount sampleCount = CMSampleBufferGetNumSamples(sampleBuffer);
     if (sampleCount <= 0) goto cleanup;
@@ -127,7 +131,10 @@ cleanup:
         if (!pcmBuffer || !format) break;
         if (pcmBuffer.frameLength == 0) break;
 
-        if (format.streamDescription->mFormatID != kAudioFormatLinearPCM) break;
+        if (!format.streamDescription ||
+            format.streamDescription->mFormatID != kAudioFormatLinearPCM) {
+            break;
+        }
 
         AVAudioFormat *srcFmt = pcmBuffer.format;
         if (srcFmt.channelCount != format.channelCount) break;
