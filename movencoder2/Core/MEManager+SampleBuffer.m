@@ -404,7 +404,9 @@ error:
     }
 error:
     // Clean up input frame on error to prevent memory leaks
-    av_frame_unref(input);
+    if (input) {
+        av_frame_unref(input);
+    }
     self.failed = TRUE;
     self.writerStatus = AVAssetWriterStatusFailed;
     return FALSE;
