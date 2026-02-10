@@ -587,7 +587,7 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
             awInputSetting[AVEncoderBitRateKey] = @(self.audioBitRate);
             awInputSetting[AVEncoderBitRateStrategyKey] = AVAudioBitRateStrategy_LongTermAverage;
         }
-        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacSrcLayout, sampleRate, self.audioBitRate);
+        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacDstLayout, sampleRate, self.audioBitRate);
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                                          outputSettings:awInputSetting];
         // awInput.mediaTimeScale = track.naturalTimeScale; // Audio track is unable to change

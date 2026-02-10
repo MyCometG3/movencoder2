@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @param avctx The AVCodecContext containing H.264 extradata (SPS/PPS).
  * @return A new CMFormatDescriptionRef, or NULL on failure. Caller is responsible for releasing.
  */
-_Nullable CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx);
+CF_RETURNS_RETAINED _Nullable CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx);
 
 /**
  * Create a CMFormatDescription from an H.265 AVCodecContext.
@@ -47,7 +47,7 @@ _Nullable CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx);
  * @param avctx The AVCodecContext containing H.265 extradata (VPS/SPS/PPS).
  * @return A new CMFormatDescriptionRef, or NULL on failure. Caller is responsible for releasing.
  */
-_Nullable CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
+CF_RETURNS_RETAINED _Nullable CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
 
 /**
  * Create a new CMFormatDescription with clean aperture information.
@@ -58,7 +58,7 @@ _Nullable CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
  *        rect.size.width = hOffset, rect.size.height = vOffset
  * @return A new CMFormatDescriptionRef with clean aperture, or NULL on failure. Caller is responsible for releasing.
  */
-_Nullable CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDesc, NSValue* cleanApertureValue);
+CF_RETURNS_RETAINED _Nullable CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDesc, NSValue* cleanApertureValue);
 
 NS_ASSUME_NONNULL_END
 
