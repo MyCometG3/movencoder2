@@ -646,8 +646,8 @@ CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered) {
     {   //pixel aspect ratio
         AVRational ratio = filtered->sample_aspect_ratio;
         if (ratio.den > 0 && ratio.num > 0) {
-            NSString* keyPaspHS = (__bridge NSString*)kCVPixelBufferPixelAspectRatioHorizontalSpacingKey;
-            NSString* keyPaspVS = (__bridge NSString*)kCVPixelBufferPixelAspectRatioVerticalSpacingKey;
+            NSString* keyPaspHS = (__bridge NSString*)kCVImageBufferPixelAspectRatioHorizontalSpacingKey;
+            NSString* keyPaspVS = (__bridge NSString*)kCVImageBufferPixelAspectRatioVerticalSpacingKey;
             
             NSMutableDictionary *pasp = [NSMutableDictionary dictionary];
             pasp[keyPaspHS] = @(ratio.num);
