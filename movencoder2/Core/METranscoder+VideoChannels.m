@@ -80,7 +80,12 @@ NS_ASSUME_NONNULL_BEGIN
         if (!mgr) continue;
 
         // Capture source track's format description extensions
-        CMFormatDescriptionRef desc =  (__bridge CMFormatDescriptionRef)track.formatDescriptions[0];
+        NSArray* descArray = track.formatDescriptions;
+        if (descArray.count == 0) {
+            SecureErrorLogf(@"Skipping video track(%d) - no format descriptions", track.trackID);
+            continue;
+        }
+        CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef)descArray[0];
         CFDictionaryRef extensions =  CMFormatDescriptionGetExtensions(desc);
         mgr.sourceExtensions = extensions;
         

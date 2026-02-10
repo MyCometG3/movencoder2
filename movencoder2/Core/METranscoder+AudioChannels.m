@@ -73,9 +73,17 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
     for (AVMovieTrack* track in audioTracks) {
         NSString* key = keyForTrackID(track.trackID);
         MEAudioConverter* audioConverter = self.managers[key];
+        if (![audioConverter isKindOfClass:[MEAudioConverter class]]) {
+            SecureErrorLogf(@"Skipping audio track(%d) - invalid audio converter", track.trackID);
+            continue;
+        }
         
         // Get source audio parameters
         NSArray* descArray = track.formatDescriptions;
+        if (descArray.count == 0) {
+            SecureErrorLogf(@"Skipping audio track(%d) - no format descriptions", track.trackID);
+            continue;
+        }
         CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);
         if (!asbd) {
@@ -303,6 +311,10 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
         NSData* aclData = nil;
         
         NSArray* descArray = track.formatDescriptions;
+        if (descArray.count == 0) {
+            SecureErrorLogf(@"Skipping audio track(%d) - no format descriptions", track.trackID);
+            continue;
+        }
         CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
         
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(desc);

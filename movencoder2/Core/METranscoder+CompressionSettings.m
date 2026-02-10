@@ -23,6 +23,10 @@ NS_ASSUME_NONNULL_BEGIN
 {
     BOOL result = FALSE;
     NSArray* descArray = track.formatDescriptions;
+    if (descArray.count == 0) {
+        SecureErrorLogf(@"Skipping track(%d) - no format descriptions", track.trackID);
+        return FALSE;
+    }
     
     CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef) descArray[0];
     CFDictionaryRef dict = NULL;
