@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 // MARK: - Shared Audio Helper (minimal extraction)
 static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awInputSetting,
-                                         AVAudioChannelLayout* avacSrcLayout,
+                                         AVAudioChannelLayout* channelLayout,
                                          int sampleRate,
                                          int requestedBitrate)
 {
@@ -29,7 +29,7 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
     if (bitrateNum == nil) return; // No bitrate key -> nothing to adjust (e.g. LPCM)
 
     AVAudioFormat* inFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:(double)sampleRate
-                                                                         channelLayout:avacSrcLayout];
+                                                                         channelLayout:channelLayout];
     AVAudioFormat* outFormat = [[AVAudioFormat alloc] initWithSettings:awInputSetting];
     if (!inFormat || !outFormat) return;
 
@@ -60,15 +60,19 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
         return;
     }
     
-    for (AVMovieTrack* track in [movie tracksWithMediaType:AVMediaTypeAudio]) {
-        // Check if we have a registered MEAudioConverter for this track
+    NSArray<AVMovieTrack*>* audioTracks = [movie tracksWithMediaType:AVMediaTypeAudio];
+    for (AVMovieTrack* track in audioTracks) {
         NSString* key = keyForTrackID(track.trackID);
         MEAudioConverter* audioConverter = self.managers[key];
         if (![audioConverter isKindOfClass:[MEAudioConverter class]]) {
-            // Fall back to regular audio processing if no MEAudioConverter registered
             [self prepareAudioMediaChannelWith:movie from:ar to:aw];
             return;
         }
+    }
+    
+    for (AVMovieTrack* track in audioTracks) {
+        NSString* key = keyForTrackID(track.trackID);
+        MEAudioConverter* audioConverter = self.managers[key];
         
         // Get source audio parameters
         NSArray* descArray = track.formatDescriptions;
