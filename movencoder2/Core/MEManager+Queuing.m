@@ -31,7 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 {
     if (!_inputQueue) {
         _inputQueue = dispatch_queue_create(kMEInputQueue, DISPATCH_QUEUE_SERIAL);
-        void* keyPtr = [self inputQueueKeyPtr];
         void* valuePtr = (__bridge void*)self;
         dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], valuePtr, NULL);
     }
@@ -42,7 +41,6 @@ NS_ASSUME_NONNULL_BEGIN
 {
     if (!_outputQueue) {
         _outputQueue = dispatch_queue_create(kMEOutputQueue, DISPATCH_QUEUE_SERIAL);
-        void* keyPtr = [self outputQueueKeyPtr];
         void* valuePtr = (__bridge void*)self;
         dispatch_queue_set_specific(_outputQueue, [self outputQueueKeyPtr], valuePtr, NULL);
     }
@@ -102,7 +100,6 @@ NS_ASSUME_NONNULL_BEGIN
     self.inputQueue = queue;
     self.inputBlock = block;
 
-    void* keyPtr = [self inputQueueKeyPtr];
     void* valuePtr = (__bridge void*)self;
     dispatch_queue_set_specific(_inputQueue, [self inputQueueKeyPtr], valuePtr, NULL);
 }
