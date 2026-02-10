@@ -60,8 +60,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) dispatch_queue_t outputQueue;
 - (void *)inputQueueKeyPtr;
 - (void *)outputQueueKeyPtr;
-- (void)setInputQueueKeyPtr:(void *)ptr;
-- (void)setOutputQueueKeyPtr:(void *)ptr;
 
 // State management
 @property (atomic) BOOL queueing;

@@ -228,19 +228,9 @@ NS_ASSUME_NONNULL_BEGIN
     return inputQueueKey;
 }
 
-- (void)setInputQueueKeyPtr:(void *)ptr
-{
-    inputQueueKey = ptr;
-}
-
 - (void *)outputQueueKeyPtr
 {
     return outputQueueKey;
-}
-
-- (void)setOutputQueueKeyPtr:(void *)ptr
-{
-    outputQueueKey = ptr;
 }
 
 - (void)setVideoFilterString:(NSString * _Nullable)filterString
