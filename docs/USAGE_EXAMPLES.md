@@ -1,7 +1,6 @@
 # movencoder2 Usage Examples
 
-**Version:** 1.0  
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -17,7 +16,7 @@ The simplest way to transcode a video:
 NSURL *inputURL = [NSURL fileURLWithPath:@"/path/to/input.mov"];
 NSURL *outputURL = [NSURL fileURLWithPath:@"/path/to/output.mov"];
 
-METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL 
+METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL
                                                         output:outputURL];
 
 // Configure video encoding
@@ -158,7 +157,7 @@ transcoder.param = [@{
     kVideoKbpsKey: @5000,
     kCopyFieldKey: @YES,
     kCopyNCLCKey: @YES,
-    
+
     // Audio settings
     kAudioEncodeKey: @YES,
     kAudioCodecKey: @"aac ",
@@ -194,7 +193,7 @@ transcoder.progressCallback = ^(NSDictionary *info) {
     NSNumber *pts = info[kProgressPTSKey];                // Presentation time
     NSNumber *percent = info[kProgressPercentKey];        // Progress percentage
     NSNumber *count = info[kProgressCountKey];            // Sample count
-    
+
     NSLog(@"[%@] Track %@: %.1f%% (%ld samples, PTS: %.2fs)",
           mediaType, trackID, percent.floatValue, count.longValue, pts.doubleValue);
 };
@@ -210,7 +209,7 @@ transcoder.callbackQueue = dispatch_get_main_queue();
 
 transcoder.progressCallback = ^(NSDictionary *info) {
     NSNumber *percent = info[kProgressPercentKey];
-    
+
     // Safe to update UI here
     dispatch_async(dispatch_get_main_queue(), ^{
         [progressIndicator setDoubleValue:percent.doubleValue];
@@ -293,9 +292,9 @@ if (transcoder.cancelled) {
 ```objective-c
 - (void)cancelTranscoding {
     [self.transcoder cancelAsync];
-    
+
     // Wait a bit for cleanup
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), 
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
         if (self.transcoder.cancelled) {
             // Remove incomplete output file
@@ -353,7 +352,7 @@ if (config) {
     NSLog(@"Codec: %@", config.rawCodecName);
     NSLog(@"Frame rate: %.2f fps", 1.0 / CMTimeGetSeconds(config.frameRate));
     NSLog(@"Bitrate: %ld bps", (long)config.bitRate);
-    
+
     // Check for validation issues
     if (config.issues.count > 0) {
         NSLog(@"Configuration issues: %@", config.issues);
@@ -406,12 +405,12 @@ transcoder.completionCallback = ^{
     } else {
         NSError *error = transcoder.finalError;
         NSLog(@"❌ Error: %@", error.localizedDescription);
-        
+
         // Check error domain and code
         if ([error.domain isEqualToString:AVFoundationErrorDomain]) {
             NSLog(@"AVFoundation error code: %ld", (long)error.code);
         }
-        
+
         // Check underlying errors
         NSError *underlyingError = error.userInfo[NSUnderlyingErrorKey];
         if (underlyingError) {
@@ -440,52 +439,52 @@ int main(int argc, const char * argv[]) {
             fprintf(stderr, "Usage: %s input output [options]\n", argv[0]);
             return 1;
         }
-        
+
         NSString *inputPath = [NSString stringWithUTF8String:argv[1]];
         NSString *outputPath = [NSString stringWithUTF8String:argv[2]];
-        
+
         NSURL *inputURL = [NSURL fileURLWithPath:inputPath];
         NSURL *outputURL = [NSURL fileURLWithPath:outputPath];
-        
-        METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL 
+
+        METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL
                                                                 output:outputURL];
-        
+
         transcoder.param = [@{
             kVideoEncodeKey: @YES,
             kVideoCodecKey: @"avc1",
             kVideoKbpsKey: @5000
         } mutableCopy];
-        
+
         __block BOOL finished = NO;
         __block int exitCode = 0;
-        
+
         transcoder.progressCallback = ^(NSDictionary *info) {
             NSNumber *percent = info[kProgressPercentKey];
             fprintf(stderr, "\rProgress: %.1f%%", percent.floatValue);
             fflush(stderr);
         };
-        
+
         transcoder.completionCallback = ^{
             fprintf(stderr, "\n");
             if (transcoder.finalSuccess) {
                 printf("✅ Transcoding completed successfully\n");
                 exitCode = 0;
             } else {
-                fprintf(stderr, "❌ Transcoding failed: %s\n", 
+                fprintf(stderr, "❌ Transcoding failed: %s\n",
                         transcoder.finalError.localizedDescription.UTF8String);
                 exitCode = 1;
             }
             finished = YES;
         };
-        
+
         [transcoder startAsync];
-        
+
         // Wait for completion
         while (!finished) {
-            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode 
+            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode
                                      beforeDate:[NSDate distantFuture]];
         }
-        
+
         return exitCode;
     }
 }
@@ -543,7 +542,7 @@ transcoder.completionCallback = ^{
         // Remove incomplete output file
         [[NSFileManager defaultManager] removeItemAtURL:outputURL error:nil];
     }
-    
+
     // Release transcoder
     self.transcoder = nil;
 };
@@ -559,29 +558,29 @@ transcoder.completionCallback = ^{
 - (void)transcodeFiles:(NSArray<NSURL*>*)inputFiles toDirectory:(NSURL*)outputDirectory {
     __block NSUInteger currentIndex = 0;
     __block METranscoder *transcoder = nil;
-    
+
     void (^processNext)(void) = ^{
         if (currentIndex >= inputFiles.count) {
             NSLog(@"✅ All files processed!");
             return;
         }
-        
+
         NSURL *inputURL = inputFiles[currentIndex];
         NSString *outputName = [inputURL.lastPathComponent stringByAppendingString:@"_transcoded.mov"];
         NSURL *outputURL = [outputDirectory URLByAppendingPathComponent:outputName];
-        
+
         transcoder = [[METranscoder alloc] initWithInput:inputURL output:outputURL];
         transcoder.param = /* ... configure ... */;
-        
+
         transcoder.completionCallback = ^{
             NSLog(@"Completed %lu/%lu", currentIndex + 1, inputFiles.count);
             currentIndex++;
             processNext();
         };
-        
+
         [transcoder startAsync];
     };
-    
+
     processNext();
 }
 ```
@@ -593,12 +592,12 @@ transcoder.completionCallback = ^{
 
 - (void)startTranscoding {
     self.progress = [NSProgress progressWithTotalUnitCount:100];
-    
+
     self.transcoder.progressCallback = ^(NSDictionary *info) {
         NSNumber *percent = info[kProgressPercentKey];
         self.progress.completedUnitCount = percent.integerValue;
     };
-    
+
     [self.transcoder startAsync];
 }
 ```

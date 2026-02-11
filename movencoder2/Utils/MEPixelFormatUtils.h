@@ -1,25 +1,25 @@
 //
-//  MEUtils.h
+//  MEPixelFormatUtils.h
 //  movencoder2
 //
-//  Created by Takashi Mochizuki on 2019/01/19.
+//  Created for refactoring on 2026/02/09.
 //
 //  Copyright (C) 2019-2026 MyCometG3
 //  SPDX-License-Identifier: GPL-2.0-or-later
 //
 
 /**
- * @header MEUtils.h
- * @abstract Internal API - Video format utilities
+ * @header MEPixelFormatUtils.h
+ * @abstract Internal API - Pixel format utilities
  * @discussion
- * This header is part of the internal implementation of movencoder2.
- * It is not intended for public use and its interface may change without notice.
+ * This header provides utilities for converting between AVFoundation/CoreVideo
+ * pixel formats and FFmpeg pixel formats.
  *
  * @internal This is an internal API. Do not use directly.
  */
 
-#ifndef MEUtils_h
-#define MEUtils_h
+#ifndef MEPixelFormatUtils_h
+#define MEPixelFormatUtils_h
 
 @import Foundation;
 @import AVFoundation;
@@ -27,16 +27,7 @@
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavfilter/buffersink.h>
-#include <libavfilter/buffersrc.h>
-#include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
-#include <libavutil/time.h>
-#include <libavutil/version.h>
-#include <libavcodec/videotoolbox.h>
-
-#import "MECodecUtils.h"
-#import "MEH26xNALUtils.h"
 
 /* =================================================================================== */
 // MARK: - AVFPixelFormatSpec definition
@@ -46,15 +37,6 @@
 struct AVFPixelFormatSpec {
     enum AVPixelFormat ff_id;
     OSType avf_id;
-};
-
-// Metadata cache structure for preserving color information
-struct AVFrameColorMetadata {
-    int color_range;
-    int color_primaries;
-    int color_trc;
-    int colorspace;
-    int chroma_location;
 };
 
 // From ffmpeg/libavdevice/avfoundation.m
@@ -101,43 +83,35 @@ static const struct AVFPixelFormatSpec AVFPixelFormatSpecUYVY = { AV_PIX_FMT_UYV
 static const struct AVFPixelFormatSpec AVFPixelFormatSpec444P = { AV_PIX_FMT_YUV444P, kCVPixelFormatType_444YpCbCr8 };
 
 /* =================================================================================== */
-// MARK: - Utility functions
+// MARK: - Pixel format utility functions
 /* =================================================================================== */
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ * @brief Get pixel format type from a CMSampleBuffer
+ * @param sb The sample buffer to query
+ * @param type Pointer to store the pixel format type
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL CMSBGetPixelFormatType(CMSampleBufferRef sb, OSType *type);
+
+/**
+ * @brief Get pixel format specification from a CMSampleBuffer
+ * @param sb The sample buffer to query
+ * @param spec Pointer to store the pixel format specification
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL CMSBGetPixelFormatSpec(CMSampleBufferRef sb, struct AVFPixelFormatSpec *spec);
+
+/**
+ * @brief Get pixel format specification from an AVFrame
+ * @param frame The AVFrame to query
+ * @param spec Pointer to store the pixel format specification
+ * @return TRUE if successful, FALSE otherwise
+ */
 BOOL AVFrameGetPixelFormatSpec(AVFrame *frame, struct AVFPixelFormatSpec *spec);
-BOOL CMSBGetTimeBase(CMSampleBufferRef sb, AVRational *timebase);
-BOOL CMSBGetWidthHeight(CMSampleBufferRef sb, int *width, int *height);
-BOOL CMSBGetCrop(CMSampleBufferRef sb, int *left, int *right, int *top, int *bottom);
-BOOL CMSBGetAspectRatio(CMSampleBufferRef sb, AVRational* ratio);
-BOOL CMSBGetFieldInfo_FDE(CFDictionaryRef sourceExtensions, int *fieldCount, int *top_field_first);
-BOOL CMSBGetFieldInfo(CMSampleBufferRef sb, int *fieldCount, int *top_field_first);
-BOOL CMSBGetColorPRI_FDE(CFDictionaryRef sourceExtensions, int *pri);
-BOOL CMSBGetColorPRI(CMSampleBufferRef sb, int *pri);
-BOOL CMSBGetColorTRC_FDE(CFDictionaryRef sourceExtensions, int *trc);
-BOOL CMSBGetColorTRC(CMSampleBufferRef sb, int *trc);
-BOOL CMSBGetColorSPC_FDE(CFDictionaryRef sourceExtensions, int *spc);
-BOOL CMSBGetColorSPC(CMSampleBufferRef sb, int* spc);
-BOOL CMSBGetChromaLoc(CMSampleBufferRef sb, int* loc);
-BOOL CMSBGetColorRange(CMSampleBufferRef sb, int*range);
-BOOL CMSBCopyParametersToAVFrame(CMSampleBufferRef sb, AVFrame *input, CMTimeScale mediaTimeScale);
-BOOL CMSBCopyImageBufferToAVFrame(CMSampleBufferRef sb, AVFrame *input);
-void AVFrameReset(AVFrame *input);
-void AVFrameFillMetadataFromCache(AVFrame *filtered, const struct AVFrameColorMetadata *cachedMetadata);
-
-_Nullable CVPixelBufferPoolRef AVFrameCreateCVPixelBufferPool(AVFrame* filtered);
-_Nullable CVPixelBufferRef AVFrameCreateCVPixelBuffer(AVFrame* filtered, CVPixelBufferPoolRef cvpbpool);
-_Nullable CFDictionaryRef AVFrameCreateCVBufferAttachments(AVFrame *filtered);
-_Nullable CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx);
-_Nullable CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
-_Nullable CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDesc, NSValue* cleanApertureValue);
-
-void avc_parse_nal_units(uint8_t *_Nonnull* _Nonnull buf, int *size);
-const uint8_t *_Nonnull avc_find_startcode(const uint8_t *_Nonnull p, const uint8_t *_Nonnull end);
 
 NS_ASSUME_NONNULL_END
 
-#endif /* MEUtils_h */
+#endif /* MEPixelFormatUtils_h */

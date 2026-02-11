@@ -1,7 +1,6 @@
 # Migration Guide: Public API Adoption
 
-**Version:** 1.0  
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -88,8 +87,8 @@ If you were directly using `MEManager` for video encoding:
 ```objective-c
 #import "MEManager.h"
 
-MEManager *manager = [[MEManager alloc] initWith:readerOutput 
-                                               to:writerInput 
+MEManager *manager = [[MEManager alloc] initWith:readerOutput
+                                               to:writerInput
                                              size:videoSize];
 [manager setupMEEncoderWith:encoderSettings size:videoSize];
 // Manual pipeline management...
@@ -99,7 +98,7 @@ MEManager *manager = [[MEManager alloc] initWith:readerOutput
 ```objective-c
 #import <MovEncoder2/MovEncoder2.h>
 
-METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL 
+METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL
                                                         output:outputURL];
 
 transcoder.param = [@{
@@ -123,7 +122,7 @@ If you were using `MEAudioConverter` directly:
 ```objective-c
 #import "MEAudioConverter.h"
 
-MEAudioConverter *converter = [[MEAudioConverter alloc] initWith:readerOutput 
+MEAudioConverter *converter = [[MEAudioConverter alloc] initWith:readerOutput
                                                                to:writerInput];
 // Manual audio conversion setup...
 ```
@@ -132,7 +131,7 @@ MEAudioConverter *converter = [[MEAudioConverter alloc] initWith:readerOutput
 ```objective-c
 #import <MovEncoder2/MovEncoder2.h>
 
-METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL 
+METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL
                                                         output:outputURL];
 
 transcoder.param = [@{
@@ -157,8 +156,8 @@ If you were using `MEProgressUtil` directly:
 ```objective-c
 #import "MEProgressUtil.h"
 
-float percent = [MEProgressUtil progressPercentForSampleBuffer:buffer 
-                                                         start:startTime 
+float percent = [MEProgressUtil progressPercentForSampleBuffer:buffer
+                                                         start:startTime
                                                            end:endTime];
 NSLog(@"Progress: %.1f%%", percent);
 ```
@@ -189,7 +188,7 @@ If you were accessing encoder/filter pipelines directly:
 MEEncoderPipeline *encoder = [[MEEncoderPipeline alloc] initWithConfig:config size:size];
 CVPixelBufferRef encoded = [encoder encode:pixelBuffer error:&error];
 
-MEFilterPipeline *filter = [[MEFilterPipeline alloc] initWithFilterString:filterString 
+MEFilterPipeline *filter = [[MEFilterPipeline alloc] initWithFilterString:filterString
                                                               sourceSize:size];
 CVPixelBufferRef filtered = [filter filter:pixelBuffer error:&error];
 ```
@@ -263,7 +262,7 @@ transcoder.completionCallback = ^{
     if (!transcoder.finalSuccess) {
         NSError *error = transcoder.finalError;
         NSLog(@"Error: %@", error.localizedDescription);
-        
+
         // Use standard NSError handling
         if (error.userInfo[NSUnderlyingErrorKey]) {
             NSLog(@"Underlying: %@", error.userInfo[NSUnderlyingErrorKey]);
@@ -326,7 +325,7 @@ NSDictionary *dict = @{
 };
 
 NSError *error = nil;
-MEVideoEncoderConfig *config = [MEVideoEncoderConfig configFromLegacyDictionary:dict 
+MEVideoEncoderConfig *config = [MEVideoEncoderConfig configFromLegacyDictionary:dict
                                                                            error:&error];
 
 if (config) {
@@ -420,26 +419,26 @@ See [XCODE_PROJECT_SETUP.md](XCODE_PROJECT_SETUP.md) for detailed framework setu
 - (void)testBasicTranscoding {
     NSURL *input = [self testMovieURL];
     NSURL *output = [self temporaryOutputURL];
-    
-    METranscoder *transcoder = [[METranscoder alloc] initWithInput:input 
+
+    METranscoder *transcoder = [[METranscoder alloc] initWithInput:input
                                                             output:output];
-    
+
     transcoder.param = [@{
         kVideoEncodeKey: @YES,
         kVideoCodecKey: @"avc1",
         kVideoKbpsKey: @5000
     } mutableCopy];
-    
+
     XCTestExpectation *expectation = [self expectationWithDescription:@"Transcoding"];
-    
+
     transcoder.completionCallback = ^{
         XCTAssertTrue(transcoder.finalSuccess);
         XCTAssertNil(transcoder.finalError);
         [expectation fulfill];
     };
-    
+
     [transcoder startAsync];
-    
+
     [self waitForExpectations:@[expectation] timeout:60.0];
 }
 ```
@@ -450,12 +449,12 @@ See [XCODE_PROJECT_SETUP.md](XCODE_PROJECT_SETUP.md) for detailed framework setu
 - (void)testTranscodingPreservesMetadata {
     // Test that metadata is preserved after migration
     METranscoder *transcoder = [[METranscoder alloc] initWithInput:input output:output];
-    
+
     // ... configure and run ...
-    
+
     AVAsset *outputAsset = [AVAsset assetWithURL:output];
     NSArray *metadata = outputAsset.metadata;
-    
+
     XCTAssertGreaterThan(metadata.count, 0);
     // Verify specific metadata items...
 }

@@ -121,7 +121,7 @@ NS_ASSUME_NONNULL_BEGIN
 // MARK: -
 
 - (BOOL) hasFieldModeSupportOf:(AVMovieTrack*)track;
-- (void) addDecommpressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting;
+- (void) addDecompressionPropertiesOf:(AVMovieTrack*)track setting:(NSMutableDictionary*)arOutputSetting;
 - (NSMutableDictionary<NSString*,id>*) videoCompressionSettingFor:(AVMovieTrack *)track;
 
 - (void) prepareVideoChannelsWith:(AVMovie*)movie from:(AVAssetReader*)ar to:(AVAssetWriter*)aw;

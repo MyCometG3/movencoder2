@@ -1,6 +1,5 @@
 # Internal API Reference
 
-**Version:** 1.0  
 **Last Updated:** February 2026  
 **Audience:** Library maintainers and contributors
 
@@ -25,7 +24,7 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 
 **Key Responsibilities:**
 - Manages video encoder pipeline (MEEncoderPipeline)
-- Manages video filter pipeline (MEFilterPipeline) 
+- Manages video filter pipeline (MEFilterPipeline)
 - Coordinates sample buffer processing
 - Handles encoder configuration
 - Manages encoding state and status
@@ -44,12 +43,12 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 
 **Key Methods:**
 ```objective-c
-- (instancetype)initWith:(AVAssetReaderTrackOutput*)readerOutput 
-                      to:(AVAssetWriterInput*)writerInput 
+- (instancetype)initWith:(AVAssetReaderTrackOutput*)readerOutput
+                      to:(AVAssetWriterInput*)writerInput
                     size:(NSSize)size;
-- (void)setupMEEncoderWith:(NSDictionary*)setting 
+- (void)setupMEEncoderWith:(NSDictionary*)setting
                       size:(NSSize)size;
-- (void)setupMEFilterWith:(NSString*)filterString 
+- (void)setupMEFilterWith:(NSString*)filterString
                      size:(NSSize)size;
 ```
 
@@ -76,7 +75,7 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 
 **Key Methods:**
 ```objective-c
-- (instancetype)initWith:(AVAssetReaderTrackOutput*)readerOutput 
+- (instancetype)initWith:(AVAssetReaderTrackOutput*)readerOutput
                       to:(AVAssetWriterInput*)writerInput;
 ```
 
@@ -146,9 +145,9 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 
 **Key Methods:**
 ```objective-c
-- (instancetype)initWithConfig:(MEVideoEncoderConfig*)config 
+- (instancetype)initWithConfig:(MEVideoEncoderConfig*)config
                           size:(CGSize)size;
-- (CVPixelBufferRef)encode:(CVPixelBufferRef)srcBuffer 
+- (CVPixelBufferRef)encode:(CVPixelBufferRef)srcBuffer
                      error:(NSError**)error;
 ```
 
@@ -164,9 +163,9 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 
 **Key Methods:**
 ```objective-c
-- (instancetype)initWithFilterString:(NSString*)filterString 
+- (instancetype)initWithFilterString:(NSString*)filterString
                          sourceSize:(CGSize)size;
-- (CVPixelBufferRef)filter:(CVPixelBufferRef)srcBuffer 
+- (CVPixelBufferRef)filter:(CVPixelBufferRef)srcBuffer
                      error:(NSError**)error;
 ```
 
@@ -240,7 +239,7 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
 
 **Key Methods:**
 ```objective-c
-- (instancetype)initWithReader:(MEInput*)reader 
+- (instancetype)initWithReader:(MEInput*)reader
                         writer:(MEOutput*)writer;
 - (void)startProcessing;
 ```
@@ -269,6 +268,7 @@ extern const AudioChannelLayoutTag kMEAACDestinationLayouts[8];
 **Location:** `Utils/MEUtils.h`
 
 **Purpose:** Video format and FFmpeg utilities
+**Implementation:** Split into `MEPixelFormatUtils` and `MEMetadataExtractor`.
 
 **Key Capabilities:**
 - Format descriptor manipulation
@@ -282,6 +282,16 @@ CMFormatDescriptionRef createFormatDescription(/* parameters */);
 NSString* describeVideoFormat(CMFormatDescriptionRef format);
 enum AVPixelFormat pixelFormatFromCVPixelFormat(OSType cvFormat);
 ```
+
+#### MEPixelFormatUtils
+**Location:** `Utils/MEPixelFormatUtils.h`
+
+**Purpose:** Pixel format mapping helpers
+
+#### MEMetadataExtractor
+**Location:** `Utils/MEMetadataExtractor.h`
+
+**Purpose:** CMSampleBuffer/AVFrame metadata extraction
 
 #### MESecureLogging
 **Location:** `Utils/MESecureLogging.h`
@@ -464,7 +474,7 @@ Internal components should have comprehensive unit tests:
     NSDictionary *dict = @{@"c": @"libx264", @"r": @"30000:1001"};
     NSError *error = nil;
     MEVideoEncoderConfig *config = [MEVideoEncoderConfig configFromLegacyDictionary:dict error:&error];
-    
+
     XCTAssertNotNil(config);
     XCTAssertEqual(config.codecKind, MEVideoCodecKindX264);
     XCTAssertTrue(config.hasFrameRate);
@@ -479,7 +489,7 @@ Test complete pipeline with real media:
 - (void)testTranscodePipeline {
     METranscoder *transcoder = [[METranscoder alloc] initWithInput:testInput output:testOutput];
     [transcoder startAsync];
-    
+
     // Wait for completion
     // Verify output file
 }
@@ -583,7 +593,6 @@ When modifying internal APIs:
 
 - [API_GUIDELINES.md](API_GUIDELINES.md) - Public API documentation
 - [ARCHITECTURE.md](ARCHITECTURE.md) - High-level architecture
-- [PROJECT_REVIEW.md](PROJECT_REVIEW.md) - Project overview
 
 ---
 

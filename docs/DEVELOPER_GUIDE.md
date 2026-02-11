@@ -1,7 +1,6 @@
 # Developer Quick Reference
 
-**Version:** 1.0  
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -62,7 +61,7 @@ typedef NS_ENUM(NSUInteger, MEVideoCodecKind) {
 **MEVideoEncoderConfig**
 ```objective-c
 // Create from legacy dictionary
-MEVideoEncoderConfig *config = 
+MEVideoEncoderConfig *config =
     [MEVideoEncoderConfig configFromLegacyDictionary:dict error:&error];
 
 // Access properties (all readonly)
@@ -78,7 +77,7 @@ NSArray<NSString*> *issues = config.issues; // Validation issues
 **METranscoder** (Main API)
 ```objective-c
 // Create transcoder
-METranscoder *transcoder = 
+METranscoder *transcoder =
     [[METranscoder alloc] initWithInput:inputURL output:outputURL];
 
 // Configure settings
@@ -103,7 +102,7 @@ BOOL success = [transcoder transcode:&error];
 **MEManager** (Video Pipeline)
 ```objective-c
 // Usually created internally by METranscoder
-MEManager *manager = [[MEManager alloc] initWithInput:input 
+MEManager *manager = [[MEManager alloc] initWithInput:input
                                                output:output];
 
 // Configure encoder
@@ -118,8 +117,8 @@ AVAssetWriterStatus status = manager.writerStatus;
 **MEAudioConverter**
 ```objective-c
 // Usually created internally by METranscoder
-MEAudioConverter *converter = 
-    [[MEAudioConverter alloc] initWithInput:input 
+MEAudioConverter *converter =
+    [[MEAudioConverter alloc] initWithInput:input
                                      output:output];
 
 converter.targetKbps = 192.0;
@@ -133,7 +132,7 @@ converter.volumeAdjustment = 0.0; // dB
 ```objective-c
 // Wrap FFmpeg encoder
 // Usually instantiated by MEManager
-MEEncoderPipeline *encoder = 
+MEEncoderPipeline *encoder =
     [[MEEncoderPipeline alloc] initWithConfig:config];
 
 // Encode frame
@@ -144,7 +143,7 @@ BOOL success = [encoder encodeFrame:avFrame error:&error];
 **MEFilterPipeline**
 ```objective-c
 // Wrap FFmpeg filter graph
-MEFilterPipeline *filter = 
+MEFilterPipeline *filter =
     [[MEFilterPipeline alloc] initWithFilterString:@"scale=1280:720"];
 
 // Apply filter
@@ -154,9 +153,9 @@ AVFrame *filtered = [filter filterFrame:inputFrame error:&error];
 **MESampleBufferFactory**
 ```objective-c
 // Create CMSampleBuffer from AVFrame
-CMSampleBufferRef sample = 
-    [MESampleBufferFactory createSampleBufferFromFrame:avFrame 
-                                                timing:timing 
+CMSampleBufferRef sample =
+    [MESampleBufferFactory createSampleBufferFromFrame:avFrame
+                                                timing:timing
                                                  error:&error];
 ```
 
@@ -196,7 +195,7 @@ MEOutput *output = [[MEOutput alloc] initWithURL:url];
 **SBChannel**
 ```objective-c
 // Channel coordination (usually managed internally)
-SBChannel *channel = [[SBChannel alloc] initWithInput:input 
+SBChannel *channel = [[SBChannel alloc] initWithInput:input
                                                output:output];
 ```
 
@@ -222,7 +221,7 @@ SetupFFmpegLogging();
 // Convert FFmpeg error codes to NSError
 int ret = avcodec_open2(...);
 if (ret < 0) {
-    NSError *error = 
+    NSError *error =
         [MEErrorFormatter errorWithFFmpegCode:ret
                                      operation:@"encoder open"
                                      component:@"libx264"];
@@ -236,7 +235,7 @@ CMTime start = kCMTimeZero;
 CMTime end = assetDuration;
 CMTime current = CMSampleBufferGetPresentationTimeStamp(sample);
 
-double progress = 
+double progress =
     [MEProgressUtil progressPercentForSampleBuffer:sample
                                              start:start
                                                end:end];
@@ -246,8 +245,8 @@ double progress =
 **MEUtils**
 ```objective-c
 // Video format utilities
-CMFormatDescriptionRef formatDesc = 
-    [MEUtils createFormatDescriptionForCodec:codecType 
+CMFormatDescriptionRef formatDesc =
+    [MEUtils createFormatDescriptionForCodec:codecType
                                         size:size];
 
 // Color space helpers
@@ -325,9 +324,9 @@ while (processing) {
 transcoder.progressBlock = ^(NSDictionary *info) {
     NSNumber *progressNum = info[@"progress"];
     NSNumber *timeRemaining = info[@"timeRemaining"];
-    
-    printf("\rProgress: %.1f%% (%.0fs remaining)", 
-           [progressNum doubleValue], 
+
+    printf("\rProgress: %.1f%% (%.0fs remaining)",
+           [progressNum doubleValue],
            [timeRemaining doubleValue]);
     fflush(stdout);
 };
@@ -430,10 +429,10 @@ kAudioCodecKey                 // NSString: audio codec (FourCC as string)
 - (void)testBasicFunctionality {
     // Arrange
     MEVideoEncoderConfig *config = /* setup */;
-    
+
     // Act
     NSInteger bitrate = config.bitRate;
-    
+
     // Assert
     XCTAssertEqual(bitrate, 5000000);
 }
@@ -441,10 +440,10 @@ kAudioCodecKey                 // NSString: audio codec (FourCC as string)
 - (void)testErrorCondition {
     // Arrange & Act
     NSError *error = nil;
-    MEVideoEncoderConfig *config = 
-        [MEVideoEncoderConfig configFromLegacyDictionary:invalidDict 
+    MEVideoEncoderConfig *config =
+        [MEVideoEncoderConfig configFromLegacyDictionary:invalidDict
                                                    error:&error];
-    
+
     // Assert
     XCTAssertNil(config);
     XCTAssertNotNil(error);
@@ -460,20 +459,20 @@ kAudioCodecKey                 // NSString: audio codec (FourCC as string)
     // Setup
     NSURL *input = [self testInputURL];
     NSURL *output = [self testOutputURL];
-    
-    METranscoder *transcoder = 
+
+    METranscoder *transcoder =
         [[METranscoder alloc] initWithInput:input output:output];
-    
+
     transcoder.videoEncoderSetting = [self testEncoderSettings];
-    
+
     // Execute
     NSError *error = nil;
     BOOL success = [transcoder transcode:&error];
-    
+
     // Verify
     XCTAssertTrue(success, @"Transcode failed: %@", error);
     XCTAssertTrue([[NSFileManager defaultManager] fileExistsAtPath:output.path]);
-    
+
     // Cleanup
     [[NSFileManager defaultManager] removeItemAtURL:output error:nil];
 }
@@ -701,7 +700,6 @@ $ grep -r "TODO\|FIXME" movencoder2 --include="*.m" --include="*.h"
 ### Documentation
 - [README.md](../README.md) - Project overview and features
 - [HowToBuildLibs.md](../HowToBuildLibs.md) - External library build guide
-- [PROJECT_REVIEW.md](PROJECT_REVIEW.md) - Comprehensive project review
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Architecture overview
 
 ### External References

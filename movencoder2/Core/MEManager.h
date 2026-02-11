@@ -118,10 +118,7 @@ NS_ASSUME_NONNULL_BEGIN
  * processing pipeline without exposing pipeline internals.
  */
 
-- (BOOL)appendSampleBuffer:(CMSampleBufferRef)sb;
 @property(nonatomic, readonly, getter=isReadyForMoreMediaData) BOOL readyForMoreMediaData;
-- (void)markAsFinished;
-- (void)requestMediaDataWhenReadyOnQueue:(dispatch_queue_t)queue usingBlock:(RequestHandler)block;
 @property(nonatomic) CMTimeScale mediaTimeScale;
 @property(nonatomic) CGSize naturalSize;
 
@@ -146,16 +143,9 @@ NS_ASSUME_NONNULL_BEGIN
  * from the pipeline in an AVAssetReader-like fashion.
  */
 
-- (nullable CMSampleBufferRef)copyNextSampleBuffer CF_RETURNS_RETAINED;
-@property(nonatomic, readonly) AVMediaType mediaType;
-
 // Internal alias methods (non-breaking, for IO adapters clarity)
 - (nullable CMSampleBufferRef)copyNextSampleBufferInternal CF_RETURNS_RETAINED;
 - (AVMediaType)mediaTypeInternal;
-
-// Internal sample buffer creation (retained return)
-- (nullable CMSampleBufferRef)createUncompressedSampleBuffer CF_RETURNS_RETAINED;
-- (nullable CMSampleBufferRef)createCompressedSampleBuffer CF_RETURNS_RETAINED;
 
 @end
 

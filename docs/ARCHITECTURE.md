@@ -1,6 +1,5 @@
 # Architecture Overview
 
-**Document Version:** 1.0  
 **Last Updated:** February 2026
 
 ---
@@ -278,7 +277,19 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Aspect ratio calculations
 - Video property utilities
 
-**LOC:** 1,174 (largest utility module)
+**LOC:** wrapper (implementation split into MEPixelFormatUtils/MEMetadataExtractor)
+
+#### MEPixelFormatUtils
+
+**Pixel format utilities:**
+- AVFoundation ↔ FFmpeg format mapping
+- Pixel format discovery helpers
+
+#### MEMetadataExtractor
+
+**Sample buffer metadata utilities:**
+- CMSampleBuffer/AVFrame metadata extraction
+- Attachment dictionary creation
 
 #### MESecureLogging
 
@@ -625,8 +636,8 @@ NSDictionary *settings = @{
 
 **Modern Approach:**
 ```objective-c
-MEVideoEncoderConfig *config = 
-    [MEVideoEncoderConfig configFromLegacyDictionary:settings 
+MEVideoEncoderConfig *config =
+    [MEVideoEncoderConfig configFromLegacyDictionary:settings
                                                error:&error];
 
 // Type-safe access

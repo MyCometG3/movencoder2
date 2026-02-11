@@ -1,5 +1,7 @@
 # Framework Target Setup
 
+**Last Updated:** February 2026
+
 ## Overview
 
 This document describes the MovEncoder2Framework target implementation, which enables the project to be distributed as a macOS framework alongside the existing command-line tool.
