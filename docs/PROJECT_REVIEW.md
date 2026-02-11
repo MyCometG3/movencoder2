@@ -1,6 +1,7 @@
 # movencoder2 - Project Review
 
 **Review Date:** December 2025  
+**Last Updated:** February 2026  
 **Repository:** MyCometG3/movencoder2  
 **Primary Language:** Objective-C  
 **License:** GPL-2.0-or-later  

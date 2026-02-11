@@ -1,6 +1,5 @@
 # Architecture Overview
 
-**Document Version:** 1.0  
 **Last Updated:** February 2026
 
 ---
@@ -637,8 +636,8 @@ NSDictionary *settings = @{
 
 **Modern Approach:**
 ```objective-c
-MEVideoEncoderConfig *config = 
-    [MEVideoEncoderConfig configFromLegacyDictionary:settings 
+MEVideoEncoderConfig *config =
+    [MEVideoEncoderConfig configFromLegacyDictionary:settings
                                                error:&error];
 
 // Type-safe access

@@ -1,5 +1,7 @@
 # Public/Internal API Separation - Implementation Notes
 
+**Last Updated:** February 2026
+
 **Summary:** This document describes the public/internal API separation implementation as described in the README's planned future steps.
 
 **Status:** ✅ **COMPLETE** - All components implemented including framework target configuration

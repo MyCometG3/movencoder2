@@ -1,5 +1,7 @@
 # Responsibility Separation Plan (MovEncoder2)
 
+**Last Updated:** February 2026
+
 Date: 2026-02-08
 Branch: `plan/separation-review`
 

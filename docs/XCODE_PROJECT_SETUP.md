@@ -1,5 +1,7 @@
 # Xcode Project Setup for Public API
 
+**Last Updated:** February 2026
+
 ## Overview
 
 This document provides instructions for configuring the Xcode project to properly expose public headers for framework distribution.
@@ -114,10 +116,10 @@ int main(int argc, char *argv[]) {
         // This should compile without errors
         NSURL *input = [NSURL fileURLWithPath:@"/tmp/input.mov"];
         NSURL *output = [NSURL fileURLWithPath:@"/tmp/output.mov"];
-        
-        METranscoder *transcoder = [[METranscoder alloc] initWithInput:input 
+
+        METranscoder *transcoder = [[METranscoder alloc] initWithInput:input
                                                                 output:output];
-        
+
         NSLog(@"Transcoder created: %@", transcoder);
     }
     return 0;
@@ -138,10 +140,10 @@ For module support, create `movencoder2/Public/module.modulemap`:
 ```
 framework module MovEncoder2 {
     umbrella header "MovEncoder2.h"
-    
+
     export *
     module * { export * }
-    
+
     explicit module Public {
         header "METranscoder.h"
         header "MEVideoEncoderConfig.h"
@@ -281,15 +283,15 @@ Pod::Spec.new do |s|
   s.homepage     = "https://github.com/MyCometG3/movencoder2"
   s.license      = { :type => "GPL-2.0-or-later", :file => "COPYING.txt" }
   s.author       = "MyCometG3"
-  
+
   s.platform     = :osx, "12.0"
   s.source       = { :git => "https://github.com/MyCometG3/movencoder2.git", :tag => "#{s.version}" }
-  
+
   s.source_files = "movencoder2/**/*.{h,m}"
   s.public_header_files = "movencoder2/Public/*.h"
-  
+
   s.frameworks   = "Foundation", "AVFoundation", "CoreMedia", "CoreVideo", "VideoToolbox", "CoreAudio"
-  
+
   # External dependencies (FFmpeg, x264, x265)
   # These would need to be specified based on installation method
 end

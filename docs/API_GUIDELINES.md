@@ -1,7 +1,6 @@
 # movencoder2 API Guidelines
 
-**Version:** 1.0  
-**Last Updated:** December 2025
+**Last Updated:** February 2026
 
 ---
 
@@ -107,7 +106,7 @@ These constants are used in progress callback dictionaries:
 NSURL *inputURL = [NSURL fileURLWithPath:@"/path/to/input.mov"];
 NSURL *outputURL = [NSURL fileURLWithPath:@"/path/to/output.mov"];
 
-METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL 
+METranscoder *transcoder = [[METranscoder alloc] initWithInput:inputURL
                                                         output:outputURL];
 
 // Configure parameters
@@ -131,7 +130,7 @@ transcoder.param = [@{
 transcoder.progressCallback = ^(NSDictionary *info) {
     NSNumber *percent = info[kProgressPercentKey];
     NSString *mediaType = info[kProgressMediaTypeKey];
-    
+
     NSLog(@"Progress [%@]: %.1f%%", mediaType, percent.floatValue);
 };
 
@@ -318,7 +317,11 @@ transcoder.progressCallback = ^(NSDictionary *info) {
 
 ## Version History
 
-### 1.0 (December 2025)
+### February 2026
+- Documentation updates for refactored utility helpers
+- Internal API references refreshed
+
+### December 2025
 - Initial public API formalization
 - Public/internal API separation
 - Umbrella header (MovEncoder2.h)
