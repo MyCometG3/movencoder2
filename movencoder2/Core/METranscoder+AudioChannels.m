@@ -201,7 +201,7 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
         arOutputSetting[AVLinearPCMIsBigEndianKey] = @NO;
 
         // Unified bitrate adjustment (only when encoding)
-        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacDstLayout, sampleRate, self.audioBitRate); // unified bitrate adjustment
+        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacSrcLayout, sampleRate, self.audioBitRate); // unified bitrate adjustment
 
         // NOTE: Three formats involved:
         //   Reader Output: (src layout) Float32 deinterleaved
@@ -603,7 +603,7 @@ static void MEAdjustAudioBitrateIfNeeded(NSMutableDictionary<NSString*,id>* awIn
             awInputSetting[AVEncoderBitRateKey] = @(self.audioBitRate);
             awInputSetting[AVEncoderBitRateStrategyKey] = AVAudioBitRateStrategy_LongTermAverage;
         }
-        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacDstLayout, sampleRate, self.audioBitRate);
+        MEAdjustAudioBitrateIfNeeded(awInputSetting, avacSrcLayout, sampleRate, self.audioBitRate);
         AVAssetWriterInput* awInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio
                                                                          outputSettings:awInputSetting];
         // awInput.mediaTimeScale = track.naturalTimeScale; // Audio track is unable to change
