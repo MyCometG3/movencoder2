@@ -593,7 +593,6 @@ When modifying internal APIs:
 
 - [API_GUIDELINES.md](API_GUIDELINES.md) - Public API documentation
 - [ARCHITECTURE.md](ARCHITECTURE.md) - High-level architecture
-- [PROJECT_REVIEW.md](PROJECT_REVIEW.md) - Project overview
 
 ---
 

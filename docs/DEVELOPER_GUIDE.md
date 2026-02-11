@@ -700,7 +700,6 @@ $ grep -r "TODO\|FIXME" movencoder2 --include="*.m" --include="*.h"
 ### Documentation
 - [README.md](../README.md) - Project overview and features
 - [HowToBuildLibs.md](../HowToBuildLibs.md) - External library build guide
-- [PROJECT_REVIEW.md](PROJECT_REVIEW.md) - Comprehensive project review
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Architecture overview
 
 ### External References
