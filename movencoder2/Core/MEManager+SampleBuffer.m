@@ -580,7 +580,7 @@ error:
                             break;
                         }
                     }
-                    if (countEAGAIN == 1) {                     // Try next ququeing after delay
+                    if (countEAGAIN == 1) {                     // Try next queueing after delay
                         waitOnSemaphore(self.eagainDelaySemaphore, 50);
                         if (self.failed) {
                             goto error;
