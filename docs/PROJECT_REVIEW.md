@@ -71,7 +71,7 @@ movencoder2 is a command-line transcoding tool that provides:
 - **Source Files:** 39 (.h and .m files)
 - **Largest Modules:**
   - MEManager.m: 1,281 LOC (core video encoding orchestration)
-  - MEUtils.m: 1,174 LOC (video format utilities)
+  - MEUtils.m: wrapper (utilities implemented in MEPixelFormatUtils/MEMetadataExtractor)
   - METranscoder+prepareChannels.m: 1,024 LOC (channel preparation)
   - MEAudioConverter.m: 728 LOC (audio processing)
   - METranscoder.m: 714 LOC (transcoding control)
@@ -103,7 +103,9 @@ movencoder2/
 │   └── SBChannel        - Sample buffer channel coordination
 ├── Utils/               # Cross-cutting utilities
 │   ├── MECommon         - Shared constants & definitions
-│   ├── MEUtils          - Video format helpers
+│   ├── MEUtils          - Utility API surface (impl split into helpers)
+│   ├── MEPixelFormatUtils - Pixel format helpers (AVFoundation ↔ FFmpeg)
+│   ├── MEMetadataExtractor - CMSampleBuffer/AVFrame metadata helpers
 │   ├── MESecureLogging  - Secure logging infrastructure
 │   ├── MEErrorFormatter - Human-friendly error messages
 │   ├── MEProgressUtil   - Progress calculation helpers

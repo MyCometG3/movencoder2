@@ -269,6 +269,7 @@ extern const AudioChannelLayoutTag kMEAACDestinationLayouts[8];
 **Location:** `Utils/MEUtils.h`
 
 **Purpose:** Video format and FFmpeg utilities
+**Implementation:** Split into `MEPixelFormatUtils` and `MEMetadataExtractor`.
 
 **Key Capabilities:**
 - Format descriptor manipulation
@@ -282,6 +283,16 @@ CMFormatDescriptionRef createFormatDescription(/* parameters */);
 NSString* describeVideoFormat(CMFormatDescriptionRef format);
 enum AVPixelFormat pixelFormatFromCVPixelFormat(OSType cvFormat);
 ```
+
+#### MEPixelFormatUtils
+**Location:** `Utils/MEPixelFormatUtils.h`
+
+**Purpose:** Pixel format mapping helpers
+
+#### MEMetadataExtractor
+**Location:** `Utils/MEMetadataExtractor.h`
+
+**Purpose:** CMSampleBuffer/AVFrame metadata extraction
 
 #### MESecureLogging
 **Location:** `Utils/MESecureLogging.h`

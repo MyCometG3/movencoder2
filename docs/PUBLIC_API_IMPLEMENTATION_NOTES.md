@@ -49,7 +49,9 @@ Added `@internal` documentation warnings to **16 internal headers**:
 
 **Utils Layer:**
 - `MECommon.h` - Common definitions and utilities
-- `MEUtils.h` - Video format utilities
+- `MEUtils.h` - Video format utilities (implementation split into helpers)
+- `MEPixelFormatUtils.h` - Pixel format helpers (internal)
+- `MEMetadataExtractor.h` - Metadata extraction helpers (internal)
 - `MESecureLogging.h` - Secure logging infrastructure
 - `MEProgressUtil.h` - Progress calculation utilities
 - `MEErrorFormatter.h` - Error message formatting
