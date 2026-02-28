@@ -16,6 +16,9 @@
 #import "MESecureLogging.h"
 #include <unistd.h>
 
+#define DEFAULT_MAX_INPUT_BUFFERS (10)
+#define OUTPUT_POLL_TIMEOUT_MS (50)
+
 /* =================================================================================== */
 // MARK: -
 /* =================================================================================== */
@@ -82,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
         self.startTime = kCMTimeInvalid;
         self.endTime = kCMTimeInvalid;
         
-        self.maxInputBufferCount = 10;
+        self.maxInputBufferCount = DEFAULT_MAX_INPUT_BUFFERS;
         
         self.audioBufferListPool = [NSMutableData data];
     }
@@ -123,6 +126,8 @@ NS_ASSUME_NONNULL_BEGIN
         }
         [self->_outputBufferQueue removeAllObjects];
     });
+    
+    [self.audioBufferListPool setLength:0];
 }
 
 - (AVMediaType)mediaType
@@ -148,13 +153,9 @@ NS_ASSUME_NONNULL_BEGIN
     __block BOOL success = YES;
     dispatch_sync(_inputQueue, ^{
         // Ensure converter is available when formats are set
-        if (!self->_audioConverter && self.sourceFormat && self.destinationFormat) {
-            self->_audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
-            if (!self->_audioConverter) {
-                self.failed = YES;
-                if (self.verbose) {
-                    SecureErrorLog(@"Failed to create AVAudioConverter");
-                }
+        if (!self->_audioConverter) {
+            [self ensureAudioConverter];
+            if (self.failed) {
                 success = NO;
                 return;
             }
@@ -166,7 +167,7 @@ NS_ASSUME_NONNULL_BEGIN
         [self->_inputBufferQueue addObject:value];
 
         // Trigger processing if converter is available
-        if (self->_audioConverter && self.sourceFormat && self.destinationFormat) {
+        if (self->_audioConverter) {
             [self processNextBuffer];
         }
     });
@@ -221,13 +222,9 @@ NS_ASSUME_NONNULL_BEGIN
         self->_inputRequestHandler = [block copy];
         
         // Initialize the audio converter if not already done
-        if (!self->_audioConverter && self.sourceFormat && self.destinationFormat) {
-            self->_audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
-            if (!self->_audioConverter) {
-                self.failed = YES;
-                if (self.verbose) {
-                    SecureErrorLog(@"Failed to create AVAudioConverter");
-                }
+        if (!self->_audioConverter) {
+            [self ensureAudioConverter];
+            if (self.failed) {
                 return;
             }
         }
@@ -241,24 +238,38 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)requestMediaDataWhenReadyOnQueueInternal:(dispatch_queue_t)queue usingBlock:(RequestHandler)block { [self requestMediaDataWhenReadyOnQueue:queue usingBlock:block]; }
 
+#pragma mark - Private methods
+
+- (void)ensureAudioConverter
+{
+    if (self->_audioConverter) {
+        return;
+    }
+    
+    if (!self.sourceFormat || !self.destinationFormat) {
+        return;
+    }
+    
+    self->_audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
+    if (!self->_audioConverter) {
+        self.failed = YES;
+        if (self.verbose) {
+            SecureErrorLog(@"Failed to create AVAudioConverter");
+        }
+    }
+}
+
 - (void)processNextBuffer
 {
     if (_inputBufferQueue.count == 0) {
         return;
     }
 
-    if (!_audioConverter && self.sourceFormat && self.destinationFormat) {
-        _audioConverter = [[AVAudioConverter alloc] initFromFormat:self.sourceFormat toFormat:self.destinationFormat];
+    if (!_audioConverter) {
+        [self ensureAudioConverter];
         if (!_audioConverter) {
-            self.failed = YES;
-            if (self.verbose) {
-                SecureErrorLog(@"Failed to create AVAudioConverter");
-            }
             return;
         }
-    }
-    if (!_audioConverter) {
-        return;
     }
     
     NSValue* value = _inputBufferQueue.firstObject;
@@ -363,7 +374,7 @@ NS_ASSUME_NONNULL_BEGIN
         
         // Wait for semaphore signal indicating new data is available
         // Use a timeout to periodically check for failure state
-        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC); // 50ms timeout
+        dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, OUTPUT_POLL_TIMEOUT_MS * NSEC_PER_MSEC);
         dispatch_semaphore_wait(_outputDataSemaphore, timeout);
         
         // Continue the loop to check for data availability and failure state
@@ -373,6 +384,25 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (nullable CMSampleBufferRef)copyNextSampleBufferInternal { return [self copyNextSampleBuffer]; }
+
+#pragma mark - Private methods
+
+- (void)setVolumeDb:(double)volumeDb
+{
+    if (volumeDb < MEAudioConverterMinVolumeDB) {
+        if (self.verbose) {
+            SecureLogf(@"volumeDb clamped from %f to %f (minimum)", volumeDb, MEAudioConverterMinVolumeDB);
+        }
+        _volumeDb = MEAudioConverterMinVolumeDB;
+    } else if (volumeDb > MEAudioConverterMaxVolumeDB) {
+        if (self.verbose) {
+            SecureLogf(@"volumeDb clamped from %f to %f (maximum)", volumeDb, MEAudioConverterMaxVolumeDB);
+        }
+        _volumeDb = MEAudioConverterMaxVolumeDB;
+    } else {
+        _volumeDb = volumeDb;
+    }
+}
 
 @end
 

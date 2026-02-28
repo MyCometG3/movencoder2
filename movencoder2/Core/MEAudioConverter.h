@@ -38,6 +38,9 @@ typedef void (^RequestHandler)(void);
 
 NS_ASSUME_NONNULL_END
 
+#define MEAudioConverterMinVolumeDB (-10.0)
+#define MEAudioConverterMaxVolumeDB (10.0)
+
 /* =================================================================================== */
 // MARK: -
 /* =================================================================================== */
@@ -82,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  Volume/gain adjustment in dB. Set to 0.0 for no adjustment.
- Valid range: -10.0 to +10.0 dB
+ Valid range: -10.0 to +10.0 dB. Values outside this range will be automatically clamped.
  */
 @property (nonatomic) double volumeDb;
 
