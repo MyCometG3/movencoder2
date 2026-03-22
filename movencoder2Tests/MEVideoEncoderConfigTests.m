@@ -10,7 +10,7 @@
 
 @import XCTest;
 
-#import "MEVideoEncoderConfig.h"
+#import "Config/MEVideoEncoderConfig.h"
 #import "MEManager.h"
 
 @interface MEVideoEncoderConfigTests : XCTestCase

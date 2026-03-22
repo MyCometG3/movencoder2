@@ -431,6 +431,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setVolumeDb:(double)volumeDb
 {
+    if (!isfinite(volumeDb)) {
+        _volumeDb = 0.0;
+        return;
+    }
     if (volumeDb < MEAudioConverterMinVolumeDB) {
         if (self.verbose) {
             SecureLogf(@"volumeDb clamped from %f to %f (minimum)", volumeDb, MEAudioConverterMinVolumeDB);

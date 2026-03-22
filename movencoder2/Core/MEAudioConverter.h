@@ -38,8 +38,8 @@ typedef void (^RequestHandler)(void);
 
 NS_ASSUME_NONNULL_END
 
-#define MEAudioConverterMinVolumeDB (-10.0)
-#define MEAudioConverterMaxVolumeDB (10.0)
+static const double MEAudioConverterMinVolumeDB = -10.0;
+static const double MEAudioConverterMaxVolumeDB = 10.0;
 
 /* =================================================================================== */
 // MARK: -
