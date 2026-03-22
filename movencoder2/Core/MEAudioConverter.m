@@ -16,6 +16,9 @@
 #import "MESecureLogging.h"
 #include <unistd.h>
 
+static const void *kMEInputQueueKey = &kMEInputQueueKey;
+static const void *kMEOutputQueueKey = &kMEOutputQueueKey;
+
 #define DEFAULT_MAX_INPUT_BUFFERS (10)
 #define OUTPUT_POLL_TIMEOUT_MS (50)
 
@@ -69,6 +72,9 @@ NS_ASSUME_NONNULL_BEGIN
         _inputQueue = dispatch_queue_create("MEAudioConverter.input", DISPATCH_QUEUE_SERIAL);
         _outputQueue = dispatch_queue_create("MEAudioConverter.output", DISPATCH_QUEUE_SERIAL);
         
+        dispatch_queue_set_specific(_inputQueue, kMEInputQueueKey, (void *)kMEInputQueueKey, NULL);
+        dispatch_queue_set_specific(_outputQueue, kMEOutputQueueKey, (void *)kMEOutputQueueKey, NULL);
+        
         _inputBufferQueue = [NSMutableArray array];
         _outputBufferQueue = [NSMutableArray array];
         
@@ -106,28 +112,64 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)cleanup
 {
-    // Use dispatch_async for cleanup to prevent deadlock between input and output queues
-    dispatch_async(_inputQueue, ^{
-        for (NSValue* value in self->_inputBufferQueue) {
-            CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
-            if (sampleBuffer) {
-                CFRelease(sampleBuffer);
-            }
-        }
+    // Determine if we're currently executing on the specific queues
+    BOOL onInputQueue = (dispatch_get_specific(kMEInputQueueKey) != NULL);
+    BOOL onOutputQueue = (dispatch_get_specific(kMEOutputQueueKey) != NULL);
+
+    // Snapshots to release outside of the queues
+    __block NSArray<NSValue *> *inputValues = nil;
+    __block NSArray<NSValue *> *outputValues = nil;
+
+    // Drain input queue synchronously (or inline if already on it)
+    if (onInputQueue) {
+        inputValues = [self->_inputBufferQueue copy] ?: @[];
         [self->_inputBufferQueue removeAllObjects];
-    });
-    
-    dispatch_async(_outputQueue, ^{
-        for (NSValue* value in self->_outputBufferQueue) {
-            CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
-            if (sampleBuffer) {
-                CFRelease(sampleBuffer);
-            }
-        }
+    } else if (_inputQueue) {
+        dispatch_sync(_inputQueue, ^{
+            inputValues = [self->_inputBufferQueue copy] ?: @[];
+            [self->_inputBufferQueue removeAllObjects];
+        });
+    } else {
+        inputValues = @[];
+    }
+
+    // Drain output queue synchronously (or inline if already on it)
+    if (onOutputQueue) {
+        outputValues = [self->_outputBufferQueue copy] ?: @[];
         [self->_outputBufferQueue removeAllObjects];
-    });
-    
-    [self.audioBufferListPool setLength:0];
+    } else if (_outputQueue) {
+        dispatch_sync(_outputQueue, ^{
+            outputValues = [self->_outputBufferQueue copy] ?: @[];
+            [self->_outputBufferQueue removeAllObjects];
+        });
+    } else {
+        outputValues = @[];
+    }
+
+    // Release outside of queues to avoid retaining self in async blocks
+    for (NSValue *value in inputValues) {
+        CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
+        if (sampleBuffer) {
+            CFRelease(sampleBuffer);
+        }
+    }
+    for (NSValue *value in outputValues) {
+        CMSampleBufferRef sampleBuffer = (CMSampleBufferRef)[value pointerValue];
+        if (sampleBuffer) {
+            CFRelease(sampleBuffer);
+        }
+    }
+
+    // Reset pooled storage synchronously on the input queue to avoid races
+    if (onInputQueue) {
+        [self.audioBufferListPool setLength:0];
+    } else if (_inputQueue) {
+        dispatch_sync(_inputQueue, ^{
+            [self.audioBufferListPool setLength:0];
+        });
+    } else {
+        [self.audioBufferListPool setLength:0];
+    }
 }
 
 - (AVMediaType)mediaType
@@ -407,3 +449,4 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+
