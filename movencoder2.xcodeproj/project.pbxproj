@@ -60,9 +60,6 @@
 
 /* Begin PBXFileReference section */
 		161907892884E28B001BFA7E /* HowToBuildLibs.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = HowToBuildLibs.md; sourceTree = "<group>"; };
-		163227632F6EABC70072CCC1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		163227672F6EAC070072CCC1 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
-		163227682F6EAC070072CCC1 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		1654A0C826DC75D500E7DBB8 /* liblzma.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblzma.dylib; path = ../../../../../opt/local/lib/liblzma.dylib; sourceTree = "<group>"; };
 		1654A0C926DC75D500E7DBB8 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = ../../../../../opt/local/lib/libz.dylib; sourceTree = "<group>"; };
 		1654A0CA26DC75D500E7DBB8 /* libbz2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libbz2.dylib; path = ../../../../../opt/local/lib/libbz2.dylib; sourceTree = "<group>"; };
@@ -81,7 +78,6 @@
 		16A9573A22C05AED008868AF /* COPYING.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.txt; sourceTree = "<group>"; };
 		16A9573B22C05AED008868AF /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		16B81251218D701000E24173 /* movencoder2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = movencoder2; sourceTree = BUILT_PRODUCTS_DIR; };
-		16C1DAF32E87F0A000DD415F /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		16C1DAF62E87F12000DD415F /* movencoder2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = movencoder2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		16DF75652F6F686F00EA55E0 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		240B87D07B35999E9BDDD7D0 /* MovEncoder2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MovEncoder2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -316,9 +312,6 @@
 			isa = PBXGroup;
 			children = (
 				16DF75652F6F686F00EA55E0 /* XCTest.framework */,
-				163227682F6EAC070072CCC1 /* CoreAudio.framework */,
-				163227672F6EAC070072CCC1 /* CoreVideo.framework */,
-				163227632F6EABC70072CCC1 /* Foundation.framework */,
 				1654A0CE26DC763C00E7DBB8 /* dylib at usr-local-lib */,
 				1654A0C726DC75C000E7DBB8 /* dylib at opt-local-lib */,
 				16741CE721A92550000EEC78 /* CoreMedia.framework */,
@@ -338,7 +331,6 @@
 				161DAF562F3B6D65002777AA /* movencoder2Tests */,
 				16B81252218D701000E24173 /* Products */,
 				16AD45BF21965FB500A0BB95 /* Frameworks */,
-				16C1DAFC2E87F21B00DD415F /* Recovered References */,
 				A50EB28E4A257BA3C5CDDEDE /* MovEncoder2Framework */,
 			);
 			sourceTree = "<group>";
@@ -351,14 +343,6 @@
 				240B87D07B35999E9BDDD7D0 /* MovEncoder2.framework */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		16C1DAFC2E87F21B00DD415F /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				16C1DAF32E87F0A000DD415F /* XCTest.framework */,
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 		A50EB28E4A257BA3C5CDDEDE /* MovEncoder2Framework */ = {
