@@ -13,7 +13,7 @@
 
 #import <Foundation/Foundation.h>
 #import <CoreMedia/CoreMedia.h>
-#import "METypes.h"
+#import <MovEncoder2/METypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -11,10 +11,10 @@
 #ifndef METranscoder_h
 #define METranscoder_h
 
-@import Foundation;
-@import AVFoundation;
-@import VideoToolbox;
-@import CoreAudio;
+#import <Foundation/Foundation.h>
+#import <AVFoundation/AVFoundation.h>
+#import <VideoToolbox/VideoToolbox.h>
+#import <CoreAudio/CoreAudioTypes.h>
 
 @class MEManager;
 @class MEInput;

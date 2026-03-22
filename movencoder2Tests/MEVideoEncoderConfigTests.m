@@ -8,7 +8,8 @@
 //  SPDX-License-Identifier: GPL-2.0-or-later
 //
 
-#import <XCTest/XCTest.h>
+@import XCTest;
+
 #import "MEVideoEncoderConfig.h"
 #import "MEManager.h"
 

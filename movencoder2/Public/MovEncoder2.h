@@ -57,17 +57,17 @@
 /**
  * Core Types and Enumerations
  */
-#import "METypes.h"
+#import <MovEncoder2/METypes.h>
 
 /**
  * Type-safe Configuration
  */
-#import "MEVideoEncoderConfig.h"
+#import <MovEncoder2/MEVideoEncoderConfig.h>
 
 /**
  * Main Transcoding Controller
  */
-#import "METranscoder.h"
+#import <MovEncoder2/METranscoder.h>
 
 // MARK: - Public Constants
 
