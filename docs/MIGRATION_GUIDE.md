@@ -1,6 +1,6 @@
 # Migration Guide: Public API Adoption
 
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ---
 

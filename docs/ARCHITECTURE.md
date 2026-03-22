@@ -1,6 +1,6 @@
 # Architecture Overview
 
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ---
 
@@ -103,6 +103,10 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 **Categories:**
 - `METranscoder+paramParser.m` - Parameter parsing logic
 - `METranscoder+prepareChannels.m` - Channel preparation logic
+- `METranscoder+AudioChannels.h/m` - Audio channel setup
+- `METranscoder+VideoChannels.h/m` - Video channel setup
+- `METranscoder+CodecHelpers.h/m` - Codec helper utilities
+- `METranscoder+CompressionSettings.h/m` - Compression settings
 - `METranscoder+Internal.h` - Private interface
 
 #### MEManager
@@ -132,6 +136,12 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Atomic properties for status flags
 - Thread-safe state management
 
+**Categories:**
+- `MEManager+Internal.h/m` - Internal bridge interface
+- `MEManager+Pipeline.h/m` - Pipeline setup methods
+- `MEManager+Queuing.h/m` - Queue management methods
+- `MEManager+SampleBuffer.h/m` - Sample buffer I/O methods
+
 #### MEAudioConverter
 
 **Role:** Audio processing coordinator
@@ -151,6 +161,11 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Buffer pooling for memory efficiency
 - Autoreleasepool optimization in hot paths
 - Efficient format conversion
+
+**Categories:**
+- `MEAudioConverter+Internal.h` - Internal bridge interface
+- `MEAudioConverter+BufferConversion.h/m` - PCM/CMSampleBuffer conversion
+- `MEAudioConverter+VolumeControl.h/m` - Volume/gain adjustment
 
 ---
 
@@ -277,7 +292,7 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 - Aspect ratio calculations
 - Video property utilities
 
-**LOC:** wrapper (implementation split into MEPixelFormatUtils/MEMetadataExtractor)
+**Note:** Implementation split into MEPixelFormatUtils, MEMetadataExtractor, MECodecUtils, and MEH26xNALUtils.
 
 #### MEPixelFormatUtils
 
@@ -290,6 +305,18 @@ movencoder2 implements a layered architecture with clear separation of concerns:
 **Sample buffer metadata utilities:**
 - CMSampleBuffer/AVFrame metadata extraction
 - Attachment dictionary creation
+
+#### MECodecUtils
+
+**H.264/H.265 codec utilities:**
+- CMFormatDescription creation from AVCodecContext (H.264/H.265)
+- Clean aperture format description helpers
+
+#### MEH26xNALUtils
+
+**NAL unit utilities:**
+- H.264/H.265 Annex B start code parsing (adapted from FFmpeg)
+- AVCC format conversion
 
 #### MESecureLogging
 
@@ -343,16 +370,12 @@ NSError *error = [MEErrorFormatter errorWithFFmpegCode:ret
 - String sanitization
 - Argument validation
 
-**LOC:** 359
-
 #### monitorUtil
 
 **Process monitoring:**
 - Signal handling
 - Interrupt detection
 - Graceful shutdown
-
-**LOC:** 169
 
 ---
 
@@ -743,21 +766,6 @@ void SetupFFmpegLogging(void);
 
 ## Future Architecture Considerations
 
-### Public API Formalization
-
-**Current State:** Internal architecture exposed
-
-**Proposed Changes:**
-- Define clear public API surface
-- Create umbrella header (MovEncoder2.h)
-- Separate public/internal interfaces
-- Document public API contracts
-
-**Benefits:**
-- Framework distribution ready
-- Clear API stability guarantees
-- Reduced coupling to internals
-
 ### Package Manager Support
 
 **Potential Additions:**
@@ -766,19 +774,16 @@ void SetupFFmpegLogging(void);
 - Carthage compatibility
 
 **Requirements:**
-- Public API formalization
 - Semantic versioning
 - Binary distribution consideration
 
 ### Test Architecture
 
-**Current:** Basic XCTest setup
+**Current:** XCTest with unit and integration tests
 
 **Expansion Needed:**
 - Mock/stub infrastructure
-- Test fixtures
 - Performance testing harness
-- Integration test framework
 
 ---
 

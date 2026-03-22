@@ -1,6 +1,6 @@
 # movencoder2 API Guidelines
 
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ---
 
@@ -316,6 +316,11 @@ transcoder.progressCallback = ^(NSDictionary *info) {
 ---
 
 ## Version History
+
+### March 2026
+- Updated documentation for Core category file refactoring
+- Added MECodecUtils and MEH26xNALUtils to Utils layer
+- Updated all Last Updated dates
 
 ### February 2026
 - Documentation updates for refactored utility helpers

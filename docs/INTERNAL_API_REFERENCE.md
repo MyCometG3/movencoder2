@@ -1,6 +1,6 @@
 # Internal API Reference
 
-**Last Updated:** February 2026  
+**Last Updated:** March 2026  
 **Audience:** Library maintainers and contributors
 
 ---
@@ -61,6 +61,12 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
                                      usingBlock:(RequestHandler)block;
 ```
 
+**Categories:**
+- `MEManager+Internal.h` - Internal bridge interface
+- `MEManager+Pipeline.h/m` - Pipeline setup (encoder/filter init)
+- `MEManager+Queuing.h/m` - Queue management methods
+- `MEManager+SampleBuffer.h/m` - Sample buffer I/O methods
+
 #### MEAudioConverter
 **Location:** `Core/MEAudioConverter.h`
 
@@ -100,15 +106,24 @@ This document describes the internal APIs of movencoder2. These APIs are **not p
                                                      format:(AVAudioFormat*)format CF_RETURNS_RETAINED;
 ```
 
+**Categories:**
+- `MEAudioConverter+Internal.h` - Internal bridge interface
+- `MEAudioConverter+BufferConversion.h/m` - PCM/CMSampleBuffer conversion
+- `MEAudioConverter+VolumeControl.h/m` - Volume/gain adjustment
+
 #### METranscoder Internal Extensions
 **Location:** `Core/METranscoder+Internal.h`
 
 **Purpose:** Private METranscoder implementation details
 
 **Categories:**
-- `METranscoder()` - Private properties and ivars
-- `METranscoder(paramParser)` - Parameter parsing
-- `METranscoder(prepareChannels)` - Channel setup
+- `METranscoder()` - Private properties and ivars (`METranscoder+Internal.h`)
+- `METranscoder(paramParser)` - Parameter parsing (`METranscoder+paramParser.m`)
+- `METranscoder(prepareChannels)` - Channel setup (`METranscoder+prepareChannels.m`)
+- `METranscoder(AudioChannels)` - Audio channel configuration (`METranscoder+AudioChannels.h/m`)
+- `METranscoder(VideoChannels)` - Video channel configuration (`METranscoder+VideoChannels.h/m`)
+- `METranscoder(CodecHelpers)` - Codec helper utilities (`METranscoder+CodecHelpers.h/m`)
+- `METranscoder(CompressionSettings)` - Compression settings (`METranscoder+CompressionSettings.h/m`)
 
 **Private Properties:**
 ```objective-c
@@ -292,6 +307,29 @@ enum AVPixelFormat pixelFormatFromCVPixelFormat(OSType cvFormat);
 **Location:** `Utils/MEMetadataExtractor.h`
 
 **Purpose:** CMSampleBuffer/AVFrame metadata extraction
+
+#### MECodecUtils
+**Location:** `Utils/MECodecUtils.h`
+
+**Purpose:** H.264/H.265 codec utilities
+
+**Key Functions:**
+```objective-c
+CF_RETURNS_RETAINED CMFormatDescriptionRef createDescriptionH264(AVCodecContext* avctx);
+CF_RETURNS_RETAINED CMFormatDescriptionRef createDescriptionH265(AVCodecContext* avctx);
+CF_RETURNS_RETAINED CMFormatDescriptionRef createDescriptionWithAperture(CMFormatDescriptionRef inDesc, NSValue* cleanApertureValue);
+```
+
+#### MEH26xNALUtils
+**Location:** `Utils/MEH26xNALUtils.h`
+
+**Purpose:** H.26x NAL unit parsing utilities (adapted from FFmpeg)
+
+**Key Functions:**
+```objective-c
+const uint8_t *avc_find_startcode(const uint8_t *p, const uint8_t *end);
+void avc_parse_nal_units(uint8_t **buf, int *size);
+```
 
 #### MESecureLogging
 **Location:** `Utils/MESecureLogging.h`

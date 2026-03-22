@@ -1,6 +1,6 @@
 # Xcode Project Setup for Public API
 
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ## Overview
 

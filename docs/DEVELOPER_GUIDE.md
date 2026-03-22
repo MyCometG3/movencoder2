@@ -1,6 +1,6 @@
 # Developer Quick Reference
 
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 ---
 
@@ -252,6 +252,21 @@ CMFormatDescriptionRef formatDesc =
 // Color space helpers
 // PAR calculations
 // Various format conversions
+```
+
+**MECodecUtils**
+```objective-c
+// H.264/H.265 format description creation
+CMFormatDescriptionRef descH264 = createDescriptionH264(avctx);
+CMFormatDescriptionRef descH265 = createDescriptionH265(avctx);
+CMFormatDescriptionRef descWithClap = createDescriptionWithAperture(inDesc, cleanApertureValue);
+```
+
+**MEH26xNALUtils**
+```objective-c
+// H.264/H.265 NAL unit parsing
+const uint8_t *startCode = avc_find_startcode(p, end);
+avc_parse_nal_units(&buf, &size);  // Annex B → AVCC
 ```
 
 **parseUtil**
@@ -713,4 +728,4 @@ $ grep -r "TODO\|FIXME" movencoder2 --include="*.m" --include="*.h"
 
 **Document Version:** 1.0  
 **Maintainer:** MyCometG3  
-**Last Review:** December 2025
+**Last Review:** March 2026
